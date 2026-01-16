@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile - {{ org.portal_title }}{% endblock %}
+
+{% block content %}
+<div class="edit-record">
+    <a href="{{ url_for('dashboard') }}" class="back-link">← Back to Dashboard</a>
+
+    <h1>Your Profile</h1>
+
+    <form id="edit-form" action="{{ url_for('edit_profile') }}" method="post" class="form">
+        {% if editable_fields or readonly_fields %}
+            {# Editable fields #}
+            {% for field_name in editable_fields %}
+                {% set field_value = user_data.fields.get(field_name, '') %}
+                <div class="form-group">
+                    <label for="{{ field_name }}">{{ field_name }}</label>
+                    {% if field_value is string and field_value|length > 100 %}
+                        <textarea id="{{ field_name }}" name="{{ field_name }}" rows="4" data-original="{{ field_value }}">{{ field_value }}</textarea>
+                    {% else %}
+                        <input type="text" id="{{ field_name }}" name="{{ field_name }}" value="{{ field_value }}" data-original="{{ field_value }}">
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            {# Read-only fields #}
+            {% for field_name in readonly_fields %}
+                {% set field_value = user_data.fields.get(field_name, '') %}
+                <div class="form-group">
+                    <label>{{ field_name }}</label>
+                    <div class="field-readonly">
+                        {% if field_value is iterable and field_value is not string %}
+                            {{ field_value | join(', ') }}
+                        {% else %}
+                            {{ field_value or '—' }}
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+
+            {% if editable_fields %}
+            <div class="form-actions">
+                <button type="submit" id="save-btn" class="btn btn-save" disabled>Save Changes</button>
+                <button type="button" id="discard-btn" class="btn btn-secondary" disabled>Discard Changes</button>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="card">
+                <p>No fields are configured for viewing. Please contact your administrator.</p>
+            </div>
+        {% endif %}
+    </form>
+</div>
+
+<script>
+(function() {
+    const form = document.getElementById('edit-form');
+    const saveBtn = document.getElementById('save-btn');
+    const discardBtn = document.getElementById('discard-btn');
+    if (!form || !saveBtn) return;
+
+    const inputs = form.querySelectorAll('input[data-original], textarea[data-original]');
+
+    function checkForChanges() {
+        let hasChanges = false;
+        inputs.forEach(input => {
+            if (input.value !== input.dataset.original) {
+                hasChanges = true;
+            }
+        });
+
+        if (hasChanges) {
+            saveBtn.disabled = false;
+            saveBtn.classList.add('has-changes');
+            if (discardBtn) discardBtn.disabled = false;
+        } else {
+            saveBtn.disabled = true;
+            saveBtn.classList.remove('has-changes');
+            if (discardBtn) discardBtn.disabled = true;
+        }
+    }
+
+    function discardChanges() {
+        inputs.forEach(input => {
+            input.value = input.dataset.original;
+        });
+        checkForChanges();
+    }
+
+    inputs.forEach(input => {
+        input.addEventListener('input', checkForChanges);
+    });
+
+    if (discardBtn) {
+        discardBtn.addEventListener('click', discardChanges);
+    }
+})();
+</script>
+{% endblock %}

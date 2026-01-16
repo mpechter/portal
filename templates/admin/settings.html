@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - {{ org.portal_title }}{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="admin-header">
+        <h1>Admin: {{ org.name }}</h1>
+        <a href="{{ url_for('admin_logout') }}" class="btn btn-secondary">Logout</a>
+    </div>
+
+    <nav class="admin-tabs">
+        <a href="{{ url_for('admin_settings') }}" class="tab active">Settings</a>
+        <a href="{{ url_for('admin_tables') }}" class="tab">Tables</a>
+        <a href="{{ url_for('admin_fields') }}" class="tab {% if not org.tables_configured %}disabled{% endif %}">Fields</a>
+    </nav>
+
+    <div class="admin-content">
+        <form id="settings-form" action="{{ url_for('admin_save_settings') }}" method="post" class="form">
+
+            <h3>Organization</h3>
+
+            <div class="form-group">
+                <label for="org_code">Organization Code</label>
+                <p class="field-help">The code users enter to access your portal.</p>
+                <input type="text" id="org_code" value="{{ org.org_code }}" class="form-input" disabled>
+                <p class="field-help text-muted">Contact support to change your organization code.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="name">Organization Name</label>
+                <p class="field-help">Displayed in the admin header.</p>
+                <input type="text" id="name" name="name" value="{{ org.name }}" class="form-input" required data-original="{{ org.name }}">
+            </div>
+
+            <div class="form-group">
+                <label for="portal_title">Portal Title</label>
+                <p class="field-help">Shown in the browser tab and page headers for users.</p>
+                <input type="text" id="portal_title" name="portal_title" value="{{ org.portal_title }}" class="form-input" placeholder="e.g., Parent Portal" data-original="{{ org.portal_title }}">
+            </div>
+
+            <h3>Airtable Connection</h3>
+
+            <div class="form-group">
+                <label for="airtable_api_key">Airtable API Key</label>
+                <p class="field-help">Your personal access token from <a href="https://airtable.com/create/tokens" target="_blank">Airtable</a>.</p>
+                <input type="password" id="airtable_api_key" name="airtable_api_key" value="{{ org.airtable_api_key }}" class="form-input" required data-original="{{ org.airtable_api_key }}">
+                <button type="button" class="btn-text" onclick="togglePassword('airtable_api_key')">Show</button>
+            </div>
+
+            <div class="form-group">
+                <label for="airtable_base_id">Airtable Base ID</label>
+                <p class="field-help">Found in your Airtable base URL (starts with "app").</p>
+                <input type="text" id="airtable_base_id" name="airtable_base_id" value="{{ org.airtable_base_id }}" class="form-input" required placeholder="appXXXXXXXXXXXXXX" data-original="{{ org.airtable_base_id }}">
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" id="save-btn" class="btn btn-save" disabled>Save Settings</button>
+                <button type="button" id="discard-btn" class="btn btn-secondary" disabled>Discard Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const btn = field.nextElementSibling;
+    if (field.type === 'password') {
+        field.type = 'text';
+        btn.textContent = 'Hide';
+    } else {
+        field.type = 'password';
+        btn.textContent = 'Show';
+    }
+}
+
+(function() {
+    const form = document.getElementById('settings-form');
+    const saveBtn = document.getElementById('save-btn');
+    const discardBtn = document.getElementById('discard-btn');
+    if (!form || !saveBtn) return;
+
+    const inputs = form.querySelectorAll('input[data-original]');
+
+    function checkForChanges() {
+        let hasChanges = false;
+        inputs.forEach(input => {
+            if (input.value !== input.dataset.original) {
+                hasChanges = true;
+            }
+        });
+
+        if (hasChanges) {
+            saveBtn.disabled = false;
+            saveBtn.classList.add('has-changes');
+            if (discardBtn) discardBtn.disabled = false;
+        } else {
+            saveBtn.disabled = true;
+            saveBtn.classList.remove('has-changes');
+            if (discardBtn) discardBtn.disabled = true;
+        }
+    }
+
+    function discardChanges() {
+        inputs.forEach(input => {
+            input.value = input.dataset.original;
+        });
+        checkForChanges();
+    }
+
+    inputs.forEach(input => {
+        input.addEventListener('input', checkForChanges);
+    });
+
+    if (discardBtn) {
+        discardBtn.addEventListener('click', discardChanges);
+    }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {{ org.portal_title }}{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h1>Welcome, {{ user.name or user.email }}</h1>
+
+    {% if has_profile_fields %}
+    <section class="profile-section">
+        <div class="section-header">
+            <h2>Your Information</h2>
+            {% if user_editable_fields %}
+            <a href="{{ url_for('edit_profile') }}" class="btn btn-secondary btn-small">Edit Profile</a>
+            {% endif %}
+        </div>
+
+        <div class="profile-summary">
+            {% for field_name in user_readonly_fields %}
+                {% set value = user_fields.get(field_name, '') %}
+                {% if value %}
+                <div class="profile-field">
+                    <span class="field-label">{{ field_name }}:</span>
+                    <span class="field-value">{{ value }}</span>
+                </div>
+                {% endif %}
+            {% endfor %}
+            {% for field_name in user_editable_fields %}
+                {% set value = user_fields.get(field_name, '') %}
+                {% if value %}
+                <div class="profile-field">
+                    <span class="field-label">{{ field_name }}:</span>
+                    <span class="field-value">{{ value }}</span>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    {% if records %}
+    <section class="records-section">
+        <h2>Your {{ org.records_table }}</h2>
+        <p class="text-muted">Select a record to view and edit.</p>
+
+        <div class="records-list">
+            {% for record in records %}
+            <a href="{{ url_for('edit_record', record_id=record.id) }}" class="record-card">
+                <h3>{{ record.fields.get('Name', 'Unnamed Record') }}</h3>
+                <p class="text-muted">Click to view and edit</p>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% elif not has_profile_fields %}
+    <div class="card">
+        <p>No records found. Please contact your administrator.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

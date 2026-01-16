@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Table Setup - {{ org.portal_title }}{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="admin-header">
+        <h1>Admin: {{ org.name }}</h1>
+        <a href="{{ url_for('admin_logout') }}" class="btn btn-secondary">Logout</a>
+    </div>
+
+    <nav class="admin-tabs">
+        <a href="{{ url_for('admin_settings') }}" class="tab">Settings</a>
+        <a href="{{ url_for('admin_tables') }}" class="tab active">Tables</a>
+        <a href="{{ url_for('admin_fields') }}" class="tab {% if not org.tables_configured %}disabled{% endif %}">Fields</a>
+    </nav>
+
+    <div class="admin-content">
+        <h2>Table Configuration</h2>
+        <p class="text-muted">Select which tables contain your users and their linked records.</p>
+
+        <form id="tables-form" action="{{ url_for('admin_save_tables') }}" method="post" class="form">
+            <div class="form-group">
+                <label for="users_table">Users Table</label>
+                <p class="field-help">The table where users log in (must have an Email field).</p>
+                <select id="users_table" name="users_table" class="form-select" required>
+                    <option value="">-- Select a table --</option>
+                    {% for table in tables %}
+                    <option value="{{ table.name }}"
+                            data-linked-fields="{{ table.linked_fields | tojson | e }}"
+                            {% if org.users_table == table.name %}selected{% endif %}>
+                        {{ table.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group" id="link-field-group" style="{% if not linked_fields %}display: none;{% endif %}">
+                <label for="link_field">Linked Records Field (Optional)</label>
+                <p class="field-help">If users have linked records (like children, projects, etc.), select the field that links to them.</p>
+                <select id="link_field" name="link_field" class="form-select">
+                    <option value="">-- No linked records --</option>
+                    {% for field in linked_fields %}
+                    <option value="{{ field.name }}" {% if org.link_field == field.name %}selected{% endif %}>
+                        {{ field.name }} (links to {{ field.linked_table_name }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" id="save-btn" class="btn btn-save" disabled>Save & Continue</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function() {
+    const form = document.getElementById('tables-form');
+    const usersTableSelect = document.getElementById('users_table');
+    const linkFieldGroup = document.getElementById('link-field-group');
+    const linkFieldSelect = document.getElementById('link_field');
+    const saveBtn = document.getElementById('save-btn');
+
+    // Store original values
+    const originalUsersTable = usersTableSelect.value;
+    const originalLinkField = linkFieldSelect.value;
+
+    // Store all tables data for dynamic updates
+    const tablesData = {};
+    {% for table in tables %}
+    tablesData['{{ table.name }}'] = {{ table.linked_fields | tojson }};
+    {% endfor %}
+
+    function checkForChanges() {
+        const hasChanges = usersTableSelect.value !== originalUsersTable ||
+                          linkFieldSelect.value !== originalLinkField;
+        const hasSelection = usersTableSelect.value !== '';
+
+        if (hasChanges && hasSelection) {
+            saveBtn.disabled = false;
+            saveBtn.classList.add('has-changes');
+        } else if (hasSelection && !originalUsersTable) {
+            // New setup - enable save if table selected
+            saveBtn.disabled = false;
+            saveBtn.classList.add('has-changes');
+        } else {
+            saveBtn.disabled = true;
+            saveBtn.classList.remove('has-changes');
+        }
+    }
+
+    function updateLinkedFields() {
+        const selectedTable = usersTableSelect.value;
+        const linkedFields = tablesData[selectedTable] || [];
+
+        // Clear and repopulate link field dropdown
+        linkFieldSelect.innerHTML = '<option value="">-- No linked records --</option>';
+
+        if (linkedFields.length > 0) {
+            linkedFields.forEach(field => {
+                const option = document.createElement('option');
+                option.value = field.name;
+                // Find linked table name
+                let linkedTableName = 'another table';
+                {% for table in tables %}
+                if (field.linked_table_id === '{{ table.id }}') {
+                    linkedTableName = '{{ table.name }}';
+                }
+                {% endfor %}
+                option.textContent = field.name + ' (links to ' + (field.linked_table_name || linkedTableName) + ')';
+                linkFieldSelect.appendChild(option);
+            });
+            linkFieldGroup.style.display = 'block';
+        } else {
+            linkFieldGroup.style.display = 'none';
+        }
+
+        checkForChanges();
+    }
+
+    usersTableSelect.addEventListener('change', updateLinkedFields);
+    linkFieldSelect.addEventListener('change', checkForChanges);
+
+    // Initial check
+    checkForChanges();
+})();
+</script>
+{% endblock %}

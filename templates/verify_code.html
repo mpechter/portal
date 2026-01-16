@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Enter Code - {{ org.portal_title }}{% endblock %}
+
+{% block content %}
+<div class="card centered">
+    <h1>Enter Your Code</h1>
+    <p>We sent a 6-digit code to <strong>{{ email }}</strong></p>
+    <form action="{{ url_for('verify_code') }}" method="post" class="form">
+        <div class="form-group">
+            <label for="code">Login Code</label>
+            <input type="text"
+                   id="code"
+                   name="code"
+                   placeholder="123456"
+                   maxlength="6"
+                   pattern="[0-9]{6}"
+                   inputmode="numeric"
+                   autocomplete="one-time-code"
+                   required
+                   autofocus
+                   class="code-input">
+        </div>
+        <button type="submit" class="btn btn-primary">Verify</button>
+    </form>
+    <p class="text-muted">Code expires in 10 minutes</p>
+    <p class="text-muted"><a href="{{ url_for('login') }}">Use a different email</a></p>
+</div>
+{% endblock %}

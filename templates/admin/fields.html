@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - {{ org.portal_title }}{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="admin-header">
+        <h1>Admin: {{ org.name }}</h1>
+        <a href="{{ url_for('admin_logout') }}" class="btn btn-secondary">Logout</a>
+    </div>
+
+    <nav class="admin-tabs">
+        <a href="{{ url_for('admin_settings') }}" class="tab">Settings</a>
+        <a href="{{ url_for('admin_tables') }}" class="tab">Tables</a>
+        <a href="{{ url_for('admin_fields') }}" class="tab active">Fields</a>
+    </nav>
+
+    <div class="admin-content">
+        <form id="admin-form" action="{{ url_for('admin_save_fields') }}" method="post" class="form">
+
+        <h3>Profile Fields ({{ org.users_table }})</h3>
+        <p class="text-muted">Fields shown on the user's own profile. Defaults to hidden if not configured.</p>
+
+        <table class="field-config-table">
+            <thead>
+                <tr>
+                    <th>Field Name</th>
+                    <th>Editable</th>
+                    <th>Read-only</th>
+                    <th>Hidden</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for field_name in user_fields %}
+                {% set current = user_field_config.get(field_name, 'hidden') %}
+                <tr>
+                    <td><strong>{{ field_name }}</strong></td>
+                    <td>
+                        <input type="radio"
+                               name="user_field_{{ field_name }}"
+                               value="editable"
+                               id="user_{{ field_name }}_editable"
+                               data-original="{{ 'true' if current == 'editable' else '' }}"
+                               {% if current == 'editable' %}checked{% endif %}>
+                        <label for="user_{{ field_name }}_editable" class="radio-label">Editable</label>
+                    </td>
+                    <td>
+                        <input type="radio"
+                               name="user_field_{{ field_name }}"
+                               value="readonly"
+                               id="user_{{ field_name }}_readonly"
+                               data-original="{{ 'true' if current == 'readonly' else '' }}"
+                               {% if current == 'readonly' %}checked{% endif %}>
+                        <label for="user_{{ field_name }}_readonly" class="radio-label">Read-only</label>
+                    </td>
+                    <td>
+                        <input type="radio"
+                               name="user_field_{{ field_name }}"
+                               value="hidden"
+                               id="user_{{ field_name }}_hidden"
+                               data-original="{{ 'true' if current == 'hidden' else '' }}"
+                               {% if current == 'hidden' %}checked{% endif %}>
+                        <label for="user_{{ field_name }}_hidden" class="radio-label">Hidden</label>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if record_fields %}
+        <h3>{{ org.records_table }} Fields</h3>
+        <p class="text-muted">Fields shown on linked records. Defaults to editable if not configured.</p>
+
+        <table class="field-config-table">
+            <thead>
+                <tr>
+                    <th>Field Name</th>
+                    <th>Editable</th>
+                    <th>Read-only</th>
+                    <th>Hidden</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for field_name in record_fields %}
+                {% set current = record_field_config.get(field_name, 'editable') %}
+                <tr>
+                    <td><strong>{{ field_name }}</strong></td>
+                    <td>
+                        <input type="radio"
+                               name="record_field_{{ field_name }}"
+                               value="editable"
+                               id="record_{{ field_name }}_editable"
+                               data-original="{{ 'true' if current == 'editable' else '' }}"
+                               {% if current == 'editable' %}checked{% endif %}>
+                        <label for="record_{{ field_name }}_editable" class="radio-label">Editable</label>
+                    </td>
+                    <td>
+                        <input type="radio"
+                               name="record_field_{{ field_name }}"
+                               value="readonly"
+                               id="record_{{ field_name }}_readonly"
+                               data-original="{{ 'true' if current == 'readonly' else '' }}"
+                               {% if current == 'readonly' %}checked{% endif %}>
+                        <label for="record_{{ field_name }}_readonly" class="radio-label">Read-only</label>
+                    </td>
+                    <td>
+                        <input type="radio"
+                               name="record_field_{{ field_name }}"
+                               value="hidden"
+                               id="record_{{ field_name }}_hidden"
+                               data-original="{{ 'true' if current == 'hidden' else '' }}"
+                               {% if current == 'hidden' %}checked{% endif %}>
+                        <label for="record_{{ field_name }}_hidden" class="radio-label">Hidden</label>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        <div class="form-actions">
+            <button type="submit" id="save-btn" class="btn btn-save" disabled>Save Configuration</button>
+            <button type="button" id="discard-btn" class="btn btn-secondary" disabled>Discard Changes</button>
+        </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function() {
+    const form = document.getElementById('admin-form');
+    const saveBtn = document.getElementById('save-btn');
+    const discardBtn = document.getElementById('discard-btn');
+    if (!form || !saveBtn) return;
+
+    const radios = form.querySelectorAll('input[type="radio"]');
+
+    function checkForChanges() {
+        let hasChanges = false;
+        radios.forEach(radio => {
+            const wasOriginallyChecked = radio.dataset.original === 'true';
+            const isNowChecked = radio.checked;
+            if (wasOriginallyChecked !== isNowChecked) {
+                hasChanges = true;
+            }
+        });
+
+        if (hasChanges) {
+            saveBtn.disabled = false;
+            saveBtn.classList.add('has-changes');
+            if (discardBtn) discardBtn.disabled = false;
+        } else {
+            saveBtn.disabled = true;
+            saveBtn.classList.remove('has-changes');
+            if (discardBtn) discardBtn.disabled = true;
+        }
+    }
+
+    function discardChanges() {
+        radios.forEach(radio => {
+            radio.checked = radio.dataset.original === 'true';
+        });
+        checkForChanges();
+    }
+
+    radios.forEach(radio => {
+        radio.addEventListener('change', checkForChanges);
+    });
+
+    if (discardBtn) {
+        discardBtn.addEventListener('click', discardChanges);
+    }
+})();
+</script>
+{% endblock %}
