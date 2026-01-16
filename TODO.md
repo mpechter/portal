@@ -2,30 +2,17 @@
 
 ## Next Up
 
-1. **Support additional Airtable field types**
-   - Currently only handles text fields
-   - Need to support:
-     - Dates (date picker)
-     - Single Select (dropdown)
-     - Multiple Select (multi-select dropdown)
-     - Checkboxes
-     - Numbers
-     - etc.
-   - Render appropriate input controls based on field type
-   - Handle field type metadata from Airtable schema API
+1. Switch to using UV
 
-2. Put into github
-
-3. Switch to using UV
-
-4. Remove any stale code.
-
-5. Host!
+2. Host!
 
 ---
 
 ## Completed Features
 
+- Support for multiple Airtable field types (text, textarea, select, multi-select, checkbox, date, number, email, phone, URL)
+- GitHub repo setup
+- Stale code cleanup
 - README with setup instructions
 - Multi-tenant org support with org codes
 - 6-digit login codes (no email provider required yet)

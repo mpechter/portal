@@ -44,12 +44,16 @@ class AirtableClient:
                         "name": field.name,
                         "type": field.type,
                     }
-                    table_info["fields"].append(field_info)
+                    # Add options for select fields
+                    if field.type in ("singleSelect", "multipleSelects") and field.options:
+                        choices = field.options.get("choices", [])
+                        field_info["options"] = [c.get("name") for c in choices if c.get("name")]
                     # Check if it's a linked record field
                     if field.type == "multipleRecordLinks":
                         linked_table_id = field.options.get("linkedTableId") if field.options else None
                         field_info["linked_table_id"] = linked_table_id
                         table_info["linked_fields"].append(field_info)
+                    table_info["fields"].append(field_info)
                 tables.append(table_info)
             return tables
         except Exception as e:
@@ -63,6 +67,24 @@ class AirtableClient:
             if table["name"] == table_name:
                 return table
         return None
+
+    def get_field_metadata(self, table_name: str, field_names: list) -> dict:
+        """Get field metadata (type, options) for specified fields in a table.
+
+        Returns a dict mapping field_name to {type, options}.
+        """
+        table = self.get_table_by_name(table_name)
+        if not table:
+            return {}
+
+        metadata = {}
+        for field in table.get("fields", []):
+            if field["name"] in field_names:
+                metadata[field["name"]] = {
+                    "type": field.get("type", "singleLineText"),
+                    "options": field.get("options", []),
+                }
+        return metadata
 
     def get_user_by_email(self, email: str) -> dict | None:
         """Find a user by email address."""

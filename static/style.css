@@ -545,3 +545,79 @@ body {
     border-radius: 6px;
     color: #666;
 }
+
+/* Checkbox styling */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 8px 0;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #007bff;
+}
+
+.checkbox-text {
+    font-weight: normal;
+}
+
+/* Hide duplicate label for standalone checkboxes */
+.form-group > .checkbox-label {
+    margin-top: -5px;
+}
+
+.form-group > .checkbox-label .checkbox-text {
+    display: none;
+}
+
+/* Multi-select styling */
+.multi-select {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 0;
+}
+
+.multi-select .checkbox-label {
+    padding: 6px 12px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.multi-select .checkbox-label:hover {
+    background: #e9ecef;
+}
+
+.multi-select .checkbox-text {
+    display: inline;
+}
+
+/* Number input */
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Date/datetime inputs */
+input[type="date"],
+input[type="datetime-local"] {
+    cursor: pointer;
+}
+
+/* Phone/email/url inputs - give visual hint */
+input[type="tel"],
+input[type="email"],
+input[type="url"] {
+    /* Same as regular inputs, just for semantic clarity */
+}

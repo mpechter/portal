@@ -245,13 +245,30 @@ def edit_record(record_id: str):
     editable_fields = org.get_record_editable_fields()
     readonly_fields = org.get_record_readonly_fields()
 
+    # Get field metadata for type-aware rendering
+    all_fields = editable_fields + readonly_fields
+    field_metadata = client.get_field_metadata(org.records_table, all_fields)
+
     if request.method == "POST":
         # Build update dict with only editable fields
         updates = {}
         for field_name in editable_fields:
-            form_value = request.form.get(field_name)
-            if form_value is not None:
-                updates[field_name] = form_value
+            field_type = field_metadata.get(field_name, {}).get("type", "singleLineText")
+
+            # Handle checkbox fields specially
+            if field_type == "checkbox":
+                updates[field_name] = field_name in request.form
+            # Handle multi-select fields (multiple values with same name)
+            elif field_type == "multipleSelects":
+                updates[field_name] = request.form.getlist(field_name)
+            else:
+                form_value = request.form.get(field_name)
+                if form_value is not None:
+                    # Convert empty strings to None for certain field types
+                    if form_value == "" and field_type in ("number", "date"):
+                        updates[field_name] = None
+                    else:
+                        updates[field_name] = form_value
 
         if updates:
             client.update_record(record_id, updates)
@@ -264,6 +281,7 @@ def edit_record(record_id: str):
         record=record,
         editable_fields=editable_fields,
         readonly_fields=readonly_fields,
+        field_metadata=field_metadata,
         org=org,
     )
 
@@ -286,13 +304,30 @@ def edit_profile():
     editable_fields = org.get_user_editable_fields()
     readonly_fields = org.get_user_readonly_fields()
 
+    # Get field metadata for type-aware rendering
+    all_fields = editable_fields + readonly_fields
+    field_metadata = client.get_field_metadata(org.users_table, all_fields)
+
     if request.method == "POST":
         # Build update dict with only editable fields
         updates = {}
         for field_name in editable_fields:
-            form_value = request.form.get(field_name)
-            if form_value is not None:
-                updates[field_name] = form_value
+            field_type = field_metadata.get(field_name, {}).get("type", "singleLineText")
+
+            # Handle checkbox fields specially
+            if field_type == "checkbox":
+                updates[field_name] = field_name in request.form
+            # Handle multi-select fields (multiple values with same name)
+            elif field_type == "multipleSelects":
+                updates[field_name] = request.form.getlist(field_name)
+            else:
+                form_value = request.form.get(field_name)
+                if form_value is not None:
+                    # Convert empty strings to None for certain field types
+                    if form_value == "" and field_type in ("number", "date"):
+                        updates[field_name] = None
+                    else:
+                        updates[field_name] = form_value
 
         if updates:
             client.update_user(current_user.user_id, updates)
@@ -305,6 +340,7 @@ def edit_profile():
         user_data=user_data,
         editable_fields=editable_fields,
         readonly_fields=readonly_fields,
+        field_metadata=field_metadata,
         org=org,
     )
 

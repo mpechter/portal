@@ -1,0 +1,121 @@
+{# Macro to render a form field based on its Airtable type #}
+{% macro render_field(field_name, field_value, field_meta, editable=True) %}
+    {% set field_type = field_meta.type if field_meta else 'singleLineText' %}
+    {% set field_options = field_meta.options if field_meta else [] %}
+
+    <div class="form-group">
+        <label for="{{ field_name }}">{{ field_name }}</label>
+
+        {% if not editable %}
+            {# Read-only display #}
+            <div class="field-readonly">
+                {% if field_type == 'checkbox' %}
+                    {{ 'Yes' if field_value else 'No' }}
+                {% elif field_value is iterable and field_value is not string %}
+                    {{ field_value | join(', ') }}
+                {% else %}
+                    {{ field_value or '—' }}
+                {% endif %}
+            </div>
+        {% elif field_type == 'checkbox' %}
+            {# Checkbox #}
+            <label class="checkbox-label">
+                <input type="checkbox"
+                       id="{{ field_name }}"
+                       name="{{ field_name }}"
+                       {% if field_value %}checked{% endif %}
+                       data-original="{{ 'true' if field_value else 'false' }}">
+                <span class="checkbox-text">{{ field_name }}</span>
+            </label>
+        {% elif field_type == 'singleSelect' %}
+            {# Dropdown for single select #}
+            <select id="{{ field_name }}"
+                    name="{{ field_name }}"
+                    class="form-select"
+                    data-original="{{ field_value or '' }}">
+                <option value="">— Select —</option>
+                {% for option in field_options %}
+                    <option value="{{ option }}" {% if field_value == option %}selected{% endif %}>
+                        {{ option }}
+                    </option>
+                {% endfor %}
+            </select>
+        {% elif field_type == 'multipleSelects' %}
+            {# Multi-select checkboxes #}
+            <div class="multi-select" data-original="{{ field_value | join(',') if field_value else '' }}">
+                {% for option in field_options %}
+                    <label class="checkbox-label">
+                        <input type="checkbox"
+                               name="{{ field_name }}"
+                               value="{{ option }}"
+                               {% if field_value and option in field_value %}checked{% endif %}>
+                        <span class="checkbox-text">{{ option }}</span>
+                    </label>
+                {% endfor %}
+            </div>
+        {% elif field_type == 'multilineText' %}
+            {# Textarea #}
+            <textarea id="{{ field_name }}"
+                      name="{{ field_name }}"
+                      rows="4"
+                      data-original="{{ field_value or '' }}">{{ field_value or '' }}</textarea>
+        {% elif field_type == 'number' or field_type == 'currency' or field_type == 'percent' %}
+            {# Number input #}
+            <input type="number"
+                   id="{{ field_name }}"
+                   name="{{ field_name }}"
+                   value="{{ field_value if field_value is not none else '' }}"
+                   step="any"
+                   data-original="{{ field_value if field_value is not none else '' }}">
+        {% elif field_type == 'date' %}
+            {# Date picker #}
+            <input type="date"
+                   id="{{ field_name }}"
+                   name="{{ field_name }}"
+                   value="{{ field_value or '' }}"
+                   data-original="{{ field_value or '' }}">
+        {% elif field_type == 'dateTime' %}
+            {# DateTime picker #}
+            <input type="datetime-local"
+                   id="{{ field_name }}"
+                   name="{{ field_name }}"
+                   value="{{ field_value[:16] if field_value else '' }}"
+                   data-original="{{ field_value[:16] if field_value else '' }}">
+        {% elif field_type == 'email' %}
+            {# Email input #}
+            <input type="email"
+                   id="{{ field_name }}"
+                   name="{{ field_name }}"
+                   value="{{ field_value or '' }}"
+                   data-original="{{ field_value or '' }}">
+        {% elif field_type == 'phoneNumber' %}
+            {# Phone input #}
+            <input type="tel"
+                   id="{{ field_name }}"
+                   name="{{ field_name }}"
+                   value="{{ field_value or '' }}"
+                   data-original="{{ field_value or '' }}">
+        {% elif field_type == 'url' %}
+            {# URL input #}
+            <input type="url"
+                   id="{{ field_name }}"
+                   name="{{ field_name }}"
+                   value="{{ field_value or '' }}"
+                   data-original="{{ field_value or '' }}">
+        {% else %}
+            {# Default: single line text #}
+            {% if field_value is string and field_value|length > 100 %}
+                <textarea id="{{ field_name }}"
+                          name="{{ field_name }}"
+                          rows="4"
+                          data-original="{{ field_value }}">{{ field_value }}</textarea>
+            {% else %}
+                <input type="text"
+                       id="{{ field_name }}"
+                       name="{{ field_name }}"
+                       value="{{ field_value or '' }}"
+                       data-original="{{ field_value or '' }}">
+            {% endif %}
+        {% endif %}
+    </div>
+{% endmacro %}

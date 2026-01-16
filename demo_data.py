@@ -40,7 +40,7 @@ DEMO_TABLES = [
             {"id": "fld_name", "name": "Name", "type": "singleLineText"},
             {"id": "fld_phone", "name": "Phone", "type": "phoneNumber"},
             {"id": "fld_address", "name": "Address", "type": "singleLineText"},
-            {"id": "fld_pref", "name": "Preferred Contact", "type": "singleSelect"},
+            {"id": "fld_pref", "name": "Preferred Contact", "type": "singleSelect", "options": ["Email", "Phone", "Text"]},
             {"id": "fld_students", "name": "Students", "type": "multipleRecordLinks", "linked_table_id": "tbl_students"},
         ],
         "linked_fields": [
@@ -52,7 +52,7 @@ DEMO_TABLES = [
         "name": "Students",
         "fields": [
             {"id": "fld_sname", "name": "Name", "type": "singleLineText"},
-            {"id": "fld_grade", "name": "Grade", "type": "singleSelect"},
+            {"id": "fld_grade", "name": "Grade", "type": "singleSelect", "options": ["Kindergarten", "1st Grade", "2nd Grade", "3rd Grade", "4th Grade", "5th Grade", "6th Grade"]},
             {"id": "fld_cphone", "name": "Contact Phone", "type": "phoneNumber"},
             {"id": "fld_medical", "name": "Medical Notes", "type": "multilineText"},
             {"id": "fld_emergency", "name": "Emergency Contact", "type": "singleLineText"},
@@ -131,6 +131,21 @@ class DemoAirtableClient:
             if table["name"] == table_name:
                 return table
         return None
+
+    def get_field_metadata(self, table_name: str, field_names: list) -> dict:
+        """Get field metadata (type, options) for specified fields in a table."""
+        table = self.get_table_by_name(table_name)
+        if not table:
+            return {}
+
+        metadata = {}
+        for field in table.get("fields", []):
+            if field["name"] in field_names:
+                metadata[field["name"]] = {
+                    "type": field.get("type", "singleLineText"),
+                    "options": field.get("options", []),
+                }
+        return metadata
 
     def get_user_by_email(self, email: str) -> dict | None:
         email = email.lower()

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/fields.html" import render_field %}
 
 {% block title %}Edit Profile - {{ org.portal_title }}{% endblock %}
 
@@ -13,29 +14,15 @@
             {# Editable fields #}
             {% for field_name in editable_fields %}
                 {% set field_value = user_data.fields.get(field_name, '') %}
-                <div class="form-group">
-                    <label for="{{ field_name }}">{{ field_name }}</label>
-                    {% if field_value is string and field_value|length > 100 %}
-                        <textarea id="{{ field_name }}" name="{{ field_name }}" rows="4" data-original="{{ field_value }}">{{ field_value }}</textarea>
-                    {% else %}
-                        <input type="text" id="{{ field_name }}" name="{{ field_name }}" value="{{ field_value }}" data-original="{{ field_value }}">
-                    {% endif %}
-                </div>
+                {% set field_meta = field_metadata.get(field_name, {}) %}
+                {{ render_field(field_name, field_value, field_meta, editable=True) }}
             {% endfor %}
 
             {# Read-only fields #}
             {% for field_name in readonly_fields %}
                 {% set field_value = user_data.fields.get(field_name, '') %}
-                <div class="form-group">
-                    <label>{{ field_name }}</label>
-                    <div class="field-readonly">
-                        {% if field_value is iterable and field_value is not string %}
-                            {{ field_value | join(', ') }}
-                        {% else %}
-                            {{ field_value or '—' }}
-                        {% endif %}
-                    </div>
-                </div>
+                {% set field_meta = field_metadata.get(field_name, {}) %}
+                {{ render_field(field_name, field_value, field_meta, editable=False) }}
             {% endfor %}
 
             {% if editable_fields %}
@@ -59,12 +46,39 @@
     const discardBtn = document.getElementById('discard-btn');
     if (!form || !saveBtn) return;
 
-    const inputs = form.querySelectorAll('input[data-original], textarea[data-original]');
+    function getInputValue(input) {
+        if (input.type === 'checkbox') {
+            return input.checked ? 'true' : 'false';
+        }
+        return input.value;
+    }
+
+    function setInputValue(input, value) {
+        if (input.type === 'checkbox') {
+            input.checked = (value === 'true');
+        } else {
+            input.value = value;
+        }
+    }
 
     function checkForChanges() {
         let hasChanges = false;
-        inputs.forEach(input => {
-            if (input.value !== input.dataset.original) {
+
+        // Check regular inputs
+        form.querySelectorAll('input[data-original], textarea[data-original], select[data-original]').forEach(input => {
+            if (getInputValue(input) !== input.dataset.original) {
+                hasChanges = true;
+            }
+        });
+
+        // Check multi-select groups
+        form.querySelectorAll('.multi-select[data-original]').forEach(group => {
+            const checked = Array.from(group.querySelectorAll('input:checked'))
+                .map(cb => cb.value)
+                .sort()
+                .join(',');
+            const original = group.dataset.original.split(',').filter(v => v).sort().join(',');
+            if (checked !== original) {
                 hasChanges = true;
             }
         });
@@ -81,14 +95,26 @@
     }
 
     function discardChanges() {
-        inputs.forEach(input => {
-            input.value = input.dataset.original;
+        // Reset regular inputs
+        form.querySelectorAll('input[data-original], textarea[data-original], select[data-original]').forEach(input => {
+            setInputValue(input, input.dataset.original);
         });
+
+        // Reset multi-select groups
+        form.querySelectorAll('.multi-select[data-original]').forEach(group => {
+            const originalValues = group.dataset.original.split(',').filter(v => v);
+            group.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = originalValues.includes(cb.value);
+            });
+        });
+
         checkForChanges();
     }
 
-    inputs.forEach(input => {
+    // Listen for changes on all form elements
+    form.querySelectorAll('input, textarea, select').forEach(input => {
         input.addEventListener('input', checkForChanges);
+        input.addEventListener('change', checkForChanges);
     });
 
     if (discardBtn) {
