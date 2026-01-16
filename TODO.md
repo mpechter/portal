@@ -2,14 +2,13 @@
 
 ## Next Up
 
-1. Switch to using UV
-
-2. Host!
+1. Host!
 
 ---
 
 ## Completed Features
 
+- UV package management with pyproject.toml
 - Support for multiple Airtable field types (text, textarea, select, multi-select, checkbox, date, number, email, phone, URL)
 - GitHub repo setup
 - Stale code cleanup

@@ -15,6 +15,12 @@ A self-service portal that lets users log in and edit their own records in Airta
 
 ### 1. Install dependencies
 
+Using [uv](https://docs.astral.sh/uv/) (recommended):
+```bash
+uv sync
+```
+
+Or with pip:
 ```bash
 pip install -r requirements.txt
 ```

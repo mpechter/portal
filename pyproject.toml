@@ -1,0 +1,19 @@
+[project]
+name = "portal"
+version = "0.1.0"
+description = "Self-service portal for editing Airtable records"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=3.0.0",
+    "flask-sqlalchemy>=3.1.1",
+    "flask-login>=0.6.3",
+    "pyairtable>=2.3.3",
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+portal = "app:app"
+
+[dependency-groups]
+dev = []
