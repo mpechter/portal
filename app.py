@@ -648,6 +648,127 @@ def admin_save_fields():
 # --- CLI Commands ---
 
 
+# --- Signup Routes ---
+
+
+def generate_org_code(name: str) -> str:
+    """Generate a unique org code from organization name."""
+    import re
+    import random
+    import string
+
+    # Create base code from name (uppercase, alphanumeric only)
+    base = re.sub(r'[^A-Z0-9]', '', name.upper())[:6]
+    if len(base) < 3:
+        base = base + ''.join(random.choices(string.ascii_uppercase, k=3-len(base)))
+
+    # Check uniqueness, add suffix if needed
+    code = base
+    suffix = 1
+    while Organization.query.filter_by(org_code=code).first():
+        code = f"{base}{suffix}"
+        suffix += 1
+
+    return code
+
+
+def validate_airtable_credentials(api_key: str, base_id: str) -> tuple[bool, str]:
+    """Test if Airtable credentials are valid by trying to fetch base schema."""
+    try:
+        from pyairtable import Api
+        api = Api(api_key)
+        base = api.base(base_id)
+        schema = base.schema()
+        if schema.tables:
+            return True, f"Connected successfully. Found {len(schema.tables)} tables."
+        return True, "Connected successfully."
+    except Exception as e:
+        error_msg = str(e)
+        if "401" in error_msg or "AUTHENTICATION" in error_msg.upper():
+            return False, "Invalid API key. Please check your Airtable Personal Access Token."
+        elif "404" in error_msg or "NOT_FOUND" in error_msg.upper():
+            return False, "Base not found. Please check your Base ID."
+        elif "403" in error_msg or "FORBIDDEN" in error_msg.upper():
+            return False, "Access denied. Make sure your API key has access to this base."
+        else:
+            return False, f"Connection failed: {error_msg}"
+
+
+@app.route("/signup", methods=["GET", "POST"])
+def signup():
+    """Organization signup page."""
+    if request.method == "POST":
+        # Get form values
+        name = request.form.get("name", "").strip()
+        org_code = request.form.get("org_code", "").strip().upper()
+        airtable_api_key = request.form.get("airtable_api_key", "").strip()
+        airtable_base_id = request.form.get("airtable_base_id", "").strip()
+        admin_password = request.form.get("admin_password", "").strip()
+        admin_password_confirm = request.form.get("admin_password_confirm", "").strip()
+
+        # Validation
+        errors = []
+
+        if not name:
+            errors.append("Organization name is required.")
+
+        if not org_code:
+            # Auto-generate if not provided
+            org_code = generate_org_code(name) if name else ""
+        elif len(org_code) < 3:
+            errors.append("Org code must be at least 3 characters.")
+        elif Organization.query.filter_by(org_code=org_code).first():
+            errors.append(f"Org code '{org_code}' is already taken.")
+
+        if not airtable_api_key:
+            errors.append("Airtable API key is required.")
+
+        if not airtable_base_id:
+            errors.append("Airtable Base ID is required.")
+
+        if not admin_password:
+            errors.append("Admin password is required.")
+        elif len(admin_password) < 6:
+            errors.append("Admin password must be at least 6 characters.")
+        elif admin_password != admin_password_confirm:
+            errors.append("Passwords do not match.")
+
+        # If basic validation passes, test Airtable connection
+        if not errors and airtable_api_key and airtable_base_id:
+            is_valid, message = validate_airtable_credentials(airtable_api_key, airtable_base_id)
+            if not is_valid:
+                errors.append(message)
+
+        if errors:
+            for error in errors:
+                flash(error, "error")
+            return render_template("signup.html",
+                                   name=name,
+                                   org_code=org_code,
+                                   airtable_base_id=airtable_base_id)
+
+        # Create the organization
+        org = Organization(
+            org_code=org_code,
+            name=name,
+            airtable_api_key=airtable_api_key,
+            airtable_base_id=airtable_base_id,
+            portal_title=f"{name} Portal",
+        )
+        org.set_admin_password(admin_password)
+
+        db.session.add(org)
+        db.session.commit()
+
+        # Log them into admin
+        session["admin_org_code"] = org.org_code
+
+        flash(f"Organization '{org_code}' created successfully! Now configure your tables.", "success")
+        return redirect(url_for("admin_tables"))
+
+    return render_template("signup.html", name="", org_code="", airtable_base_id="")
+
+
 @app.cli.command("init-db")
 def init_db():
     """Initialize the database."""

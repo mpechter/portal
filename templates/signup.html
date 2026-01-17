@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Create Organization - Portal{% endblock %}
+
+{% block content %}
+<div class="card centered" style="max-width: 500px;">
+    <h1>Create Organization</h1>
+    <p>Set up your organization's portal by connecting your Airtable base.</p>
+    <form action="{{ url_for('signup') }}" method="post" class="form">
+        <div class="form-group">
+            <label for="name">Organization Name</label>
+            <input type="text" id="name" name="name" value="{{ name }}" placeholder="e.g., Lincoln Elementary School" required>
+        </div>
+        <div class="form-group">
+            <label for="org_code">Organization Code (optional)</label>
+            <input type="text" id="org_code" name="org_code" value="{{ org_code }}" placeholder="e.g., LINCOLN" maxlength="20" style="text-transform: uppercase;">
+            <p class="field-help">Leave blank to auto-generate. This is what users enter to log in.</p>
+        </div>
+
+        <hr style="margin: 25px 0; border: none; border-top: 1px solid #eee;">
+
+        <h3 style="margin-bottom: 15px; font-size: 1.1rem;">Airtable Connection</h3>
+
+        <div class="form-group">
+            <label for="airtable_api_key">Airtable Personal Access Token</label>
+            <input type="password" id="airtable_api_key" name="airtable_api_key" placeholder="pat..." required>
+            <p class="field-help">Create one at <a href="https://airtable.com/create/tokens" target="_blank">airtable.com/create/tokens</a></p>
+        </div>
+        <div class="form-group">
+            <label for="airtable_base_id">Airtable Base ID</label>
+            <input type="text" id="airtable_base_id" name="airtable_base_id" value="{{ airtable_base_id }}" placeholder="app..." required>
+            <p class="field-help">Found in your base URL: airtable.com/<strong>appXXXXXX</strong>/...</p>
+        </div>
+
+        <hr style="margin: 25px 0; border: none; border-top: 1px solid #eee;">
+
+        <h3 style="margin-bottom: 15px; font-size: 1.1rem;">Admin Account</h3>
+
+        <div class="form-group">
+            <label for="admin_password">Admin Password</label>
+            <input type="password" id="admin_password" name="admin_password" placeholder="At least 6 characters" required>
+        </div>
+        <div class="form-group">
+            <label for="admin_password_confirm">Confirm Password</label>
+            <input type="password" id="admin_password_confirm" name="admin_password_confirm" placeholder="Re-enter password" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Create Organization</button>
+    </form>
+    <p class="text-muted" style="margin-top: 20px;">Already have an organization? <a href="{{ url_for('admin_login') }}">Admin Login</a></p>
+</div>
+{% endblock %}
