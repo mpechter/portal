@@ -12,7 +12,7 @@ def generate_login_code() -> str:
     return str(random.randint(100000, 999999))
 
 
-def send_login_code(org, user_email: str, user_id: str) -> bool:
+def send_login_code(org, user_email: str, user_id: str) -> str | None:
     """
     Generate and send a login code to the user's email.
 
@@ -22,7 +22,7 @@ def send_login_code(org, user_email: str, user_id: str) -> bool:
         user_id: The user's Airtable record ID
 
     Returns:
-        True if successful, False otherwise
+        The generated code (for demo mode display), or None on failure
     """
     # Generate code and expiry (10 minutes)
     code = generate_login_code()
@@ -39,7 +39,7 @@ def send_login_code(org, user_email: str, user_id: str) -> bool:
     print(f"  {code}", file=sys.stderr)
     print("=" * 60 + "\n", file=sys.stderr)
 
-    return True
+    return code
 
 
 def is_locked_out(email: str) -> bool:

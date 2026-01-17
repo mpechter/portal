@@ -110,10 +110,14 @@ def login():
             return render_template("login.html", org_code=org_code, email=email)
 
         # Send login code
-        if send_login_code(org, email, user["id"]):
+        code = send_login_code(org, email, user["id"])
+        if code:
             # Store org_code and email in session for code verification
             session["pending_org_code"] = org_code
             session["pending_email"] = email
+            # In demo mode, store code in session so we can display it
+            if Config.DEMO_MODE:
+                session["demo_code"] = code
             return redirect(url_for("verify_code"))
         else:
             flash("Error sending login code. Please try again.", "error")
@@ -140,6 +144,9 @@ def verify_code():
         flash("Invalid session. Please try again.", "error")
         return redirect(url_for("login"))
 
+    # Get demo code if in demo mode
+    demo_code = session.get("demo_code") if Config.DEMO_MODE else None
+
     if request.method == "POST":
         code = request.form.get("code", "").strip()
 
@@ -147,13 +154,13 @@ def verify_code():
         if is_locked_out(email):
             remaining = get_lockout_remaining(email)
             flash(f"Too many failed attempts. Try again in {remaining // 60} minutes.", "error")
-            return render_template("verify_code.html", email=email, org=org)
+            return render_template("verify_code.html", email=email, org=org, demo_code=demo_code)
 
         # Verify the code
         user_data = verify_login_code(org, email, code)
         if not user_data:
             flash("Invalid or expired code. Please try again.", "error")
-            return render_template("verify_code.html", email=email, org=org)
+            return render_template("verify_code.html", email=email, org=org, demo_code=demo_code)
 
         # Success - log them in
         fields = user_data.get("fields", {})
@@ -168,11 +175,12 @@ def verify_code():
         # Clear pending session data and store org_code
         session.pop("pending_org_code", None)
         session.pop("pending_email", None)
+        session.pop("demo_code", None)
         session["org_code"] = org.org_code
 
         return redirect(url_for("dashboard"))
 
-    return render_template("verify_code.html", email=email, org=org)
+    return render_template("verify_code.html", email=email, org=org, demo_code=demo_code)
 
 
 @app.route("/logout")
