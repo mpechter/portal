@@ -87,11 +87,15 @@
                 <label for="confirmation_field">Date field to update:</label>
                 <select name="confirmation_field" id="confirmation_field" class="form-select" data-original="{{ org.confirmation_field or '' }}">
                     <option value="">— Select a date field —</option>
-                    {% for field_name in record_fields %}
+                    {% for field_name in date_fields %}
                     <option value="{{ field_name }}" {% if org.confirmation_field == field_name %}selected{% endif %}>{{ field_name }}</option>
                     {% endfor %}
                 </select>
+                {% if not date_fields %}
+                <p class="field-help" style="color: #d63939;">No date fields found. Add a date field to your {{ org.records_table }} table in Airtable first.</p>
+                {% else %}
                 <p class="field-help">This field will be set to the current date when the user confirms.</p>
+                {% endif %}
             </div>
         </div>
 

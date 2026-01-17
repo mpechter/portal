@@ -57,6 +57,7 @@ DEMO_TABLES = [
             {"id": "fld_medical", "name": "Medical Notes", "type": "multilineText"},
             {"id": "fld_emergency", "name": "Emergency Contact", "type": "singleLineText"},
             {"id": "fld_photo", "name": "Photo Permission", "type": "checkbox"},
+            {"id": "fld_verified", "name": "Last Verified", "type": "date"},
             {"id": "fld_parent", "name": "User", "type": "multipleRecordLinks", "linked_table_id": "tbl_users"},
         ],
         "linked_fields": [

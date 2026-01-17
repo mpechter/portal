@@ -575,11 +575,21 @@ def admin_fields():
     user_fields = client.get_all_user_fields()
     record_fields = client.get_all_record_fields() if org.has_linked_records else []
 
+    # Get date fields for confirmation feature
+    date_fields = []
+    if org.has_linked_records:
+        field_metadata = client.get_field_metadata(org.records_table, record_fields)
+        date_fields = [
+            name for name, meta in field_metadata.items()
+            if meta.get("type") in ("date", "dateTime")
+        ]
+
     return render_template(
         "admin/fields.html",
         org=org,
         user_fields=user_fields,
         record_fields=record_fields,
+        date_fields=date_fields,
         user_field_config=org.user_field_config,
         record_field_config=org.record_field_config,
     )
