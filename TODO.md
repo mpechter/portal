@@ -4,6 +4,11 @@
 
 1. Host!
 
+2. **Organization logos**
+   - Allow admins to upload a logo for their portal
+   - Display logo in navbar and login pages
+   - Store in cloud storage (S3, Cloudflare R2, etc.)
+
 ---
 
 ## Completed Features
