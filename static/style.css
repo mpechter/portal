@@ -632,3 +632,35 @@ input[type="email"],
 input[type="url"] {
     /* Same as regular inputs, just for semantic clarity */
 }
+
+/* Data confirmation box */
+.confirmation-box {
+    margin: 25px 0;
+    padding: 20px;
+    background: #f0f7ff;
+    border: 2px solid #007bff;
+    border-radius: 8px;
+}
+
+.confirmation-label {
+    font-size: 1.1rem;
+}
+
+.confirmation-label .checkbox-text {
+    display: inline;
+    font-weight: 600;
+    color: #0056b3;
+}
+
+.confirmation-status {
+    margin: 10px 0 0 30px;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.confirmation-config {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+}

@@ -71,6 +71,30 @@
         <h3>{{ org.records_table }} Fields</h3>
         <p class="text-muted">Fields shown on linked records. Defaults to editable if not configured.</p>
 
+        <div class="confirmation-config">
+            <label class="checkbox-label">
+                <input type="checkbox"
+                       name="confirmation_enabled"
+                       id="confirmation_enabled"
+                       {% if org.confirmation_enabled %}checked{% endif %}
+                       data-original="{{ 'true' if org.confirmation_enabled else 'false' }}"
+                       onchange="toggleConfirmationField()">
+                <span class="checkbox-text"><strong>Enable "Data is Up to Date" confirmation</strong></span>
+            </label>
+            <p class="field-help">When enabled, users see a checkbox to confirm their data is current. This updates a date field you specify.</p>
+
+            <div id="confirmation-field-select" class="form-group" style="margin-top: 10px; margin-left: 30px; {% if not org.confirmation_enabled %}display: none;{% endif %}">
+                <label for="confirmation_field">Date field to update:</label>
+                <select name="confirmation_field" id="confirmation_field" class="form-select" data-original="{{ org.confirmation_field or '' }}">
+                    <option value="">— Select a date field —</option>
+                    {% for field_name in record_fields %}
+                    <option value="{{ field_name }}" {% if org.confirmation_field == field_name %}selected{% endif %}>{{ field_name }}</option>
+                    {% endfor %}
+                </select>
+                <p class="field-help">This field will be set to the current date when the user confirms.</p>
+            </div>
+        </div>
+
         <table class="field-config-table">
             <thead>
                 <tr>
@@ -127,6 +151,12 @@
 </div>
 
 <script>
+function toggleConfirmationField() {
+    const checkbox = document.getElementById('confirmation_enabled');
+    const fieldSelect = document.getElementById('confirmation-field-select');
+    fieldSelect.style.display = checkbox.checked ? 'block' : 'none';
+}
+
 (function() {
     const form = document.getElementById('admin-form');
     const saveBtn = document.getElementById('save-btn');
@@ -134,9 +164,13 @@
     if (!form || !saveBtn) return;
 
     const radios = form.querySelectorAll('input[type="radio"]');
+    const confirmCheckbox = document.getElementById('confirmation_enabled');
+    const confirmField = document.getElementById('confirmation_field');
 
     function checkForChanges() {
         let hasChanges = false;
+
+        // Check radio buttons
         radios.forEach(radio => {
             const wasOriginallyChecked = radio.dataset.original === 'true';
             const isNowChecked = radio.checked;
@@ -144,6 +178,21 @@
                 hasChanges = true;
             }
         });
+
+        // Check confirmation checkbox
+        if (confirmCheckbox) {
+            const wasEnabled = confirmCheckbox.dataset.original === 'true';
+            if (confirmCheckbox.checked !== wasEnabled) {
+                hasChanges = true;
+            }
+        }
+
+        // Check confirmation field select
+        if (confirmField) {
+            if (confirmField.value !== confirmField.dataset.original) {
+                hasChanges = true;
+            }
+        }
 
         if (hasChanges) {
             saveBtn.disabled = false;
@@ -160,12 +209,26 @@
         radios.forEach(radio => {
             radio.checked = radio.dataset.original === 'true';
         });
+        if (confirmCheckbox) {
+            confirmCheckbox.checked = confirmCheckbox.dataset.original === 'true';
+            toggleConfirmationField();
+        }
+        if (confirmField) {
+            confirmField.value = confirmField.dataset.original;
+        }
         checkForChanges();
     }
 
     radios.forEach(radio => {
         radio.addEventListener('change', checkForChanges);
     });
+
+    if (confirmCheckbox) {
+        confirmCheckbox.addEventListener('change', checkForChanges);
+    }
+    if (confirmField) {
+        confirmField.addEventListener('change', checkForChanges);
+    }
 
     if (discardBtn) {
         discardBtn.addEventListener('click', discardChanges);

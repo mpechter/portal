@@ -270,11 +270,22 @@ def edit_record(record_id: str):
                     else:
                         updates[field_name] = form_value
 
+        # Handle data confirmation
+        if org.confirmation_enabled and org.confirmation_field:
+            if "data_confirmed" in request.form:
+                from datetime import date
+                updates[org.confirmation_field] = date.today().isoformat()
+
         if updates:
             client.update_record(record_id, updates)
             flash("Changes saved successfully.", "success")
 
         return redirect(url_for("edit_record", record_id=record_id))
+
+    # Get last confirmed date if confirmation is enabled
+    last_confirmed = None
+    if org.confirmation_enabled and org.confirmation_field:
+        last_confirmed = record.get("fields", {}).get(org.confirmation_field)
 
     return render_template(
         "edit_record.html",
@@ -283,6 +294,7 @@ def edit_record(record_id: str):
         readonly_fields=readonly_fields,
         field_metadata=field_metadata,
         org=org,
+        last_confirmed=last_confirmed,
     )
 
 
@@ -604,6 +616,11 @@ def admin_save_fields():
         "user_fields": user_field_config,
         "record_fields": record_field_config,
     }
+
+    # Save confirmation settings
+    org.confirmation_enabled = "confirmation_enabled" in request.form
+    org.confirmation_field = request.form.get("confirmation_field", "").strip() or None
+
     db.session.commit()
 
     flash("Field configuration saved.", "success")
