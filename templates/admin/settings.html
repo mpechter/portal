@@ -39,6 +39,17 @@
                 <input type="text" id="portal_title" name="portal_title" value="{{ org.portal_title }}" class="form-input" placeholder="e.g., Parent Portal" data-original="{{ org.portal_title }}">
             </div>
 
+            <div class="form-group">
+                <label for="logo_url">Logo URL</label>
+                <p class="field-help">URL to your organization's logo (displayed in the navbar). Leave empty for text-only.</p>
+                <input type="url" id="logo_url" name="logo_url" value="{{ org.logo_url or '' }}" class="form-input" placeholder="https://example.com/logo.png" data-original="{{ org.logo_url or '' }}">
+                {% if org.logo_url %}
+                <div class="logo-preview">
+                    <img src="{{ org.logo_url }}" alt="Logo preview" style="max-height: 40px; margin-top: 10px;">
+                </div>
+                {% endif %}
+            </div>
+
             <h3>Airtable Connection</h3>
 
             <div class="form-group">

@@ -4,15 +4,16 @@
 
 1. Host!
 
-2. **Organization logos**
-   - Allow admins to upload a logo for their portal
-   - Display logo in navbar and login pages
-   - Store in cloud storage (S3, Cloudflare R2, etc.)
+2. **Organization logos (upload)**
+   - Currently supports logo via URL
+   - Future: Allow admins to upload directly
+   - Would need cloud storage (S3, Cloudflare R2, etc.)
 
 ---
 
 ## Completed Features
 
+- Organization logo URL support (displayed in navbar)
 - UV package management with pyproject.toml
 - Support for multiple Airtable field types (text, textarea, select, multi-select, checkbox, date, number, email, phone, URL)
 - GitHub repo setup

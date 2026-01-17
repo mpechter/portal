@@ -25,6 +25,7 @@ class Organization(db.Model):
 
     # Customization
     portal_title = db.Column(db.String(200), default="Parent Portal")
+    logo_url = db.Column(db.String(500), nullable=True)  # URL to organization logo
 
     # Admin authentication
     admin_password_hash = db.Column(db.String(256), nullable=True)

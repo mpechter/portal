@@ -424,6 +424,7 @@ def admin_save_settings():
     # Get form values
     name = request.form.get("name", "").strip()
     portal_title = request.form.get("portal_title", "").strip()
+    logo_url = request.form.get("logo_url", "").strip() or None
     airtable_api_key = request.form.get("airtable_api_key", "").strip()
     airtable_base_id = request.form.get("airtable_base_id", "").strip()
 
@@ -443,6 +444,7 @@ def admin_save_settings():
 
     org.name = name
     org.portal_title = portal_title or "Portal"
+    org.logo_url = logo_url
     org.airtable_api_key = airtable_api_key
     org.airtable_base_id = airtable_base_id
 
