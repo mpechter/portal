@@ -2,12 +2,18 @@
 
 ## Next Up
 
-1. Host!
+1. Change "updated" field to single select, select value
+2. Implement trial period logic
+3. Move login codes out of Airtable (security: codes visible to anyone with base access)
+4. Host!
 
-2. **Organization logos (upload)**
+5. **Organization logos (upload)**
    - Currently supports logo via URL
    - Future: Allow admins to upload directly
    - Would need cloud storage (S3, Cloudflare R2, etc.)
+
+6. Password strength requirements
+7. Add Flask-Migrate for database schema migrations
 
 ---
 
