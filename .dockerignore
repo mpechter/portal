@@ -1,0 +1,46 @@
+# flyctl launch added from .gitignore
+# Python
+**/__pycache__
+**/*.py[cod]
+**/*$py.class
+**/*.so
+**/.Python
+**/env
+**/venv
+**/.venv
+**/ENV
+
+# Flask
+**/instance
+**/.webassets-cache
+
+# Environment
+**/.env
+**/.env.local
+
+# IDE
+**/.idea
+**/.vscode
+**/*.swp
+**/*.swo
+**/*~
+
+# OS
+**/.DS_Store
+**/Thumbs.db
+
+# Testing
+**/.pytest_cache
+**/.coverage
+**/htmlcov
+
+# Database
+**/*.db
+
+# flyctl launch added from .pytest_cache/.gitignore
+# Created by pytest automatically.
+.pytest_cache/**/*
+
+# flyctl launch added from .venv/.gitignore
+.venv/**/*
+fly.toml
