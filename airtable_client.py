@@ -46,11 +46,11 @@ class AirtableClient:
                     }
                     # Add options for select fields
                     if field.type in ("singleSelect", "multipleSelects") and field.options:
-                        choices = field.options.get("choices", [])
-                        field_info["options"] = [c.get("name") for c in choices if c.get("name")]
+                        choices = getattr(field.options, "choices", []) or []
+                        field_info["options"] = [c.name for c in choices if hasattr(c, "name")]
                     # Check if it's a linked record field
-                    if field.type == "multipleRecordLinks":
-                        linked_table_id = field.options.get("linkedTableId") if field.options else None
+                    if field.type == "multipleRecordLinks" and field.options:
+                        linked_table_id = getattr(field.options, "linked_table_id", None)
                         field_info["linked_table_id"] = linked_table_id
                         table_info["linked_fields"].append(field_info)
                     table_info["fields"].append(field_info)
@@ -66,6 +66,32 @@ class AirtableClient:
         for table in tables:
             if table["name"] == table_name:
                 return table
+        return None
+
+    def detect_link_field(self) -> str | None:
+        """Auto-detect the field in records_table that links to users_table."""
+        if not self.org.records_table or not self.org.users_table:
+            return None
+
+        tables = self.get_base_tables()
+
+        # Find the users table ID
+        users_table_id = None
+        for table in tables:
+            if table["name"] == self.org.users_table:
+                users_table_id = table["id"]
+                break
+
+        if not users_table_id:
+            return None
+
+        # Find the linked field in records_table that points to users_table
+        for table in tables:
+            if table["name"] == self.org.records_table:
+                for field in table.get("linked_fields", []):
+                    if field.get("linked_table_id") == users_table_id:
+                        return field["name"]
+
         return None
 
     def get_field_metadata(self, table_name: str, field_names: list) -> dict:
@@ -122,9 +148,24 @@ class AirtableClient:
 
     def get_records_for_user(self, user_id: str) -> list:
         """Get all records linked to a user."""
-        # Query records where the User field contains this user's ID
+        # Use configured link_field, or auto-detect from schema
+        link_field = self.org.link_field or self.detect_link_field()
+        if not link_field:
+            return []
+
+        # Get the user's name - Airtable's ARRAYJOIN on linked fields returns
+        # display names (primary field values), not record IDs
+        user = self.get_user_by_id(user_id)
+        if not user:
+            return []
+        user_name = user.get("fields", {}).get("Name", "")
+        if not user_name:
+            return []
+
+        # Escape single quotes in the name for the formula
+        user_name_escaped = user_name.replace("'", "\\'")
         records = self.records_table.all(
-            formula=f"FIND('{user_id}', ARRAYJOIN(User))"
+            formula=f"FIND('{user_name_escaped}', ARRAYJOIN({{{link_field}}}))"
         )
         return records
 
@@ -146,7 +187,8 @@ class AirtableClient:
             return False
 
         # Get the linked user IDs
-        user_ids = record.get("fields", {}).get("User", [])
+        link_field = self.org.link_field or self.detect_link_field() or "User"
+        user_ids = record.get("fields", {}).get(link_field, [])
         return user_id in user_ids
 
     def get_all_record_fields(self) -> list:
@@ -156,8 +198,10 @@ class AirtableClient:
         field_names = set()
         for record in records:
             field_names.update(record.get("fields", {}).keys())
-        # Remove system/link fields that shouldn't be configured
-        field_names.discard("User")
+        # Remove link field that shouldn't be configured by users
+        link_field = self.org.link_field or self.detect_link_field()
+        if link_field:
+            field_names.discard(link_field)
         return sorted(field_names)
 
     def get_all_user_fields(self) -> list:

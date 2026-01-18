@@ -52,7 +52,8 @@ class Organization(db.Model):
     @property
     def has_linked_records(self) -> bool:
         """Check if linked records (child table) are configured."""
-        return bool(self.records_table and self.link_field)
+        # link_field can be auto-detected, so just check if records_table is set
+        return bool(self.records_table)
 
     @classmethod
     def get_by_code(cls, org_code: str):
