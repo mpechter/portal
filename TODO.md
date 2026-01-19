@@ -12,11 +12,11 @@
    - Would need cloud storage (S3, Cloudflare R2, etc.)
 
 5. Add Flask-Migrate for database schema migrations
-6. Document required Airtable token scopes in setup (data.records:read/write, schema.bases:read)
 ---
 
 ## Completed Features
 
+- Document required Airtable token scopes in admin Settings
 - Fly.io deployment with Postgres
 - Resend email integration for login codes
 - Validate Users table has required fields (Email, Login Code, Code Expires) during setup

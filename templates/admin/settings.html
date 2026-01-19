@@ -52,9 +52,22 @@
 
             <h3>Airtable Connection</h3>
 
+            <div class="setup-instructions" style="background: #f0f7ff; border: 1px solid #c0d8f0; border-radius: 6px; padding: 16px; margin-bottom: 20px;">
+                <h4 style="margin-top: 0; font-size: 14px; color: #1a5dad;">Token Requirements</h4>
+                <p style="margin-bottom: 8px; font-size: 13px;">Create a <a href="https://airtable.com/create/tokens" target="_blank">Personal Access Token</a> with these scopes:</p>
+                <ul style="margin: 0; padding-left: 20px; font-size: 13px;">
+                    <li><code>data.records:read</code> — read user and record data</li>
+                    <li><code>data.records:write</code> — save login codes and updates</li>
+                    <li><code>schema.bases:read</code> — detect tables and fields</li>
+                </ul>
+                <p style="margin-top: 10px; margin-bottom: 0; font-size: 13px; color: #666;">
+                    Grant access to the specific base you want to connect.
+                </p>
+            </div>
+
             <div class="form-group">
                 <label for="airtable_api_key">Airtable API Key</label>
-                <p class="field-help">Your personal access token from <a href="https://airtable.com/create/tokens" target="_blank">Airtable</a>.</p>
+                <p class="field-help">Your personal access token from Airtable.</p>
                 <input type="password" id="airtable_api_key" name="airtable_api_key" value="{{ org.airtable_api_key }}" class="form-input" required data-original="{{ org.airtable_api_key }}">
                 <button type="button" class="btn-text" onclick="togglePassword('airtable_api_key')">Show</button>
             </div>
