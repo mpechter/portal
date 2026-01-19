@@ -26,23 +26,21 @@
                 <select id="users_table" name="users_table" class="form-select" required>
                     <option value="">-- Select a table --</option>
                     {% for table in tables %}
-                    <option value="{{ table.name }}"
-                            data-linked-fields="{{ table.linked_fields | tojson | e }}"
-                            {% if org.users_table == table.name %}selected{% endif %}>
+                    <option value="{{ table.name }}" {% if org.users_table == table.name %}selected{% endif %}>
                         {{ table.name }}
                     </option>
                     {% endfor %}
                 </select>
             </div>
 
-            <div class="form-group" id="link-field-group" style="{% if not linked_fields %}display: none;{% endif %}">
-                <label for="link_field">Linked Records Field (Optional)</label>
-                <p class="field-help">If users have linked records (like children, projects, etc.), select the field that links to them.</p>
-                <select id="link_field" name="link_field" class="form-select">
+            <div class="form-group">
+                <label for="records_table">Linked Records Table (Optional)</label>
+                <p class="field-help">If users have linked records (like children, projects, etc.), select that table here. The link field will be auto-detected.</p>
+                <select id="records_table" name="records_table" class="form-select">
                     <option value="">-- No linked records --</option>
-                    {% for field in linked_fields %}
-                    <option value="{{ field.name }}" {% if org.link_field == field.name %}selected{% endif %}>
-                        {{ field.name }} (links to {{ field.linked_table_name }})
+                    {% for table in tables %}
+                    <option value="{{ table.name }}" {% if org.records_table == table.name %}selected{% endif %}>
+                        {{ table.name }}
                     </option>
                     {% endfor %}
                 </select>
@@ -59,23 +57,16 @@
 (function() {
     const form = document.getElementById('tables-form');
     const usersTableSelect = document.getElementById('users_table');
-    const linkFieldGroup = document.getElementById('link-field-group');
-    const linkFieldSelect = document.getElementById('link_field');
+    const recordsTableSelect = document.getElementById('records_table');
     const saveBtn = document.getElementById('save-btn');
 
     // Store original values
     const originalUsersTable = usersTableSelect.value;
-    const originalLinkField = linkFieldSelect.value;
-
-    // Store all tables data for dynamic updates
-    const tablesData = {};
-    {% for table in tables %}
-    tablesData['{{ table.name }}'] = {{ table.linked_fields | tojson }};
-    {% endfor %}
+    const originalRecordsTable = recordsTableSelect.value;
 
     function checkForChanges() {
         const hasChanges = usersTableSelect.value !== originalUsersTable ||
-                          linkFieldSelect.value !== originalLinkField;
+                          recordsTableSelect.value !== originalRecordsTable;
         const hasSelection = usersTableSelect.value !== '';
 
         if (hasChanges && hasSelection) {
@@ -91,37 +82,8 @@
         }
     }
 
-    function updateLinkedFields() {
-        const selectedTable = usersTableSelect.value;
-        const linkedFields = tablesData[selectedTable] || [];
-
-        // Clear and repopulate link field dropdown
-        linkFieldSelect.innerHTML = '<option value="">-- No linked records --</option>';
-
-        if (linkedFields.length > 0) {
-            linkedFields.forEach(field => {
-                const option = document.createElement('option');
-                option.value = field.name;
-                // Find linked table name
-                let linkedTableName = 'another table';
-                {% for table in tables %}
-                if (field.linked_table_id === '{{ table.id }}') {
-                    linkedTableName = '{{ table.name }}';
-                }
-                {% endfor %}
-                option.textContent = field.name + ' (links to ' + (field.linked_table_name || linkedTableName) + ')';
-                linkFieldSelect.appendChild(option);
-            });
-            linkFieldGroup.style.display = 'block';
-        } else {
-            linkFieldGroup.style.display = 'none';
-        }
-
-        checkForChanges();
-    }
-
-    usersTableSelect.addEventListener('change', updateLinkedFields);
-    linkFieldSelect.addEventListener('change', checkForChanges);
+    usersTableSelect.addEventListener('change', checkForChanges);
+    recordsTableSelect.addEventListener('change', checkForChanges);
 
     // Initial check
     checkForChanges();

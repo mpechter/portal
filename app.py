@@ -495,26 +495,10 @@ def admin_tables():
     client = get_client_for_org(org)
     tables = client.get_base_tables()
 
-    # Get linked fields for the selected users table
-    linked_fields = []
-    if org.users_table:
-        users_table_info = client.get_table_by_name(org.users_table)
-        if users_table_info:
-            linked_fields = users_table_info.get("linked_fields", [])
-            # Resolve linked table names
-            for field in linked_fields:
-                linked_table_id = field.get("linked_table_id")
-                if linked_table_id:
-                    for table in tables:
-                        if table["id"] == linked_table_id:
-                            field["linked_table_name"] = table["name"]
-                            break
-
     return render_template(
         "admin/tables.html",
         org=org,
         tables=tables,
-        linked_fields=linked_fields,
     )
 
 
@@ -527,34 +511,15 @@ def admin_save_tables():
         return redirect(url_for("admin_login"))
 
     users_table = request.form.get("users_table", "").strip()
-    link_field = request.form.get("link_field", "").strip()
+    records_table = request.form.get("records_table", "").strip()
 
     if not users_table:
         flash("Please select a Users table.", "error")
         return redirect(url_for("admin_tables"))
 
-    # Get the linked table name from the link field
-    records_table = None
-    if link_field:
-        client = get_client_for_org(org)
-        # Temporarily set users_table to get its schema
-        org.users_table = users_table
-        users_table_info = client.get_table_by_name(users_table)
-        if users_table_info:
-            for field in users_table_info.get("linked_fields", []):
-                if field["name"] == link_field:
-                    linked_table_id = field.get("linked_table_id")
-                    if linked_table_id:
-                        tables = client.get_base_tables()
-                        for table in tables:
-                            if table["id"] == linked_table_id:
-                                records_table = table["name"]
-                                break
-                    break
-
     org.users_table = users_table
-    org.link_field = link_field if link_field else None
-    org.records_table = records_table
+    org.records_table = records_table if records_table else None
+    org.link_field = None  # Auto-detected from schema
 
     # Clear field config when tables change
     org.field_config = {"user_fields": {}, "record_fields": {}}
