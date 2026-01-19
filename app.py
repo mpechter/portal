@@ -208,9 +208,16 @@ def dashboard():
     user_data = client.get_user_by_id(current_user.user_id)
     user_fields = user_data.get("fields", {}) if user_data else {}
 
-    # Get field permissions for user profile
-    user_editable_fields = org.get_user_editable_fields()
-    user_readonly_fields = org.get_user_readonly_fields()
+    # Get linked field names to exclude from display
+    linked_field_names = set()
+    users_table_info = client.get_table_by_name(org.users_table)
+    if users_table_info:
+        for field in users_table_info.get("linked_fields", []):
+            linked_field_names.add(field["name"])
+
+    # Get field permissions for user profile, excluding link fields
+    user_editable_fields = [f for f in org.get_user_editable_fields() if f not in linked_field_names]
+    user_readonly_fields = [f for f in org.get_user_readonly_fields() if f not in linked_field_names]
     has_profile_fields = bool(user_editable_fields or user_readonly_fields)
 
     # Get linked records (only if configured)
@@ -320,9 +327,16 @@ def edit_profile():
     if not user_data:
         abort(404)
 
-    # Get field permissions for user profile
-    editable_fields = org.get_user_editable_fields()
-    readonly_fields = org.get_user_readonly_fields()
+    # Get linked field names to exclude from display
+    linked_field_names = set()
+    users_table_info = client.get_table_by_name(org.users_table)
+    if users_table_info:
+        for field in users_table_info.get("linked_fields", []):
+            linked_field_names.add(field["name"])
+
+    # Get field permissions for user profile, excluding link fields
+    editable_fields = [f for f in org.get_user_editable_fields() if f not in linked_field_names]
+    readonly_fields = [f for f in org.get_user_readonly_fields() if f not in linked_field_names]
 
     # Get field metadata for type-aware rendering
     all_fields = editable_fields + readonly_fields
