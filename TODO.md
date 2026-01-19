@@ -12,6 +12,7 @@
    - Would need cloud storage (S3, Cloudflare R2, etc.)
 
 5. Add Flask-Migrate for database schema migrations
+6. Document required Airtable token scopes in setup (data.records:read/write, schema.bases:read)
 ---
 
 ## Completed Features
