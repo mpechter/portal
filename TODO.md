@@ -14,6 +14,7 @@
 
 6. Password strength requirements
 7. Add Flask-Migrate for database schema migrations
+8. Validate Users table has required fields (Email, Login Code, Code Expires) during setup
 
 ---
 
