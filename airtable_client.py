@@ -213,6 +213,11 @@ class AirtableClient:
         # Remove system/auth fields that shouldn't be shown to users
         system_fields = {"Login Code", "Code Expires", "Email"}
         field_names -= system_fields
+        # Remove linked record fields (editing these could break relationships)
+        users_table_info = self.get_table_by_name(self.org.users_table)
+        if users_table_info:
+            for field in users_table_info.get("linked_fields", []):
+                field_names.discard(field["name"])
         return sorted(field_names)
 
     def update_user(self, user_id: str, fields: dict):

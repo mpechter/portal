@@ -517,7 +517,20 @@ def admin_save_tables():
         flash("Please select a Users table.", "error")
         return redirect(url_for("admin_tables"))
 
-    org.users_table = users_table
+    # Validate that Users table has required fields
+    client = get_client_for_org(org)
+    org.users_table = users_table  # Temporarily set for client to use
+    users_table_info = client.get_table_by_name(users_table)
+
+    if users_table_info:
+        field_names = {f["name"] for f in users_table_info.get("fields", [])}
+        required_fields = {"Email", "Login Code", "Code Expires"}
+        missing_fields = required_fields - field_names
+
+        if missing_fields:
+            flash(f"Warning: Users table is missing required fields: {', '.join(sorted(missing_fields))}. "
+                  "Login will not work until these fields are added to your Airtable base.", "error")
+
     org.records_table = records_table if records_table else None
     org.link_field = None  # Auto-detected from schema
 

@@ -19,10 +19,23 @@
         <h2>Table Configuration</h2>
         <p class="text-muted">Select which tables contain your users and their linked records.</p>
 
+        <div class="setup-instructions" style="background: #f0f7ff; border: 1px solid #c0d8f0; border-radius: 6px; padding: 16px; margin-bottom: 24px;">
+            <h3 style="margin-top: 0; font-size: 14px; color: #1a5dad;">Airtable Setup Requirements</h3>
+            <p style="margin-bottom: 8px; font-size: 13px;">Your <strong>Users Table</strong> must have these fields:</p>
+            <ul style="margin: 0; padding-left: 20px; font-size: 13px;">
+                <li><strong>Email</strong> (Email type) — used for login</li>
+                <li><strong>Login Code</strong> (Single line text) — stores the 6-digit code</li>
+                <li><strong>Code Expires</strong> (Date type, include time) — code expiration</li>
+            </ul>
+            <p style="margin-top: 12px; margin-bottom: 0; font-size: 13px; color: #666;">
+                If using linked records, the Records table should have a <strong>Link to Users</strong> field.
+            </p>
+        </div>
+
         <form id="tables-form" action="{{ url_for('admin_save_tables') }}" method="post" class="form">
             <div class="form-group">
                 <label for="users_table">Users Table</label>
-                <p class="field-help">The table where users log in (must have an Email field).</p>
+                <p class="field-help">The table where users log in.</p>
                 <select id="users_table" name="users_table" class="form-select" required>
                     <option value="">-- Select a table --</option>
                     {% for table in tables %}
