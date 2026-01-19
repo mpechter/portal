@@ -1,7 +1,11 @@
 import random
 import sys
 from datetime import datetime, timedelta, timezone
+
+import resend
+
 from airtable_client import get_client_for_org
+from config import Config
 
 # In-memory rate limiting (in production, use Redis or database)
 _failed_attempts = {}  # {email: {"count": int, "lockout_until": datetime}}
@@ -32,12 +36,31 @@ def send_login_code(org, user_email: str, user_id: str) -> str | None:
     client = get_client_for_org(org)
     client.save_login_code(user_id, code, expires)
 
-    # Print code to console (for development/demo)
-    # In production, integrate your email provider here
-    print("\n" + "=" * 60, file=sys.stderr)
-    print(f"Login code for {user_email}:", file=sys.stderr)
-    print(f"  {code}", file=sys.stderr)
-    print("=" * 60 + "\n", file=sys.stderr)
+    # Send email via Resend if configured
+    if Config.RESEND_API_KEY and not Config.DEMO_MODE:
+        try:
+            resend.api_key = Config.RESEND_API_KEY
+            resend.Emails.send({
+                "from": Config.EMAIL_FROM,
+                "to": user_email,
+                "subject": f"Your {org.portal_title} Login Code",
+                "html": f"""
+                    <h2>Your Login Code</h2>
+                    <p>Use this code to log in to {org.portal_title}:</p>
+                    <h1 style="font-size: 32px; letter-spacing: 4px; font-family: monospace;">{code}</h1>
+                    <p>This code expires in 10 minutes.</p>
+                    <p style="color: #666; font-size: 12px;">If you didn't request this code, you can safely ignore this email.</p>
+                """,
+            })
+        except Exception as e:
+            print(f"Error sending email: {e}", file=sys.stderr)
+            # Still return code so demo mode fallback works
+    else:
+        # Print code to console for development/demo
+        print("\n" + "=" * 60, file=sys.stderr)
+        print(f"Login code for {user_email}:", file=sys.stderr)
+        print(f"  {code}", file=sys.stderr)
+        print("=" * 60 + "\n", file=sys.stderr)
 
     return code
 
