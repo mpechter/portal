@@ -574,15 +574,14 @@ def admin_fields():
     user_fields = client.get_all_user_fields()
     record_fields = client.get_all_record_fields() if org.has_linked_records else []
 
-    # Get single select fields with their options for confirmation feature
+    # Get single select fields with their options from schema (not sampled records)
     select_fields = {}
     if org.has_linked_records:
-        field_metadata = client.get_field_metadata(org.records_table, record_fields)
-        select_fields = {
-            name: meta.get("options", [])
-            for name, meta in field_metadata.items()
-            if meta.get("type") == "singleSelect"
-        }
+        table_schema = client.get_table_by_name(org.records_table)
+        if table_schema:
+            for field in table_schema.get("fields", []):
+                if field.get("type") == "singleSelect":
+                    select_fields[field["name"]] = field.get("options", [])
 
     return render_template(
         "admin/fields.html",
