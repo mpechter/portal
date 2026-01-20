@@ -487,6 +487,11 @@ def admin_save_settings():
     org.airtable_base_id = airtable_base_id
 
     if credentials_changed:
+        # Clear schema cache for both old and new base
+        from airtable_client import AirtableClient
+        AirtableClient.clear_schema_cache(org.airtable_base_id)  # Old base
+        AirtableClient.clear_schema_cache(airtable_base_id)  # New base
+
         # Clear table and field config since we're connecting to a different base
         org.users_table = None
         org.records_table = None
@@ -554,6 +559,10 @@ def admin_save_tables():
 
     # Clear field config when tables change
     org.field_config = {"user_fields": {}, "record_fields": {}}
+
+    # Clear schema cache to pick up any Airtable changes
+    from airtable_client import AirtableClient
+    AirtableClient.clear_schema_cache(org.airtable_base_id)
 
     db.session.commit()
 

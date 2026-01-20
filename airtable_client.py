@@ -1,5 +1,10 @@
 from datetime import datetime, timezone
+import time
 from pyairtable import Api
+
+# Schema cache: {base_id: {"tables": [...], "timestamp": float}}
+_schema_cache = {}
+SCHEMA_CACHE_TTL = 300  # 5 minutes
 
 
 class AirtableClient:
@@ -27,7 +32,16 @@ class AirtableClient:
             self.records_table = None
 
     def get_base_tables(self) -> list:
-        """Get all tables in the base with their schema."""
+        """Get all tables in the base with their schema (cached)."""
+        base_id = self.org.airtable_base_id
+
+        # Check cache
+        if base_id in _schema_cache:
+            cached = _schema_cache[base_id]
+            if time.time() - cached["timestamp"] < SCHEMA_CACHE_TTL:
+                return cached["tables"]
+
+        # Fetch fresh schema
         try:
             schema = self.base.schema()
             tables = []
@@ -60,10 +74,24 @@ class AirtableClient:
                         table_info["linked_fields"].append(field_info)
                     table_info["fields"].append(field_info)
                 tables.append(table_info)
+
+            # Store in cache
+            _schema_cache[base_id] = {
+                "tables": tables,
+                "timestamp": time.time(),
+            }
             return tables
         except Exception as e:
             print(f"Error fetching base schema: {e}", flush=True)
             return []
+
+    @staticmethod
+    def clear_schema_cache(base_id: str = None):
+        """Clear the schema cache for a specific base or all bases."""
+        if base_id:
+            _schema_cache.pop(base_id, None)
+        else:
+            _schema_cache.clear()
 
     def get_table_by_name(self, table_name: str) -> dict | None:
         """Get a specific table's schema by name."""
