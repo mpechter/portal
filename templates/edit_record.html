@@ -25,7 +25,7 @@
                 {{ render_field(field_name, field_value, field_meta, editable=False) }}
             {% endfor %}
 
-            {% if org.confirmation_enabled and org.confirmation_field %}
+            {% if org.confirmation_enabled and org.confirmation_field and org.confirmation_value %}
             <div class="confirmation-box">
                 <label class="checkbox-label confirmation-label">
                     <input type="checkbox"
@@ -35,12 +35,12 @@
                     <span class="checkbox-text">Data is Up to Date</span>
                 </label>
                 {% if last_confirmed %}
-                <p class="confirmation-status">Last confirmed: {{ last_confirmed }}</p>
+                <p class="confirmation-status">Current status: {{ last_confirmed }}</p>
                 {% endif %}
             </div>
             {% endif %}
 
-            {% if editable_fields or org.confirmation_enabled %}
+            {% if editable_fields or (org.confirmation_enabled and org.confirmation_value) %}
             <div class="form-actions">
                 <button type="submit" id="save-btn" class="btn btn-save" disabled>Save Changes</button>
                 <button type="button" id="discard-btn" class="btn btn-secondary" disabled>Discard Changes</button>

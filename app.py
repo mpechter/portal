@@ -286,10 +286,9 @@ def edit_record(record_id: str):
                         updates[field_name] = form_value
 
         # Handle data confirmation
-        if org.confirmation_enabled and org.confirmation_field:
+        if org.confirmation_enabled and org.confirmation_field and org.confirmation_value:
             if "data_confirmed" in request.form:
-                from datetime import date
-                updates[org.confirmation_field] = date.today().isoformat()
+                updates[org.confirmation_field] = org.confirmation_value
 
         if updates:
             client.update_record(record_id, updates)
@@ -297,9 +296,9 @@ def edit_record(record_id: str):
 
         return redirect(url_for("edit_record", record_id=record_id))
 
-    # Get last confirmed date if confirmation is enabled
+    # Get current confirmation status if confirmation is enabled
     last_confirmed = None
-    if org.confirmation_enabled and org.confirmation_field:
+    if org.confirmation_enabled and org.confirmation_field and org.confirmation_value:
         last_confirmed = record.get("fields", {}).get(org.confirmation_field)
 
     return render_template(
@@ -575,21 +574,22 @@ def admin_fields():
     user_fields = client.get_all_user_fields()
     record_fields = client.get_all_record_fields() if org.has_linked_records else []
 
-    # Get date fields for confirmation feature
-    date_fields = []
+    # Get single select fields with their options for confirmation feature
+    select_fields = {}
     if org.has_linked_records:
         field_metadata = client.get_field_metadata(org.records_table, record_fields)
-        date_fields = [
-            name for name, meta in field_metadata.items()
-            if meta.get("type") in ("date", "dateTime")
-        ]
+        select_fields = {
+            name: meta.get("options", [])
+            for name, meta in field_metadata.items()
+            if meta.get("type") == "singleSelect"
+        }
 
     return render_template(
         "admin/fields.html",
         org=org,
         user_fields=user_fields,
         record_fields=record_fields,
-        date_fields=date_fields,
+        select_fields=select_fields,
         user_field_config=org.user_field_config,
         record_field_config=org.record_field_config,
     )
@@ -630,6 +630,7 @@ def admin_save_fields():
     # Save confirmation settings
     org.confirmation_enabled = "confirmation_enabled" in request.form
     org.confirmation_field = request.form.get("confirmation_field", "").strip() or None
+    org.confirmation_value = request.form.get("confirmation_value", "").strip() or None
 
     db.session.commit()
 

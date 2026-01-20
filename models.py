@@ -27,9 +27,10 @@ class Organization(db.Model):
     portal_title = db.Column(db.String(200), default="Parent Portal")
     logo_url = db.Column(db.String(500), nullable=True)  # URL to organization logo
 
-    # Data confirmation feature - updates a date field when user confirms data is current
+    # Data confirmation feature - sets a single select field to a specific value when user confirms
     confirmation_enabled = db.Column(db.Boolean, default=False)
-    confirmation_field = db.Column(db.String(100), nullable=True)  # Field name to update with current date
+    confirmation_field = db.Column(db.String(100), nullable=True)  # Single select field name
+    confirmation_value = db.Column(db.String(200), nullable=True)  # Value to set when confirmed
 
     # Admin authentication
     admin_password_hash = db.Column(db.String(256), nullable=True)

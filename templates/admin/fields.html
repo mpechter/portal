@@ -81,21 +81,31 @@
                        onchange="toggleConfirmationField()">
                 <span class="checkbox-text"><strong>Enable "Data is Up to Date" confirmation</strong></span>
             </label>
-            <p class="field-help">When enabled, users see a checkbox to confirm their data is current. This updates a date field you specify.</p>
+            <p class="field-help">When enabled, users see a dropdown to confirm their data is current. This sets a single select field to a value you specify.</p>
 
             <div id="confirmation-field-select" class="form-group" style="margin-top: 10px; margin-left: 30px; {% if not org.confirmation_enabled %}display: none;{% endif %}">
-                <label for="confirmation_field">Date field to update:</label>
-                <select name="confirmation_field" id="confirmation_field" class="form-select" data-original="{{ org.confirmation_field or '' }}">
-                    <option value="">— Select a date field —</option>
-                    {% for field_name in date_fields %}
-                    <option value="{{ field_name }}" {% if org.confirmation_field == field_name %}selected{% endif %}>{{ field_name }}</option>
+                <label for="confirmation_field">Single select field:</label>
+                <select name="confirmation_field" id="confirmation_field" class="form-select" data-original="{{ org.confirmation_field or '' }}" onchange="updateConfirmationValues()">
+                    <option value="">— Select a field —</option>
+                    {% for field_name, options in select_fields.items() %}
+                    <option value="{{ field_name }}" data-options="{{ options | tojson | e }}" {% if org.confirmation_field == field_name %}selected{% endif %}>{{ field_name }}</option>
                     {% endfor %}
                 </select>
-                {% if not date_fields %}
-                <p class="field-help" style="color: #d63939;">No date fields found. Add a date field to your {{ org.records_table }} table in Airtable first.</p>
-                {% else %}
-                <p class="field-help">This field will be set to the current date when the user confirms.</p>
+                {% if not select_fields %}
+                <p class="field-help" style="color: #d63939;">No single select fields found. Add a single select field to your {{ org.records_table }} table in Airtable first.</p>
                 {% endif %}
+
+                <div id="confirmation-value-select" class="form-group" style="margin-top: 10px; {% if not org.confirmation_field %}display: none;{% endif %}">
+                    <label for="confirmation_value">Value to set when confirmed:</label>
+                    <select name="confirmation_value" id="confirmation_value" class="form-select" data-original="{{ org.confirmation_value or '' }}">
+                        <option value="">— Select a value —</option>
+                        {% if org.confirmation_field and select_fields.get(org.confirmation_field) %}
+                        {% for option in select_fields.get(org.confirmation_field, []) %}
+                        <option value="{{ option }}" {% if org.confirmation_value == option %}selected{% endif %}>{{ option }}</option>
+                        {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -161,6 +171,40 @@ function toggleConfirmationField() {
     fieldSelect.style.display = checkbox.checked ? 'block' : 'none';
 }
 
+function updateConfirmationValues() {
+    const fieldSelect = document.getElementById('confirmation_field');
+    const valueSelect = document.getElementById('confirmation_value');
+    const valueContainer = document.getElementById('confirmation-value-select');
+    const selectedOption = fieldSelect.options[fieldSelect.selectedIndex];
+
+    // Clear current options
+    valueSelect.innerHTML = '<option value="">— Select a value —</option>';
+
+    if (selectedOption && selectedOption.value) {
+        // Get options from the data attribute
+        const optionsJson = selectedOption.getAttribute('data-options');
+        if (optionsJson) {
+            try {
+                const options = JSON.parse(optionsJson);
+                options.forEach(opt => {
+                    const optEl = document.createElement('option');
+                    optEl.value = opt;
+                    optEl.textContent = opt;
+                    valueSelect.appendChild(optEl);
+                });
+            } catch (e) {
+                console.error('Error parsing options:', e);
+            }
+        }
+        valueContainer.style.display = 'block';
+    } else {
+        valueContainer.style.display = 'none';
+    }
+
+    // Trigger change detection
+    if (typeof checkForChanges === 'function') checkForChanges();
+}
+
 (function() {
     const form = document.getElementById('admin-form');
     const saveBtn = document.getElementById('save-btn');
@@ -170,8 +214,9 @@ function toggleConfirmationField() {
     const radios = form.querySelectorAll('input[type="radio"]');
     const confirmCheckbox = document.getElementById('confirmation_enabled');
     const confirmField = document.getElementById('confirmation_field');
+    const confirmValue = document.getElementById('confirmation_value');
 
-    function checkForChanges() {
+    window.checkForChanges = function checkForChanges() {
         let hasChanges = false;
 
         // Check radio buttons
@@ -198,6 +243,13 @@ function toggleConfirmationField() {
             }
         }
 
+        // Check confirmation value select
+        if (confirmValue) {
+            if (confirmValue.value !== confirmValue.dataset.original) {
+                hasChanges = true;
+            }
+        }
+
         if (hasChanges) {
             saveBtn.disabled = false;
             saveBtn.classList.add('has-changes');
@@ -219,6 +271,10 @@ function toggleConfirmationField() {
         }
         if (confirmField) {
             confirmField.value = confirmField.dataset.original;
+            updateConfirmationValues();
+        }
+        if (confirmValue) {
+            confirmValue.value = confirmValue.dataset.original;
         }
         checkForChanges();
     }
@@ -232,6 +288,9 @@ function toggleConfirmationField() {
     }
     if (confirmField) {
         confirmField.addEventListener('change', checkForChanges);
+    }
+    if (confirmValue) {
+        confirmValue.addEventListener('change', checkForChanges);
     }
 
     if (discardBtn) {

@@ -2,20 +2,19 @@
 
 ## Next Up
 
-1. Change "updated" field to single select, select value
-2. Implement trial period logic
-3. Move login codes out of Airtable (security: codes visible to anyone with base access)
-
-4. **Organization logos (upload)**
+1. Implement trial period logic
+2. Move login codes out of Airtable (security: codes visible to anyone with base access)
+3. **Organization logos (upload)**
    - Currently supports logo via URL
    - Future: Allow admins to upload directly
    - Would need cloud storage (S3, Cloudflare R2, etc.)
+4. Add Flask-Migrate for database schema migrations
 
-5. Add Flask-Migrate for database schema migrations
 ---
 
 ## Completed Features
 
+- Data confirmation field uses single select with value selection (instead of date)
 - Document required Airtable token scopes in admin Settings
 - Fly.io deployment with Postgres
 - Resend email integration for login codes

@@ -137,6 +137,44 @@ portal/
     └── portal.db       # SQLite database (created on init)
 ```
 
+## Fly.io Deployment
+
+### Initial Setup
+
+1. Create the app and Postgres database:
+   ```bash
+   fly launch
+   fly postgres create
+   fly postgres attach <postgres-app-name>
+   ```
+
+2. Set required secrets:
+   ```bash
+   fly secrets set SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
+   fly secrets set RESEND_API_KEY=your-resend-api-key
+   ```
+
+3. Deploy and initialize the database:
+   ```bash
+   fly deploy
+   fly ssh console
+   uv run python -c "from app import app, db; app.app_context().push(); db.create_all(); print('Done')"
+   exit
+   ```
+
+4. Create your organization through the signup flow at your app URL.
+
+### Database Migrations
+
+When model changes add new columns, connect to SSH and run:
+
+```bash
+fly ssh console
+uv run python -c "from app import app, db; app.app_context().push(); db.create_all(); print('Done')"
+```
+
+Note: `db.create_all()` only adds new tables/columns—it won't modify existing columns or delete data.
+
 ## Demo Mode
 
 Set `DEMO_MODE=true` in your `.env` to use mock data without connecting to Airtable. This is useful for development and testing.
@@ -148,20 +186,16 @@ Demo credentials:
 
 Login codes are printed to the console.
 
-## Adding Email
+## Email Setup (Resend)
 
-Currently, login codes are printed to the console. To send actual emails, integrate your email provider in `auth.py`:
+Login codes are sent via [Resend](https://resend.com). Set these environment variables:
 
-```python
-def send_login_code(org, user_email: str, user_id: str) -> bool:
-    code = generate_login_code()
-    # ... save code to Airtable ...
-
-    # Add your email sending logic here
-    # e.g., SendGrid, AWS SES, Postmark, etc.
-
-    return True
+```bash
+RESEND_API_KEY=re_xxxxx
+EMAIL_FROM=noreply@yourdomain.com
 ```
+
+In demo mode or when `RESEND_API_KEY` is not set, login codes are printed to the console instead.
 
 ## License
 
