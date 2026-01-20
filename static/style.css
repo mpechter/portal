@@ -279,6 +279,30 @@ body {
     margin-bottom: 5px;
 }
 
+.record-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.record-card.reviewed {
+    border-left: 4px solid #22c55e;
+}
+
+.review-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: #22c55e;
+    color: white;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
 /* Edit record */
 .back-link {
     display: inline-flex;

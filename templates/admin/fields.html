@@ -79,9 +79,9 @@
                        {% if org.confirmation_enabled %}checked{% endif %}
                        data-original="{{ 'true' if org.confirmation_enabled else 'false' }}"
                        onchange="toggleConfirmationField()">
-                <span class="checkbox-text"><strong>Enable "Data is Up to Date" confirmation</strong></span>
+                <span class="checkbox-text"><strong>Enable Client Review</strong></span>
             </label>
-            <p class="field-help">When enabled, users see a dropdown to confirm their data is current. This sets a single select field to a value you specify.</p>
+            <p class="field-help">When enabled, users can mark each record as reviewed. A green checkmark shows on the dashboard for reviewed records, helping clients track their progress.</p>
 
             <div id="confirmation-field-select" class="form-group" style="margin-top: 10px; margin-left: 30px; {% if not org.confirmation_enabled %}display: none;{% endif %}">
                 <label for="confirmation_field">Single select field:</label>
@@ -96,7 +96,7 @@
                 {% endif %}
 
                 <div id="confirmation-value-select" class="form-group" style="margin-top: 10px; {% if not org.confirmation_field %}display: none;{% endif %}">
-                    <label for="confirmation_value">Value to set when confirmed:</label>
+                    <label for="confirmation_value">Value to set when reviewed:</label>
                     <select name="confirmation_value" id="confirmation_value" class="form-select" data-original="{{ org.confirmation_value or '' }}">
                         <option value="">— Select a value —</option>
                         {% if org.confirmation_field and select_fields.get(org.confirmation_field) %}

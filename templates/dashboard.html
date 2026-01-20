@@ -45,8 +45,14 @@
 
         <div class="records-list">
             {% for record in records %}
-            <a href="{{ url_for('edit_record', record_id=record.id) }}" class="record-card">
-                <h3>{{ record.fields.get('Name', 'Unnamed Record') }}</h3>
+            {% set is_reviewed = org.confirmation_enabled and org.confirmation_field and org.confirmation_value and record.fields.get(org.confirmation_field) == org.confirmation_value %}
+            <a href="{{ url_for('edit_record', record_id=record.id) }}" class="record-card {% if is_reviewed %}reviewed{% endif %}">
+                <div class="record-card-header">
+                    <h3>{{ record.fields.get('Name', 'Unnamed Record') }}</h3>
+                    {% if is_reviewed %}
+                    <span class="review-badge" title="Reviewed">&#10003;</span>
+                    {% endif %}
+                </div>
                 <p class="text-muted">Click to view and edit</p>
             </a>
             {% endfor %}
