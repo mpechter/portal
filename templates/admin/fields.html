@@ -121,7 +121,7 @@
             <tbody>
                 {% for field_name in record_fields %}
                 {% set current = record_field_config.get(field_name, 'editable') %}
-                <tr>
+                <tr data-field-name="{{ field_name }}" {% if org.confirmation_field == field_name %}style="display: none;"{% endif %}>
                     <td><strong>{{ field_name }}</strong></td>
                     <td>
                         <input type="radio"
@@ -176,6 +176,7 @@ function updateConfirmationValues() {
     const valueSelect = document.getElementById('confirmation_value');
     const valueContainer = document.getElementById('confirmation-value-select');
     const selectedOption = fieldSelect.options[fieldSelect.selectedIndex];
+    const selectedFieldName = selectedOption ? selectedOption.value : '';
 
     // Clear current options
     valueSelect.innerHTML = '<option value="">— Select a value —</option>';
@@ -200,6 +201,15 @@ function updateConfirmationValues() {
     } else {
         valueContainer.style.display = 'none';
     }
+
+    // Hide/show field rows based on confirmation field selection
+    document.querySelectorAll('tr[data-field-name]').forEach(row => {
+        if (row.dataset.fieldName === selectedFieldName) {
+            row.style.display = 'none';
+        } else {
+            row.style.display = '';
+        }
+    });
 
     // Trigger change detection
     if (typeof checkForChanges === 'function') checkForChanges();
