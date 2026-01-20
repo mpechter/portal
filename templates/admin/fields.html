@@ -88,7 +88,7 @@
                 <select name="confirmation_field" id="confirmation_field" class="form-select" data-original="{{ org.confirmation_field or '' }}" onchange="updateConfirmationValues()">
                     <option value="">— Select a field —</option>
                     {% for field_name, options in select_fields.items() %}
-                    <option value="{{ field_name }}" data-options="{{ options | tojson | e }}" {% if org.confirmation_field == field_name %}selected{% endif %}>{{ field_name }}</option>
+                    <option value="{{ field_name }}" data-options='{{ options | tojson }}' {% if org.confirmation_field == field_name %}selected{% endif %}>{{ field_name }}</option>
                     {% endfor %}
                 </select>
                 {% if not select_fields %}

@@ -286,14 +286,19 @@ def edit_record(record_id: str):
                         updates[field_name] = form_value
 
         # Handle data confirmation
+        data_confirmed = False
         if org.confirmation_enabled and org.confirmation_field and org.confirmation_value:
             if "data_confirmed" in request.form:
                 updates[org.confirmation_field] = org.confirmation_value
+                data_confirmed = True
 
         if updates:
             client.update_record(record_id, updates)
             flash("Changes saved successfully.", "success")
 
+        # Redirect to dashboard if data was confirmed, otherwise stay on edit page
+        if data_confirmed:
+            return redirect(url_for("dashboard"))
         return redirect(url_for("edit_record", record_id=record_id))
 
     # Get current confirmation status if confirmation is enabled

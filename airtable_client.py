@@ -45,9 +45,14 @@ class AirtableClient:
                         "type": field.type,
                     }
                     # Add options for select fields
-                    if field.type in ("singleSelect", "multipleSelects") and field.options:
-                        choices = getattr(field.options, "choices", []) or []
-                        field_info["options"] = [c.name for c in choices if hasattr(c, "name")]
+                    if field.type in ("singleSelect", "multipleSelects"):
+                        choices = []
+                        if field.options:
+                            choices = getattr(field.options, "choices", None)
+                            if choices is None:
+                                # Try dict access as fallback
+                                choices = field.options.get("choices", []) if isinstance(field.options, dict) else []
+                        field_info["options"] = [c.name if hasattr(c, "name") else c.get("name", c) for c in (choices or [])]
                     # Check if it's a linked record field
                     if field.type == "multipleRecordLinks" and field.options:
                         linked_table_id = getattr(field.options, "linked_table_id", None)
