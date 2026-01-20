@@ -159,26 +159,6 @@ class AirtableClient:
         except Exception:
             return None
 
-    def save_login_code(self, user_id: str, code: str, expires: datetime):
-        """Save a login code for a user."""
-        self.users_table.update(
-            user_id,
-            {
-                "Login Code": code,
-                "Code Expires": expires.isoformat(),
-            },
-        )
-
-    def clear_login_code(self, user_id: str):
-        """Clear the login code after successful login."""
-        self.users_table.update(
-            user_id,
-            {
-                "Login Code": "",
-                "Code Expires": None,
-            },
-        )
-
     def get_records_for_user(self, user_id: str) -> list:
         """Get all records linked to a user."""
         # Use configured link_field, or auto-detect from schema
@@ -243,9 +223,8 @@ class AirtableClient:
         field_names = set()
         for record in records:
             field_names.update(record.get("fields", {}).keys())
-        # Remove system/auth fields that shouldn't be shown to users
-        system_fields = {"Login Code", "Code Expires", "Email"}
-        field_names -= system_fields
+        # Remove Email field that shouldn't be shown to users (login identifier)
+        field_names.discard("Email")
         # Remove linked record fields (editing these could break relationships)
         users_table_info = self.get_table_by_name(self.org.users_table)
         if users_table_info:

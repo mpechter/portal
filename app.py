@@ -547,12 +547,12 @@ def admin_save_tables():
 
     if users_table_info:
         field_names = {f["name"] for f in users_table_info.get("fields", [])}
-        required_fields = {"Email", "Login Code", "Code Expires"}
+        required_fields = {"Email"}
         missing_fields = required_fields - field_names
 
         if missing_fields:
-            flash(f"Warning: Users table is missing required fields: {', '.join(sorted(missing_fields))}. "
-                  "Login will not work until these fields are added to your Airtable base.", "error")
+            flash(f"Warning: Users table is missing required field: Email. "
+                  "Login will not work until this field is added to your Airtable base.", "error")
 
     org.records_table = records_table if records_table else None
     org.link_field = None  # Auto-detected from schema

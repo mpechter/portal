@@ -12,8 +12,6 @@ DEMO_USERS = {
             "Phone": "555-111-2222",
             "Address": "123 Main St, Anytown, USA",
             "Preferred Contact": "Email",
-            "Login Code": "",
-            "Code Expires": None,
         },
     },
     "user_002": {
@@ -24,8 +22,6 @@ DEMO_USERS = {
             "Phone": "555-333-4444",
             "Address": "456 Oak Ave, Somewhere, USA",
             "Preferred Contact": "Phone",
-            "Login Code": "",
-            "Code Expires": None,
         },
     },
 }
@@ -158,16 +154,6 @@ class DemoAirtableClient:
     def get_user_by_id(self, record_id: str) -> dict | None:
         return DEMO_USERS.get(record_id)
 
-    def save_login_code(self, user_id: str, code: str, expires: datetime):
-        if user_id in DEMO_USERS:
-            DEMO_USERS[user_id]["fields"]["Login Code"] = code
-            DEMO_USERS[user_id]["fields"]["Code Expires"] = expires.isoformat()
-
-    def clear_login_code(self, user_id: str):
-        if user_id in DEMO_USERS:
-            DEMO_USERS[user_id]["fields"]["Login Code"] = ""
-            DEMO_USERS[user_id]["fields"]["Code Expires"] = None
-
     def get_records_for_user(self, user_id: str) -> list:
         records = []
         for record in DEMO_RECORDS.values():
@@ -202,9 +188,8 @@ class DemoAirtableClient:
         field_names = set()
         for user in DEMO_USERS.values():
             field_names.update(user.get("fields", {}).keys())
-        # Remove system/auth fields that shouldn't be shown to users
-        system_fields = {"Login Code", "Code Expires", "Email"}
-        field_names -= system_fields
+        # Remove Email field that shouldn't be shown to users
+        field_names.discard("Email")
         return sorted(field_names)
 
     def update_user(self, user_id: str, fields: dict):

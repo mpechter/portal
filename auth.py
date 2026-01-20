@@ -6,9 +6,11 @@ import resend
 
 from airtable_client import get_client_for_org
 from config import Config
+from models import db, LoginAttempt, LoginCode
 
-# In-memory rate limiting (in production, use Redis or database)
-_failed_attempts = {}  # {email: {"count": int, "lockout_until": datetime}}
+# In-memory storage for demo mode
+_demo_codes = {}  # {(org_id, email): {"code": str, "user_id": str, "expires": datetime}}
+_demo_attempts = {}  # {(org_id, email): {"count": int, "lockout_until": datetime}}
 
 
 def generate_login_code() -> str:
@@ -32,9 +34,21 @@ def send_login_code(org, user_email: str, user_id: str) -> str | None:
     code = generate_login_code()
     expires = datetime.now(timezone.utc) + timedelta(minutes=10)
 
-    # Save code to Airtable
-    client = get_client_for_org(org)
-    client.save_login_code(user_id, code, expires)
+    # Save code (hashed in Postgres, plaintext in demo mode memory)
+    if Config.DEMO_MODE:
+        _demo_codes[(org.id, user_email.lower())] = {
+            "code": code,
+            "user_id": user_id,
+            "expires": expires,
+        }
+    else:
+        LoginCode.create_code(
+            org_id=org.id,
+            user_email=user_email,
+            airtable_user_id=user_id,
+            code=code,
+            expires_at=expires,
+        )
 
     # Send email via Resend if configured
     if Config.RESEND_API_KEY and not Config.DEMO_MODE:
@@ -65,54 +79,91 @@ def send_login_code(org, user_email: str, user_id: str) -> str | None:
     return code
 
 
-def is_locked_out(email: str) -> bool:
+def is_locked_out(org_id: int, email: str) -> bool:
     """Check if an email is locked out due to too many failed attempts."""
     email = email.lower()
-    if email not in _failed_attempts:
+
+    if Config.DEMO_MODE:
+        key = (org_id, email)
+        if key not in _demo_attempts:
+            return False
+        info = _demo_attempts[key]
+        if info.get("lockout_until"):
+            if datetime.now(timezone.utc) < info["lockout_until"]:
+                return True
+            del _demo_attempts[key]
         return False
 
-    info = _failed_attempts[email]
-    if info.get("lockout_until"):
-        if datetime.now(timezone.utc) < info["lockout_until"]:
-            return True
-        else:
-            # Lockout expired, reset
-            del _failed_attempts[email]
-            return False
+    attempt = LoginAttempt.query.filter_by(email=email, org_id=org_id).first()
+
+    if not attempt or not attempt.lockout_until:
+        return False
+
+    if datetime.now(timezone.utc) < attempt.lockout_until:
+        return True
+
+    # Lockout expired, reset
+    db.session.delete(attempt)
+    db.session.commit()
     return False
 
 
-def get_lockout_remaining(email: str) -> int:
+def get_lockout_remaining(org_id: int, email: str) -> int:
     """Get remaining lockout time in seconds."""
     email = email.lower()
-    if email not in _failed_attempts:
+
+    if Config.DEMO_MODE:
+        key = (org_id, email)
+        if key not in _demo_attempts:
+            return 0
+        info = _demo_attempts[key]
+        if info.get("lockout_until"):
+            remaining = (info["lockout_until"] - datetime.now(timezone.utc)).total_seconds()
+            return max(0, int(remaining))
         return 0
 
-    info = _failed_attempts[email]
-    if info.get("lockout_until"):
-        remaining = (info["lockout_until"] - datetime.now(timezone.utc)).total_seconds()
-        return max(0, int(remaining))
-    return 0
+    attempt = LoginAttempt.query.filter_by(email=email, org_id=org_id).first()
+
+    if not attempt or not attempt.lockout_until:
+        return 0
+
+    remaining = (attempt.lockout_until - datetime.now(timezone.utc)).total_seconds()
+    return max(0, int(remaining))
 
 
-def record_failed_attempt(email: str):
+def record_failed_attempt(org_id: int, email: str):
     """Record a failed login attempt and potentially lock out the email."""
     email = email.lower()
-    if email not in _failed_attempts:
-        _failed_attempts[email] = {"count": 0}
 
-    _failed_attempts[email]["count"] += 1
+    if Config.DEMO_MODE:
+        key = (org_id, email)
+        if key not in _demo_attempts:
+            _demo_attempts[key] = {"count": 0}
+        _demo_attempts[key]["count"] += 1
+        if _demo_attempts[key]["count"] >= 5:
+            _demo_attempts[key]["lockout_until"] = datetime.now(timezone.utc) + timedelta(minutes=15)
+        return
+
+    attempt = LoginAttempt.get_or_create(email, org_id)
+    attempt.failed_count += 1
 
     # Lock out after 5 failed attempts for 15 minutes
-    if _failed_attempts[email]["count"] >= 5:
-        _failed_attempts[email]["lockout_until"] = datetime.now(timezone.utc) + timedelta(minutes=15)
+    if attempt.failed_count >= 5:
+        attempt.lockout_until = datetime.now(timezone.utc) + timedelta(minutes=15)
+
+    db.session.commit()
 
 
-def clear_failed_attempts(email: str):
+def clear_failed_attempts(org_id: int, email: str):
     """Clear failed attempts after successful login."""
     email = email.lower()
-    if email in _failed_attempts:
-        del _failed_attempts[email]
+
+    if Config.DEMO_MODE:
+        _demo_attempts.pop((org_id, email), None)
+        return
+
+    LoginAttempt.query.filter_by(email=email, org_id=org_id).delete()
+    db.session.commit()
 
 
 def verify_login_code(org, email: str, code: str) -> dict | None:
@@ -127,36 +178,58 @@ def verify_login_code(org, email: str, code: str) -> dict | None:
     Returns:
         User dict if valid, None otherwise
     """
+    email_lower = email.lower()
+
     # Check lockout first
-    if is_locked_out(email):
+    if is_locked_out(org.id, email):
         return None
 
-    client = get_client_for_org(org)
+    if Config.DEMO_MODE:
+        # Demo mode: check in-memory storage
+        key = (org.id, email_lower)
+        stored = _demo_codes.get(key)
 
-    # Find user by email first
-    user = client.get_user_by_email(email)
-    if not user:
-        record_failed_attempt(email)
-        return None
-
-    # Check if the code matches and isn't expired
-    fields = user.get("fields", {})
-    stored_code = fields.get("Login Code", "")
-    expires_str = fields.get("Code Expires")
-
-    if stored_code != code:
-        record_failed_attempt(email)
-        return None
-
-    # Check expiry
-    if expires_str:
-        expires = datetime.fromisoformat(expires_str.replace("Z", "+00:00"))
-        if datetime.now(timezone.utc) > expires:
-            record_failed_attempt(email)
+        if not stored:
+            record_failed_attempt(org.id, email)
             return None
 
+        # Check expiry
+        if datetime.now(timezone.utc) > stored["expires"]:
+            record_failed_attempt(org.id, email)
+            return None
+
+        # Check code (plaintext comparison in demo mode)
+        if stored["code"] != code:
+            record_failed_attempt(org.id, email)
+            return None
+
+        # Get user from demo client
+        client = get_client_for_org(org)
+        user = client.get_user_by_id(stored["user_id"])
+        if not user:
+            record_failed_attempt(org.id, email)
+            return None
+
+        # Success - clear code and failed attempts
+        _demo_codes.pop(key, None)
+        clear_failed_attempts(org.id, email)
+        return user
+
+    # Production mode: verify from Postgres
+    login_code = LoginCode.verify_code(org.id, email, code)
+    if not login_code:
+        record_failed_attempt(org.id, email)
+        return None
+
+    # Code is valid - get user from Airtable to return user data
+    client = get_client_for_org(org)
+    user = client.get_user_by_id(login_code.airtable_user_id)
+    if not user:
+        record_failed_attempt(org.id, email)
+        return None
+
     # Success - clear code and failed attempts
-    client.clear_login_code(user["id"])
-    clear_failed_attempts(email)
+    LoginCode.clear_code(org.id, email)
+    clear_failed_attempts(org.id, email)
 
     return user

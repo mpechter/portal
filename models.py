@@ -132,3 +132,85 @@ class Organization(db.Model):
     def get_record_hidden_fields(self) -> list:
         """Get list of record fields that are hidden."""
         return [f for f, p in self.record_field_config.items() if p == "hidden"]
+
+
+class LoginAttempt(db.Model):
+    """Tracks failed login attempts for rate limiting."""
+
+    __tablename__ = "login_attempts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(255), nullable=False, index=True)
+    org_id = db.Column(db.Integer, db.ForeignKey("organizations.id"), nullable=False)
+    failed_count = db.Column(db.Integer, default=0)
+    lockout_until = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    @classmethod
+    def get_or_create(cls, email: str, org_id: int):
+        """Get existing record or create new one."""
+        email = email.lower()
+        attempt = cls.query.filter_by(email=email, org_id=org_id).first()
+        if not attempt:
+            attempt = cls(email=email, org_id=org_id, failed_count=0)
+            db.session.add(attempt)
+        return attempt
+
+
+class LoginCode(db.Model):
+    """Stores hashed login codes in Postgres instead of Airtable."""
+
+    __tablename__ = "login_codes"
+
+    id = db.Column(db.Integer, primary_key=True)
+    org_id = db.Column(db.Integer, db.ForeignKey("organizations.id"), nullable=False)
+    user_email = db.Column(db.String(255), nullable=False, index=True)
+    airtable_user_id = db.Column(db.String(50), nullable=False)  # Reference to Airtable record
+    code_hash = db.Column(db.String(256), nullable=False)
+    expires_at = db.Column(db.DateTime(timezone=True), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: __import__('datetime').datetime.now(__import__('datetime').timezone.utc))
+
+    @classmethod
+    def create_code(cls, org_id: int, user_email: str, airtable_user_id: str, code: str, expires_at):
+        """Create a new login code, replacing any existing one for this user."""
+        user_email = user_email.lower()
+        # Delete any existing codes for this user
+        cls.query.filter_by(org_id=org_id, user_email=user_email).delete()
+
+        # Create new code with hashed value
+        login_code = cls(
+            org_id=org_id,
+            user_email=user_email,
+            airtable_user_id=airtable_user_id,
+            code_hash=generate_password_hash(code),
+            expires_at=expires_at,
+        )
+        db.session.add(login_code)
+        db.session.commit()
+        return login_code
+
+    @classmethod
+    def verify_code(cls, org_id: int, user_email: str, code: str):
+        """Verify a code and return the LoginCode record if valid."""
+        from datetime import datetime, timezone
+        user_email = user_email.lower()
+        login_code = cls.query.filter_by(org_id=org_id, user_email=user_email).first()
+
+        if not login_code:
+            return None
+
+        # Check expiry
+        if datetime.now(timezone.utc) > login_code.expires_at:
+            return None
+
+        # Check code hash
+        if not check_password_hash(login_code.code_hash, code):
+            return None
+
+        return login_code
+
+    @classmethod
+    def clear_code(cls, org_id: int, user_email: str):
+        """Delete the login code after successful login."""
+        user_email = user_email.lower()
+        cls.query.filter_by(org_id=org_id, user_email=user_email).delete()
+        db.session.commit()
