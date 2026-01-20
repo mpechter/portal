@@ -2,13 +2,25 @@
 
 ## Next Up
 
-1. Implement trial period logic
-2. Move login codes out of Airtable (security: codes visible to anyone with base access)
-3. **Organization logos (upload)**
+1. **Move login codes to Postgres (security)**
+   - Currently stored in plaintext in Airtable (visible to anyone with base access)
+   - Store hashed codes in Postgres instead
+   - Keep Code Expires in Postgres too
+   - Remove Login Code / Code Expires fields from Airtable requirements
+
+2. **Use schema API for field discovery (robustness)**
+   - `get_all_record_fields()` and `get_all_user_fields()` sample records to find fields
+   - Fields with no data won't appear in admin Fields panel
+   - Should use `get_table_by_name()` schema API instead (like we did for single select options)
+
+3. Implement trial period logic
+
+4. **Organization logos (upload)**
    - Currently supports logo via URL
    - Future: Allow admins to upload directly
    - Would need cloud storage (S3, Cloudflare R2, etc.)
-4. Add Flask-Migrate for database schema migrations
+
+5. Add Flask-Migrate for database schema migrations
 
 ---
 
