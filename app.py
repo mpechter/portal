@@ -97,8 +97,8 @@ def login():
             return render_template("login.html", org_code=org_code, email=email)
 
         # Check if locked out
-        if is_locked_out(email):
-            remaining = get_lockout_remaining(email)
+        if is_locked_out(org.id, email):
+            remaining = get_lockout_remaining(org.id, email)
             flash(f"Too many failed attempts. Try again in {remaining // 60} minutes.", "error")
             return render_template("login.html", org_code=org_code, email=email)
 
@@ -151,8 +151,8 @@ def verify_code():
         code = request.form.get("code", "").strip()
 
         # Check lockout
-        if is_locked_out(email):
-            remaining = get_lockout_remaining(email)
+        if is_locked_out(org.id, email):
+            remaining = get_lockout_remaining(org.id, email)
             flash(f"Too many failed attempts. Try again in {remaining // 60} minutes.", "error")
             return render_template("verify_code.html", email=email, org=org, demo_code=demo_code)
 

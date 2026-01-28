@@ -176,20 +176,38 @@ class DemoAirtableClient:
         return user_id in user_ids
 
     def get_all_record_fields(self) -> list:
-        """Get all field names from the demo Records."""
+        """Get all field names from the demo Records table using schema."""
+        table_info = self.get_table_by_name("Students")
+        if not table_info:
+            return []
+
         field_names = set()
-        for record in DEMO_RECORDS.values():
-            field_names.update(record.get("fields", {}).keys())
-        field_names.discard("User")
+        for field in table_info.get("fields", []):
+            field_names.add(field["name"])
+
+        # Remove link fields
+        for field in table_info.get("linked_fields", []):
+            field_names.discard(field["name"])
+
         return sorted(field_names)
 
     def get_all_user_fields(self) -> list:
-        """Get all field names from the demo Users."""
+        """Get all field names from the demo Users table using schema."""
+        table_info = self.get_table_by_name("Parents")
+        if not table_info:
+            return []
+
         field_names = set()
-        for user in DEMO_USERS.values():
-            field_names.update(user.get("fields", {}).keys())
-        # Remove Email field that shouldn't be shown to users
+        for field in table_info.get("fields", []):
+            field_names.add(field["name"])
+
+        # Remove Email field (login identifier)
         field_names.discard("Email")
+
+        # Remove link fields
+        for field in table_info.get("linked_fields", []):
+            field_names.discard(field["name"])
+
         return sorted(field_names)
 
     def update_user(self, user_id: str, fields: dict):

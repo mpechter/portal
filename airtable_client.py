@@ -205,31 +205,38 @@ class AirtableClient:
         return user_id in user_ids
 
     def get_all_record_fields(self) -> list:
-        """Get all field names from the Records table by sampling records."""
-        # Fetch a few records to discover all fields
-        records = self.records_table.all(max_records=10)
+        """Get all field names from the Records table using schema API."""
+        table_info = self.get_table_by_name(self.org.records_table)
+        if not table_info:
+            return []
+
         field_names = set()
-        for record in records:
-            field_names.update(record.get("fields", {}).keys())
-        # Remove link field that shouldn't be configured by users
-        link_field = self.org.link_field or self.detect_link_field()
-        if link_field:
-            field_names.discard(link_field)
+        for field in table_info.get("fields", []):
+            field_names.add(field["name"])
+
+        # Remove link fields that shouldn't be configured by users
+        for field in table_info.get("linked_fields", []):
+            field_names.discard(field["name"])
+
         return sorted(field_names)
 
     def get_all_user_fields(self) -> list:
-        """Get all field names from the Users table by sampling records."""
-        records = self.users_table.all(max_records=10)
+        """Get all field names from the Users table using schema API."""
+        table_info = self.get_table_by_name(self.org.users_table)
+        if not table_info:
+            return []
+
         field_names = set()
-        for record in records:
-            field_names.update(record.get("fields", {}).keys())
-        # Remove Email field that shouldn't be shown to users (login identifier)
+        for field in table_info.get("fields", []):
+            field_names.add(field["name"])
+
+        # Remove Email field (login identifier, not user-editable)
         field_names.discard("Email")
+
         # Remove linked record fields (editing these could break relationships)
-        users_table_info = self.get_table_by_name(self.org.users_table)
-        if users_table_info:
-            for field in users_table_info.get("linked_fields", []):
-                field_names.discard(field["name"])
+        for field in table_info.get("linked_fields", []):
+            field_names.discard(field["name"])
+
         return sorted(field_names)
 
     def update_user(self, user_id: str, fields: dict):

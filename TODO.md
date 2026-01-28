@@ -2,24 +2,20 @@
 
 ## Next Up
 
-1. **Use schema API for field discovery (robustness)**
-   - `get_all_record_fields()` and `get_all_user_fields()` sample records to find fields
-   - Fields with no data won't appear in admin Fields panel
-   - Should use `get_table_by_name()` schema API instead (like we did for single select options)
+1. Implement trial period logic
 
-2. Implement trial period logic
-
-3. **Organization logos (upload)**
+2. **Organization logos (upload)**
    - Currently supports logo via URL
    - Future: Allow admins to upload directly
    - Would need cloud storage (S3, Cloudflare R2, etc.)
 
-4. Add Flask-Migrate for database schema migrations
+3. Add Flask-Migrate for database schema migrations
 
 ---
 
 ## Completed Features
 
+- Field discovery uses schema API (all fields appear even if empty)
 - Login codes stored securely in Postgres (hashed), not Airtable
 - Rate limiting persisted in Postgres (works across server instances)
 - Schema caching (5 min TTL) to reduce Airtable API calls

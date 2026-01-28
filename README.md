@@ -164,16 +164,86 @@ portal/
 
 4. Create your organization through the signup flow at your app URL.
 
+### Adding New Organizations
+
+Organizations can be added in two ways:
+
+**Option 1: Signup Flow (Recommended)**
+
+Navigate to `/signup` on your deployed app and fill out the form. This creates the organization and admin account in one step.
+
+**Option 2: Direct Database Insert**
+
+Connect to Postgres and insert directly:
+
+```bash
+fly postgres connect -a <your-postgres-app-name>
+\c <your-database-name>
+```
+
+```sql
+INSERT INTO organizations (
+    org_code, name, portal_title, admin_password_hash,
+    airtable_api_key, airtable_base_id, created_at
+) VALUES (
+    'MYORG',
+    'My Organization',
+    'My Portal',
+    -- Generate hash: python -c "from werkzeug.security import generate_password_hash; print(generate_password_hash('yourpassword'))"
+    'scrypt:32768:8:1$...',
+    'pat_xxxxx',
+    'appXXXXXXXXXXXXXX',
+    NOW()
+);
+```
+
+After inserting, log into the admin panel at `/admin/login` to configure tables and fields.
+
 ### Database Migrations
 
-When model changes add new columns, connect to SSH and run:
+Portal uses SQLAlchemy without a migration framework. When the schema changes:
+
+**For new tables or columns:**
 
 ```bash
 fly ssh console
 uv run python -c "from app import app, db; app.app_context().push(); db.create_all(); print('Done')"
 ```
 
-Note: `db.create_all()` only adds new tables/columns—it won't modify existing columns or delete data.
+Note: `db.create_all()` only creates new tables/columns—it won't modify existing columns or delete data.
+
+**For column modifications (rare):**
+
+Connect to Postgres and run ALTER TABLE manually:
+
+```bash
+fly postgres connect -a <your-postgres-app-name>
+\c <your-database-name>
+```
+
+```sql
+-- Example: Add a new column
+ALTER TABLE organizations ADD COLUMN new_field VARCHAR(255);
+
+-- Example: Change column type
+ALTER TABLE organizations ALTER COLUMN some_field TYPE TEXT;
+
+-- Example: Add an index
+CREATE INDEX idx_login_codes_email ON login_codes(user_email);
+```
+
+**Listing current schema:**
+
+```sql
+\dt                          -- List all tables
+\d organizations             -- Describe organizations table
+\d login_codes               -- Describe login_codes table
+```
+
+**Current tables:**
+- `organizations` - Multi-tenant org configuration
+- `login_codes` - Hashed login codes with expiry
+- `login_attempts` - Rate limiting for failed logins
 
 ## Demo Mode
 
