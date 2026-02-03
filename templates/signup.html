@@ -6,7 +6,7 @@
 <div class="card centered" style="max-width: 500px;">
     <h1>Create Organization</h1>
     <p>Set up your organization's portal by connecting your Airtable base.</p>
-    <form action="{{ url_for('signup') }}" method="post" class="form">
+    <form action="{{ url_for('signup') }}" method="post" class="form" onsubmit="this.querySelector('button[type=submit]').disabled = true; this.querySelector('button[type=submit]').textContent = 'Creating...'">
         <div class="form-group">
             <label for="name">Organization Name</label>
             <input type="text" id="name" name="name" value="{{ name }}" placeholder="e.g., Lincoln Elementary School" required>

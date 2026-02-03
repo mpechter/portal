@@ -7,7 +7,7 @@
 <div class="card centered">
     <h1>Login</h1>
     <p>Enter your organization code and email to receive a login link.</p>
-    <form action="{{ url_for('login') }}" method="post" class="form">
+    <form action="{{ url_for('login') }}" method="post" class="form" onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Sending...';">
         <div class="form-group">
             <label for="org_code">Organization Code</label>
             <input type="text" id="org_code" name="org_code" value="{{ org_code }}" placeholder="e.g., SCHOOL1" required>
@@ -16,7 +16,7 @@
             <label for="email">Email Address</label>
             <input type="email" id="email" name="email" value="{{ email }}" placeholder="your@email.com" required>
         </div>
-        <button type="submit" class="btn btn-primary">Send Login Link</button>
+        <button type="submit" class="btn btn-primary">Send Login Code</button>
     </form>
 </div>
 {% endblock %}

@@ -14,7 +14,7 @@
     {% else %}
     <p>We sent a 6-digit code to <strong>{{ email }}</strong></p>
     {% endif %}
-    <form action="{{ url_for('verify_code') }}" method="post" class="form">
+    <form action="{{ url_for('verify_code') }}" method="post" class="form" onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Verifying...'">
         <div class="form-group">
             <label for="code">Login Code</label>
             <input type="text"
