@@ -10,9 +10,14 @@
     <div class="demo-code-box">
         <p class="demo-label">Demo Mode</p>
         <p class="demo-code">{{ demo_code }}</p>
+        {% if demo_token %}
+        <p style="margin-top: 12px; font-size: 0.85rem;">Or use magic link:</p>
+        <a href="{{ url_for('magic_link_auth', token=demo_token) }}" class="btn btn-primary" style="margin-top: 8px;">Log In Directly</a>
+        {% endif %}
     </div>
     {% else %}
     <p>We sent a 6-digit code to <strong>{{ email }}</strong></p>
+    <p class="text-muted" style="font-size: 0.9rem;">Check your email for a login button or code.</p>
     {% endif %}
     <form action="{{ url_for('verify_code') }}" method="post" class="form" onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Verifying...'">
         <div class="form-group">

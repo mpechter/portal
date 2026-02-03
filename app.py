@@ -4,7 +4,7 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from config import Config
 from models import db, Organization
 from airtable_client import get_client_for_org
-from auth import send_login_code, verify_login_code, is_locked_out, get_lockout_remaining
+from auth import send_login_code, verify_login_code, verify_magic_link, is_locked_out, get_lockout_remaining
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -109,15 +109,17 @@ def login():
             flash("Email not found. Please contact your administrator.", "error")
             return render_template("login.html", org_code=org_code, email=email)
 
-        # Send login code
-        code = send_login_code(org, email, user["id"])
-        if code:
+        # Send login code (with magic link)
+        base_url = request.url_root.rstrip("/")
+        result = send_login_code(org, email, user["id"], base_url=base_url)
+        if result:
             # Store org_code and email in session for code verification
             session["pending_org_code"] = org_code
             session["pending_email"] = email
-            # In demo mode, store code in session so we can display it
+            # In demo mode, store code and token in session so we can display them
             if Config.DEMO_MODE:
-                session["demo_code"] = code
+                session["demo_code"] = result["code"]
+                session["demo_token"] = result["token"]
             return redirect(url_for("verify_code"))
         else:
             flash("Error sending login code. Please try again.", "error")
@@ -144,8 +146,9 @@ def verify_code():
         flash("Invalid session. Please try again.", "error")
         return redirect(url_for("login"))
 
-    # Get demo code if in demo mode
+    # Get demo code/token if in demo mode
     demo_code = session.get("demo_code") if Config.DEMO_MODE else None
+    demo_token = session.get("demo_token") if Config.DEMO_MODE else None
 
     if request.method == "POST":
         code = request.form.get("code", "").strip()
@@ -154,13 +157,13 @@ def verify_code():
         if is_locked_out(org.id, email):
             remaining = get_lockout_remaining(org.id, email)
             flash(f"Too many failed attempts. Try again in {remaining // 60} minutes.", "error")
-            return render_template("verify_code.html", email=email, org=org, demo_code=demo_code)
+            return render_template("verify_code.html", email=email, org=org, demo_code=demo_code, demo_token=demo_token)
 
         # Verify the code
         user_data = verify_login_code(org, email, code)
         if not user_data:
             flash("Invalid or expired code. Please try again.", "error")
-            return render_template("verify_code.html", email=email, org=org, demo_code=demo_code)
+            return render_template("verify_code.html", email=email, org=org, demo_code=demo_code, demo_token=demo_token)
 
         # Success - log them in
         fields = user_data.get("fields", {})
@@ -176,11 +179,46 @@ def verify_code():
         session.pop("pending_org_code", None)
         session.pop("pending_email", None)
         session.pop("demo_code", None)
+        session.pop("demo_token", None)
         session["org_code"] = org.org_code
 
         return redirect(url_for("dashboard"))
 
-    return render_template("verify_code.html", email=email, org=org, demo_code=demo_code)
+    return render_template("verify_code.html", email=email, org=org, demo_code=demo_code, demo_token=demo_token)
+
+
+@app.route("/auth")
+def magic_link_auth():
+    """Handle magic link authentication."""
+    token = request.args.get("token")
+    if not token:
+        flash("Invalid login link.", "error")
+        return redirect(url_for("login"))
+
+    # Verify the magic link token
+    user_data, org = verify_magic_link(token)
+    if not user_data or not org:
+        flash("This login link is invalid or has expired. Please request a new one.", "error")
+        return redirect(url_for("login"))
+
+    # Success - log them in
+    fields = user_data.get("fields", {})
+    user = User(
+        org_code=org.org_code,
+        user_id=user_data["id"],
+        email=fields.get("Email", ""),
+        name=fields.get("Name", ""),
+    )
+    login_user(user)
+
+    # Clear any pending session data and store org_code
+    session.pop("pending_org_code", None)
+    session.pop("pending_email", None)
+    session.pop("demo_code", None)
+    session.pop("demo_token", None)
+    session["org_code"] = org.org_code
+
+    return redirect(url_for("dashboard"))
 
 
 @app.route("/logout")
