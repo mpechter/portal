@@ -3,6 +3,7 @@
 {% block title %}Enter Code - {{ org.portal_title }}{% endblock %}
 
 {% block content %}
+<a href="{{ url_for('login') }}" class="back-link">← Use a different email</a>
 <div class="card centered">
     <h1>Enter Your Code</h1>
     {% if demo_code %}
@@ -31,6 +32,5 @@
         <button type="submit" class="btn btn-primary">Verify</button>
     </form>
     <p class="text-muted">Code expires in 10 minutes</p>
-    <p class="text-muted"><a href="{{ url_for('login') }}">Use a different email</a></p>
 </div>
 {% endblock %}

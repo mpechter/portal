@@ -3,6 +3,7 @@
 {% block title %}Login - Portal{% endblock %}
 
 {% block content %}
+<a href="{{ url_for('index') }}" class="back-link">← Back</a>
 <div class="card centered">
     <h1>Login</h1>
     <p>Enter your organization code and email to receive a login link.</p>
@@ -17,6 +18,5 @@
         </div>
         <button type="submit" class="btn btn-primary">Send Login Link</button>
     </form>
-    <p class="text-muted"><a href="{{ url_for('index') }}">Back</a></p>
 </div>
 {% endblock %}

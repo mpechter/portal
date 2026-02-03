@@ -3,6 +3,7 @@
 {% block title %}Admin Login{% endblock %}
 
 {% block content %}
+<a href="{{ url_for('index') }}" class="back-link">← Back to Portal</a>
 <div class="card centered">
     <h1>Admin Login</h1>
     <p>Enter your organization code and admin password.</p>
@@ -17,6 +18,5 @@
         </div>
         <button type="submit" class="btn btn-primary">Log In</button>
     </form>
-    <p class="text-muted"><a href="{{ url_for('index') }}">Back to Portal</a></p>
 </div>
 {% endblock %}

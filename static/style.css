@@ -342,6 +342,21 @@ body {
     color: #333;
 }
 
+/* Corner link (top-right aligned) */
+.corner-link {
+    display: block;
+    text-align: right;
+    margin-bottom: 10px;
+    padding: 8px 14px;
+    color: #888;
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.corner-link:hover {
+    color: #333;
+}
+
 .edit-record h1 {
     margin-bottom: 20px;
 }
@@ -419,6 +434,16 @@ body {
 
 .admin-header h1 {
     margin: 0;
+}
+
+.admin-logout {
+    color: #666;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.admin-logout:hover {
+    color: #333;
 }
 
 .admin-dashboard h2 {

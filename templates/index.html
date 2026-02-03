@@ -3,6 +3,7 @@
 {% block title %}Welcome - Portal{% endblock %}
 
 {% block content %}
+<a href="{{ url_for('admin_login') }}" class="corner-link">Admin Login</a>
 <div class="card centered">
     <h1>Welcome</h1>
     <p>Enter your organization code to get started.</p>
@@ -13,6 +14,5 @@
         </div>
         <button type="submit" class="btn btn-primary">Continue</button>
     </form>
-    <a href="{{ url_for('admin_login') }}" class="admin-link">Admin Login</a>
 </div>
 {% endblock %}
