@@ -1,10 +1,13 @@
 {# Macro to render a form field based on its Airtable type #}
-{% macro render_field(field_name, field_value, field_meta, editable=True) %}
+{% macro render_field(field_name, field_value, field_meta, editable=True, annotation='') %}
     {% set field_type = field_meta.type if field_meta else 'singleLineText' %}
     {% set field_options = field_meta.options if field_meta else [] %}
 
     <div class="form-group">
         <label for="{{ field_name }}">{{ field_name }}</label>
+        {% if annotation %}
+        <p class="field-annotation">{{ annotation }}</p>
+        {% endif %}
 
         {% if not editable %}
             {# Read-only display #}

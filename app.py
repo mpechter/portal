@@ -344,6 +344,9 @@ def edit_record(record_id: str):
     if org.confirmation_enabled and org.confirmation_field and org.confirmation_value:
         last_confirmed = record.get("fields", {}).get(org.confirmation_field)
 
+    # Get annotations for record fields
+    record_annotations = org.field_annotations.get("record_fields", {})
+
     return render_template(
         "edit_record.html",
         record=record,
@@ -352,6 +355,7 @@ def edit_record(record_id: str):
         field_metadata=field_metadata,
         org=org,
         last_confirmed=last_confirmed,
+        field_annotations=record_annotations,
     )
 
 
@@ -411,6 +415,9 @@ def edit_profile():
 
         return redirect(url_for("edit_profile"))
 
+    # Get annotations for user fields
+    user_annotations = org.field_annotations.get("user_fields", {})
+
     return render_template(
         "edit_profile.html",
         user_data=user_data,
@@ -418,6 +425,7 @@ def edit_profile():
         readonly_fields=readonly_fields,
         field_metadata=field_metadata,
         org=org,
+        field_annotations=user_annotations,
     )
 
 
@@ -635,6 +643,11 @@ def admin_fields():
                 if field.get("type") == "singleSelect":
                     select_fields[field["name"]] = field.get("options", [])
 
+    # Get annotations
+    annotations = org.field_annotations
+    user_annotations = annotations.get("user_fields", {})
+    record_annotations = annotations.get("record_fields", {})
+
     return render_template(
         "admin/fields.html",
         org=org,
@@ -643,6 +656,8 @@ def admin_fields():
         select_fields=select_fields,
         user_field_config=org.user_field_config,
         record_field_config=org.record_field_config,
+        user_annotations=user_annotations,
+        record_annotations=record_annotations,
     )
 
 
@@ -676,6 +691,24 @@ def admin_save_fields():
     org.field_config = {
         "user_fields": user_field_config,
         "record_fields": record_field_config,
+    }
+
+    # Build annotations from form (only save non-empty ones)
+    user_annotations = {}
+    for field_name in user_fields:
+        annotation = request.form.get(f"user_annotation_{field_name}", "").strip()
+        if annotation:
+            user_annotations[field_name] = annotation
+
+    record_annotations = {}
+    for field_name in record_fields:
+        annotation = request.form.get(f"record_annotation_{field_name}", "").strip()
+        if annotation:
+            record_annotations[field_name] = annotation
+
+    org.field_annotations = {
+        "user_fields": user_annotations,
+        "record_fields": record_annotations,
     }
 
     # Save confirmation settings

@@ -535,6 +535,13 @@ body {
     color: #007bff;
 }
 
+.field-annotation {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 2px 0 8px 0;
+    font-style: italic;
+}
+
 /* Form input (same as form-group input) */
 .form-input {
     width: 100%;
@@ -589,8 +596,25 @@ body {
     font-weight: 600;
 }
 
-.field-config-table td:not(:first-child) {
+.field-config-table td:not(:first-child):not(:nth-child(2)) {
     text-align: center;
+}
+
+.annotation-input {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 0.85rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.annotation-input:focus {
+    outline: none;
+    border-color: #4a90d9;
+}
+
+.annotation-input::placeholder {
+    color: #aaa;
 }
 
 .radio-label {

@@ -25,6 +25,7 @@
             <thead>
                 <tr>
                     <th>Field Name</th>
+                    <th>Annotation</th>
                     <th>Editable</th>
                     <th>Read-only</th>
                     <th>Hidden</th>
@@ -33,8 +34,17 @@
             <tbody>
                 {% for field_name in user_fields %}
                 {% set current = user_field_config.get(field_name, 'hidden') %}
+                {% set annotation = user_annotations.get(field_name, '') %}
                 <tr>
                     <td><strong>{{ field_name }}</strong></td>
+                    <td>
+                        <input type="text"
+                               name="user_annotation_{{ field_name }}"
+                               value="{{ annotation }}"
+                               data-original="{{ annotation }}"
+                               placeholder="Helper text..."
+                               class="annotation-input">
+                    </td>
                     <td>
                         <input type="radio"
                                name="user_field_{{ field_name }}"
@@ -113,6 +123,7 @@
             <thead>
                 <tr>
                     <th>Field Name</th>
+                    <th>Annotation</th>
                     <th>Editable</th>
                     <th>Read-only</th>
                     <th>Hidden</th>
@@ -121,8 +132,17 @@
             <tbody>
                 {% for field_name in record_fields %}
                 {% set current = record_field_config.get(field_name, 'editable') %}
+                {% set annotation = record_annotations.get(field_name, '') %}
                 <tr data-field-name="{{ field_name }}" {% if org.confirmation_field == field_name %}style="display: none;"{% endif %}>
                     <td><strong>{{ field_name }}</strong></td>
+                    <td>
+                        <input type="text"
+                               name="record_annotation_{{ field_name }}"
+                               value="{{ annotation }}"
+                               data-original="{{ annotation }}"
+                               placeholder="Helper text..."
+                               class="annotation-input">
+                    </td>
                     <td>
                         <input type="radio"
                                name="record_field_{{ field_name }}"
@@ -222,6 +242,7 @@ function updateConfirmationValues() {
     if (!form || !saveBtn) return;
 
     const radios = form.querySelectorAll('input[type="radio"]');
+    const annotations = form.querySelectorAll('input.annotation-input');
     const confirmCheckbox = document.getElementById('confirmation_enabled');
     const confirmField = document.getElementById('confirmation_field');
     const confirmValue = document.getElementById('confirmation_value');
@@ -234,6 +255,13 @@ function updateConfirmationValues() {
             const wasOriginallyChecked = radio.dataset.original === 'true';
             const isNowChecked = radio.checked;
             if (wasOriginallyChecked !== isNowChecked) {
+                hasChanges = true;
+            }
+        });
+
+        // Check annotation inputs
+        annotations.forEach(input => {
+            if (input.value !== input.dataset.original) {
                 hasChanges = true;
             }
         });
@@ -275,6 +303,9 @@ function updateConfirmationValues() {
         radios.forEach(radio => {
             radio.checked = radio.dataset.original === 'true';
         });
+        annotations.forEach(input => {
+            input.value = input.dataset.original;
+        });
         if (confirmCheckbox) {
             confirmCheckbox.checked = confirmCheckbox.dataset.original === 'true';
             toggleConfirmationField();
@@ -291,6 +322,10 @@ function updateConfirmationValues() {
 
     radios.forEach(radio => {
         radio.addEventListener('change', checkForChanges);
+    });
+
+    annotations.forEach(input => {
+        input.addEventListener('input', checkForChanges);
     });
 
     if (confirmCheckbox) {

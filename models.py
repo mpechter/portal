@@ -40,6 +40,10 @@ class Organization(db.Model):
     # Values: "editable", "readonly", "hidden"
     _field_config = db.Column("field_config", db.Text, default="{}")
 
+    # Field annotations stored as JSON with structure:
+    # {"user_fields": {"Name": "Your full name", ...}, "record_fields": {"Grade": "Nivel escolar", ...}}
+    _field_annotations = db.Column("field_annotations", db.Text, default="{}")
+
     is_active = db.Column(db.Boolean, default=True)
 
     def __repr__(self):
@@ -132,6 +136,28 @@ class Organization(db.Model):
     def get_record_hidden_fields(self) -> list:
         """Get list of record fields that are hidden."""
         return [f for f, p in self.record_field_config.items() if p == "hidden"]
+
+    # Field annotations
+    @property
+    def field_annotations(self) -> dict:
+        """Get full field annotations as a dict."""
+        try:
+            return json.loads(self._field_annotations or "{}")
+        except json.JSONDecodeError:
+            return {"user_fields": {}, "record_fields": {}}
+
+    @field_annotations.setter
+    def field_annotations(self, value: dict):
+        """Set field annotations from a dict."""
+        self._field_annotations = json.dumps(value)
+
+    def get_user_field_annotation(self, field_name: str) -> str:
+        """Get annotation for a user field. Returns empty string if not set."""
+        return self.field_annotations.get("user_fields", {}).get(field_name, "")
+
+    def get_record_field_annotation(self, field_name: str) -> str:
+        """Get annotation for a record field. Returns empty string if not set."""
+        return self.field_annotations.get("record_fields", {}).get(field_name, "")
 
 
 class LoginAttempt(db.Model):

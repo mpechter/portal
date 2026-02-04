@@ -15,14 +15,16 @@
             {% for field_name in editable_fields %}
                 {% set field_value = record.fields.get(field_name, '') %}
                 {% set field_meta = field_metadata.get(field_name, {}) %}
-                {{ render_field(field_name, field_value, field_meta, editable=True) }}
+                {% set annotation = field_annotations.get(field_name, '') %}
+                {{ render_field(field_name, field_value, field_meta, editable=True, annotation=annotation) }}
             {% endfor %}
 
             {# Read-only fields #}
             {% for field_name in readonly_fields %}
                 {% set field_value = record.fields.get(field_name, '') %}
                 {% set field_meta = field_metadata.get(field_name, {}) %}
-                {{ render_field(field_name, field_value, field_meta, editable=False) }}
+                {% set annotation = field_annotations.get(field_name, '') %}
+                {{ render_field(field_name, field_value, field_meta, editable=False, annotation=annotation) }}
             {% endfor %}
 
             {% if org.confirmation_enabled and org.confirmation_field and org.confirmation_value %}
