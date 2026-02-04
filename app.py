@@ -298,6 +298,11 @@ def edit_record(record_id: str):
     editable_fields = org.get_record_editable_fields()
     readonly_fields = org.get_record_readonly_fields()
 
+    # Exclude the confirmation field from display (it's handled separately)
+    if org.confirmation_field:
+        editable_fields = [f for f in editable_fields if f != org.confirmation_field]
+        readonly_fields = [f for f in readonly_fields if f != org.confirmation_field]
+
     # Get field metadata for type-aware rendering
     all_fields = editable_fields + readonly_fields
     field_metadata = client.get_field_metadata(org.records_table, all_fields)

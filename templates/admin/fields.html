@@ -341,6 +341,9 @@ function updateConfirmationValues() {
     if (discardBtn) {
         discardBtn.addEventListener('click', discardChanges);
     }
+
+    // Initialize row visibility based on current confirmation field
+    updateConfirmationValues();
 })();
 </script>
 {% endblock %}
