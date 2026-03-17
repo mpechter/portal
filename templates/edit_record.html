@@ -28,18 +28,17 @@
             {% endfor %}
 
             {% if org.confirmation_enabled and org.confirmation_field and org.confirmation_value %}
+            {% set is_confirmed = last_confirmed == org.confirmation_value %}
             <div class="confirmation-box">
                 <label class="checkbox-label confirmation-label">
                     <input type="checkbox"
                            name="data_confirmed"
                            id="data_confirmed"
-                           data-original="false">
+                           {% if is_confirmed %}checked{% endif %}
+                           data-original="{{ 'true' if is_confirmed else 'false' }}">
                     <span class="checkbox-text">I have reviewed this record</span>
                 </label>
                 <p class="field-help" style="margin-top: 4px; margin-left: 28px;">Check this box to confirm you've reviewed the information above and it is accurate.</p>
-                {% if last_confirmed %}
-                <p class="confirmation-status">Current status: {{ last_confirmed }}</p>
-                {% endif %}
             </div>
             {% endif %}
 
