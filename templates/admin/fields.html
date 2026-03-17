@@ -217,6 +217,10 @@ function updateConfirmationValues() {
                 console.error('Error parsing options:', e);
             }
         }
+        // Restore the saved value if it exists among the new options
+        if (valueSelect.dataset.original) {
+            valueSelect.value = valueSelect.dataset.original;
+        }
         valueContainer.style.display = 'block';
     } else {
         valueContainer.style.display = 'none';
