@@ -1,3 +1,4 @@
+import time
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, flash, session, abort
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
@@ -103,15 +104,28 @@ def login():
             return render_template("login.html", org_code=org_code, email=email)
 
         # Find the user in Airtable
-        client = get_client_for_org(org)
-        user = client.get_user_by_email(email)
+        try:
+            client = get_client_for_org(org)
+            user = client.get_user_by_email(email)
+        except Exception as e:
+            app.logger.error(f"Error looking up user in Airtable: {e}")
+            flash("Unable to reach the directory service. Please try again.", "error")
+            return render_template("login.html", org_code=org_code, email=email)
         if not user:
             flash("Email not found. Please contact your administrator.", "error")
             return render_template("login.html", org_code=org_code, email=email)
 
         # Send login code (with magic link)
         base_url = request.url_root.rstrip("/")
-        result = send_login_code(org, email, user["id"], base_url=base_url)
+        result = None
+        for attempt in range(3):
+            try:
+                result = send_login_code(org, email, user["id"], base_url=base_url)
+                break
+            except Exception as e:
+                app.logger.error(f"Error sending login code (attempt {attempt + 1}): {e}")
+                if attempt < 2:
+                    time.sleep(0.5)
         if result:
             # Store org_code and email in session for code verification
             session["pending_org_code"] = org_code

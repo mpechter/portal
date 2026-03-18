@@ -189,6 +189,16 @@ function toggleConfirmationField() {
     const checkbox = document.getElementById('confirmation_enabled');
     const fieldSelect = document.getElementById('confirmation-field-select');
     fieldSelect.style.display = checkbox.checked ? 'block' : 'none';
+
+    if (!checkbox.checked) {
+        // Show all field rows immediately when client review is disabled
+        document.querySelectorAll('tr[data-field-name]').forEach(row => {
+            row.style.display = '';
+        });
+    } else {
+        // Re-apply hiding based on the currently selected confirmation field
+        updateConfirmationValues();
+    }
 }
 
 function updateConfirmationValues() {
