@@ -90,6 +90,12 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/about")
+def about():
+    """About page."""
+    return render_template("about.html")
+
+
 @app.route("/api/check-org-code")
 def check_org_code():
     """Check whether an org code is available (used by signup form)."""

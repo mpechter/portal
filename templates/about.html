@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}About — Airbud{% endblock %}
+
+{% block content %}
+<div class="marketing-nav">
+    <a href="{{ url_for('index') }}" class="marketing-brand">Airbud</a>
+    <div class="marketing-nav-links">
+        <a href="{{ url_for('about') }}">About</a>
+        <a href="{{ feedback_url }}" target="_blank" rel="noopener" class="btn btn-secondary btn-small">Contact</a>
+        <a href="{{ url_for('login') }}">Sign In</a>
+        <a href="{{ url_for('admin_login') }}" class="btn btn-secondary btn-small">Admin Login</a>
+    </div>
+</div>
+
+<div class="marketing-hero">
+    <h1>About Airbud</h1>
+    <p>Built by someone who's been in the spreadsheet trenches.</p>
+</div>
+
+<div class="marketing-card">
+    <p>Airbud was built by <strong>Mike Pechter</strong>, a project manager who has done strategic consulting with a number of organizations and nonprofits. He knows how useful Airtable can be, and how valuable a simple portal can be for smaller organizations on a fixed budget.</p>
+    <p style="margin-top: 16px;">When he isn't sitting at a computer, he is playing the piano, running in the woods, or feeding his chatty kids.</p>
+</div>
+
+<div class="marketing-card marketing-contact">
+    <h2>Get in touch</h2>
+    <p>Have a question, need help, or want to request a feature? We'd love to hear from you.</p>
+    <a href="{{ feedback_url }}" target="_blank" rel="noopener" class="btn btn-primary">Contact / Feedback</a>
+</div>
+{% endblock %}
