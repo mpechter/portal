@@ -41,7 +41,7 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id: str):
-    """Load user from session data."""
+    """Load user from session cache, falling back to Airtable only when needed."""
     if ":" not in user_id:
         return None
 
@@ -50,12 +50,24 @@ def load_user(user_id: str):
     if not org:
         return None
 
+    # Use data cached in session at login time — avoids an Airtable API call on every request
+    user_cache = session.get("user_cache")
+    if user_cache:
+        return User(
+            org_code=org_code,
+            user_id=airtable_id,
+            email=user_cache.get("email", ""),
+            name=user_cache.get("name", ""),
+        )
+
+    # Fallback: first request after login or cache miss — fetch from Airtable
     client = get_client_for_org(org)
     user_data = client.get_user_by_id(airtable_id)
     if not user_data:
         return None
 
     fields = user_data.get("fields", {})
+    session["user_cache"] = {"email": fields.get("Email", ""), "name": fields.get("Name", "")}
     return User(
         org_code=org_code,
         user_id=airtable_id,
@@ -222,12 +234,13 @@ def verify_code():
         )
         login_user(user)
 
-        # Clear pending session data and store org_code
+        # Clear pending session data and store org_code + user cache
         session.pop("pending_org_code", None)
         session.pop("pending_email", None)
         session.pop("demo_code", None)
         session.pop("demo_token", None)
         session["org_code"] = org.org_code
+        session["user_cache"] = {"email": user.email, "name": user.name}
 
         return redirect(url_for("dashboard"))
 
@@ -258,12 +271,13 @@ def magic_link_auth():
     )
     login_user(user)
 
-    # Clear any pending session data and store org_code
+    # Clear any pending session data and store org_code + user cache
     session.pop("pending_org_code", None)
     session.pop("pending_email", None)
     session.pop("demo_code", None)
     session.pop("demo_token", None)
     session["org_code"] = org.org_code
+    session["user_cache"] = {"email": user.email, "name": user.name}
 
     return redirect(url_for("dashboard"))
 
