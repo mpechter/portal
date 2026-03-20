@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Portal{% endblock %}</title>
+    <title>{% block title %}Airbud{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -14,7 +14,7 @@
                 {% if org and org.logo_url %}
                 <img src="{{ org.logo_url }}" alt="{{ org.portal_title }}" class="nav-logo">
                 {% endif %}
-                <span class="nav-title">{{ org.portal_title if org else 'Portal' }}</span>
+                <span class="nav-title">{{ org.portal_title if org else 'Airbud' }}</span>
             </div>
             <div class="nav-links">
                 <a href="{{ url_for('logout') }}">Logout</a>
