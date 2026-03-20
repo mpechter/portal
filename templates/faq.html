@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}FAQ — Airbud{% endblock %}
+
+{% block content %}
+<div class="marketing-nav">
+    <a href="{{ url_for('index') }}" class="marketing-brand">Airbud</a>
+    <div class="marketing-nav-links">
+        <a href="{{ url_for('about') }}">About</a>
+        <a href="{{ url_for('faq') }}">FAQ</a>
+        <a href="{{ feedback_url }}" target="_blank" rel="noopener" class="btn btn-secondary btn-small">Contact</a>
+        <a href="{{ url_for('login') }}">Sign In</a>
+        <a href="{{ url_for('admin_login') }}" class="btn btn-secondary btn-small">Admin Login</a>
+    </div>
+</div>
+
+<div class="marketing-hero">
+    <h1>Frequently Asked Questions</h1>
+</div>
+
+<div class="marketing-card">
+    <div class="faq-list">
+        <div class="faq-item">
+            <h3>Does Airbud store my Airtable data?</h3>
+            <p>No. Your data lives in Airtable. Airbud reads it on demand to display to your clients and never copies or caches it.</p>
+        </div>
+        <div class="faq-item">
+            <h3>What does Airbud store?</h3>
+            <p>Your Airtable API key, base configuration, field settings, and client login info (email addresses and login codes). Nothing else.</p>
+        </div>
+        <div class="faq-item">
+            <h3>Is my API key safe?</h3>
+            <p>It's stored securely and only used to fetch your data. We never share it.</p>
+        </div>
+        <div class="faq-item">
+            <h3>Do my clients need an Airtable account?</h3>
+            <p>No. They just log in with their email address — no Airtable account, no passwords.</p>
+        </div>
+        <div class="faq-item">
+            <h3>How does client login work?</h3>
+            <p>Clients receive a one-time code and magic link via email. One click and they're in.</p>
+        </div>
+    </div>
+</div>
+
+<div class="marketing-card marketing-contact">
+    <h2>Still have questions?</h2>
+    <p>We're happy to help.</p>
+    <a href="{{ feedback_url }}" target="_blank" rel="noopener" class="btn btn-primary">Get in Touch</a>
+</div>
+{% endblock %}

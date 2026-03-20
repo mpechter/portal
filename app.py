@@ -96,6 +96,12 @@ def about():
     return render_template("about.html")
 
 
+@app.route("/faq")
+def faq():
+    """FAQ page."""
+    return render_template("faq.html")
+
+
 @app.route("/api/check-org-code")
 def check_org_code():
     """Check whether an org code is available (used by signup form)."""
