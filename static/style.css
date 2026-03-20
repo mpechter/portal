@@ -855,6 +855,15 @@ input[type="url"] {
     line-height: 1.5;
 }
 
+.marketing-contact {
+    text-align: center;
+}
+
+.marketing-contact p {
+    color: #666;
+    margin-bottom: 20px;
+}
+
 .marketing-cta {
     text-align: center;
     padding: 40px 20px;

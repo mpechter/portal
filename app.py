@@ -18,6 +18,13 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
+FEEDBACK_URL = "https://airtable.com/appYPwkzs25LDrae3/shrJuZD5M9EDp90iW"
+
+
+@app.context_processor
+def inject_globals():
+    return {"feedback_url": FEEDBACK_URL}
+
 
 class User(UserMixin):
     """Flask-Login user class that wraps Airtable user data."""

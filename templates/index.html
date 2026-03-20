@@ -6,6 +6,7 @@
 <div class="marketing-nav">
     <span class="marketing-brand">Airbud</span>
     <div class="marketing-nav-links">
+        <a href="{{ feedback_url }}" target="_blank" rel="noopener" class="btn btn-secondary btn-small">Contact</a>
         <a href="{{ url_for('login') }}">Sign In</a>
         <a href="{{ url_for('admin_login') }}" class="btn btn-secondary btn-small">Admin Login</a>
     </div>
@@ -45,6 +46,12 @@
         <li><strong>Configure access</strong> — choose which fields clients can see, edit, or are hidden from entirely.</li>
         <li><strong>Share your portal link</strong> — send clients your URL. They log in with their email and see their own records immediately.</li>
     </ol>
+</div>
+
+<div class="marketing-card marketing-contact">
+    <h2>Get in touch</h2>
+    <p>Have a question, need help, or want to request a feature? We'd love to hear from you.</p>
+    <a href="{{ feedback_url }}" target="_blank" rel="noopener" class="btn btn-primary">Contact / Feedback</a>
 </div>
 
 <div class="marketing-cta">
