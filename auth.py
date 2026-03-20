@@ -295,6 +295,73 @@ def verify_login_code(org, email: str, code: str) -> dict | None:
     return user
 
 
+def generate_admin_reset_token(org_id: int) -> str:
+    """Generate a signed password-reset token for an admin."""
+    serializer = URLSafeTimedSerializer(Config.SECRET_KEY, salt="admin-reset")
+    return serializer.dumps({"org_id": org_id})
+
+
+def verify_admin_reset_token(token: str, max_age: int = 900) -> int | None:
+    """
+    Verify an admin password-reset token.
+
+    Returns:
+        org_id if valid, None otherwise
+    """
+    serializer = URLSafeTimedSerializer(Config.SECRET_KEY, salt="admin-reset")
+    try:
+        data = serializer.loads(token, max_age=max_age)
+        return data.get("org_id")
+    except (BadSignature, SignatureExpired):
+        return None
+
+
+def send_admin_reset_email(org, base_url: str) -> bool:
+    """
+    Send a password-reset link to the org's admin email.
+
+    Returns True if sent (or printed to console), False on error.
+    """
+    token = generate_admin_reset_token(org.id)
+    reset_link = f"{base_url}/admin/reset-password/{token}"
+
+    if Config.RESEND_API_KEY:
+        try:
+            resend.api_key = Config.RESEND_API_KEY
+            html_content = f"""
+                <h2>Reset your admin password</h2>
+                <p>Click the button below to reset the admin password for
+                   <strong>{org.name}</strong> ({org.org_code}):</p>
+                <p style="margin: 25px 0;">
+                    <a href="{reset_link}"
+                       style="background: #007bff; color: white; padding: 12px 24px;
+                              text-decoration: none; border-radius: 6px; font-weight: 500;">
+                        Reset Admin Password
+                    </a>
+                </p>
+                <p style="color: #666; font-size: 14px;">This link expires in 15 minutes.</p>
+                <p style="color: #666; font-size: 12px;">
+                    If you didn't request this, you can safely ignore this email.
+                </p>
+            """
+            resend.Emails.send({
+                "from": Config.EMAIL_FROM,
+                "to": org.admin_email,
+                "subject": f"Reset admin password for {org.org_code}",
+                "html": html_content,
+            })
+            return True
+        except Exception as e:
+            print(f"Error sending reset email: {e}", file=sys.stderr)
+            return False
+    else:
+        print("\n" + "=" * 60, file=sys.stderr)
+        print(f"Admin password reset for {org.org_code}:", file=sys.stderr)
+        print(f"  Link: {reset_link}", file=sys.stderr)
+        print("=" * 60 + "\n", file=sys.stderr)
+        return True
+
+
 def verify_magic_link(token: str):
     """
     Verify a magic link token and return the user and org if valid.

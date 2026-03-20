@@ -1,11 +1,13 @@
 import time
 from functools import wraps
-from flask import Flask, render_template, request, redirect, url_for, flash, session, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, session, abort, jsonify
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from config import Config
 from models import db, Organization
 from airtable_client import get_client_for_org
-from auth import send_login_code, verify_login_code, verify_magic_link, is_locked_out, get_lockout_remaining
+from auth import (send_login_code, verify_login_code, verify_magic_link,
+                  is_locked_out, get_lockout_remaining,
+                  send_admin_reset_email, verify_admin_reset_token)
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -75,8 +77,18 @@ def admin_required(f):
 
 @app.route("/")
 def index():
-    """Home page - prompt for org code."""
+    """Marketing home page."""
     return render_template("index.html")
+
+
+@app.route("/api/check-org-code")
+def check_org_code():
+    """Check whether an org code is available (used by signup form)."""
+    code = request.args.get("code", "").strip().upper()
+    if not code or len(code) < 3:
+        return jsonify({"available": False, "message": "Code must be at least 3 characters"})
+    exists = Organization.query.filter_by(org_code=code).first() is not None
+    return jsonify({"available": not exists})
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -622,6 +634,17 @@ def admin_save_tables():
     org.records_table = records_table if records_table else None
     org.link_field = None  # Auto-detected from schema
 
+    # Validate data.records:read permission by attempting a test read
+    try:
+        from pyairtable import Api as AirtableApi
+        api = AirtableApi(org.airtable_api_key)
+        api.table(org.airtable_base_id, users_table).first()
+    except Exception as e:
+        err = str(e)
+        if "403" in err or "FORBIDDEN" in err.upper() or "PERMISSION" in err.upper():
+            flash("Warning: your Airtable token is missing data.records:read permission. "
+                  "Users won't be able to log in until you add that scope to your token.", "error")
+
     # Clear field config when tables change
     org.field_config = {"user_fields": {}, "record_fields": {}}
 
@@ -741,6 +764,61 @@ def admin_save_fields():
     return redirect(url_for("admin_fields"))
 
 
+# --- Admin Password Recovery ---
+
+
+@app.route("/admin/forgot-password", methods=["GET", "POST"])
+def admin_forgot_password():
+    """Send admin password reset link."""
+    if request.method == "POST":
+        org_code = request.form.get("org_code", "").strip().upper()
+        org = Organization.get_by_code(org_code)
+
+        # Always show the same message — don't reveal whether org/email exists
+        if org and org.admin_email:
+            base_url = request.url_root.rstrip("/")
+            send_admin_reset_email(org, base_url)
+
+        flash("If that organization has an admin email on file, you'll receive a reset link shortly.", "info")
+        return redirect(url_for("admin_forgot_password"))
+
+    org_code = request.args.get("org", "")
+    return render_template("admin/forgot_password.html", org_code=org_code)
+
+
+@app.route("/admin/reset-password/<token>", methods=["GET", "POST"])
+def admin_reset_password(token):
+    """Reset admin password via token from email."""
+    org_id = verify_admin_reset_token(token)
+    if not org_id:
+        flash("This reset link is invalid or has expired.", "error")
+        return redirect(url_for("admin_login"))
+
+    org = Organization.query.get(org_id)
+    if not org:
+        flash("Organization not found.", "error")
+        return redirect(url_for("admin_login"))
+
+    if request.method == "POST":
+        password = request.form.get("password", "").strip()
+        confirm = request.form.get("password_confirm", "").strip()
+
+        if not password or len(password) < 6:
+            flash("Password must be at least 6 characters.", "error")
+            return render_template("admin/reset_password.html", token=token, org=org)
+
+        if password != confirm:
+            flash("Passwords do not match.", "error")
+            return render_template("admin/reset_password.html", token=token, org=org)
+
+        org.set_admin_password(password)
+        db.session.commit()
+        flash("Password reset successfully. Please log in.", "success")
+        return redirect(url_for("admin_login", org=org.org_code))
+
+    return render_template("admin/reset_password.html", token=token, org=org)
+
+
 # --- CLI Commands ---
 
 
@@ -792,10 +870,11 @@ def validate_airtable_credentials(api_key: str, base_id: str) -> tuple[bool, str
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
-    """Organization signup page."""
+    """Organization signup / get-started page."""
     if request.method == "POST":
         # Get form values
         name = request.form.get("name", "").strip()
+        admin_email = request.form.get("admin_email", "").strip().lower()
         org_code = request.form.get("org_code", "").strip().upper()
         airtable_api_key = request.form.get("airtable_api_key", "").strip()
         airtable_base_id = request.form.get("airtable_base_id", "").strip()
@@ -807,6 +886,9 @@ def signup():
 
         if not name:
             errors.append("Organization name is required.")
+
+        if not admin_email:
+            errors.append("Admin email is required.")
 
         if not org_code:
             # Auto-generate if not provided
@@ -829,7 +911,7 @@ def signup():
         elif admin_password != admin_password_confirm:
             errors.append("Passwords do not match.")
 
-        # If basic validation passes, test Airtable connection
+        # If basic validation passes, test Airtable connection (validates schema.bases:read)
         if not errors and airtable_api_key and airtable_base_id:
             is_valid, message = validate_airtable_credentials(airtable_api_key, airtable_base_id)
             if not is_valid:
@@ -840,6 +922,7 @@ def signup():
                 flash(error, "error")
             return render_template("signup.html",
                                    name=name,
+                                   admin_email=admin_email,
                                    org_code=org_code,
                                    airtable_base_id=airtable_base_id)
 
@@ -847,9 +930,11 @@ def signup():
         org = Organization(
             org_code=org_code,
             name=name,
+            admin_email=admin_email,
             airtable_api_key=airtable_api_key,
             airtable_base_id=airtable_base_id,
             portal_title=f"{name} Portal",
+            plan="trial",
         )
         org.set_admin_password(admin_password)
 
@@ -859,10 +944,10 @@ def signup():
         # Log them into admin
         session["admin_org_code"] = org.org_code
 
-        flash(f"Organization '{org_code}' created successfully! Now configure your tables.", "success")
+        flash(f"Organization '{org_code}' created! Now let's connect your tables.", "success")
         return redirect(url_for("admin_tables"))
 
-    return render_template("signup.html", name="", org_code="", airtable_base_id="")
+    return render_template("signup.html", name="", admin_email="", org_code="", airtable_base_id="")
 
 
 @app.cli.command("init-db")
@@ -899,6 +984,22 @@ def add_org():
     db.session.commit()
     print(f"Organization '{org_code}' added successfully.")
     print("Log in as admin to configure tables and fields.")
+
+
+@app.cli.command("add-admin-columns")
+def add_admin_columns():
+    """Add admin_email and plan columns to organizations table (safe to run multiple times)."""
+    with db.engine.connect() as conn:
+        for col, definition in [
+            ("admin_email", "VARCHAR(255)"),
+            ("plan", "VARCHAR(20)"),
+        ]:
+            try:
+                conn.execute(db.text(f"ALTER TABLE organizations ADD COLUMN {col} {definition}"))
+                conn.commit()
+                print(f"Added column: {col}")
+            except Exception:
+                print(f"Column already exists (skipping): {col}")
 
 
 @app.cli.command("set-admin-password")

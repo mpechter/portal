@@ -33,7 +33,11 @@ class Organization(db.Model):
     confirmation_value = db.Column(db.String(200), nullable=True)  # Value to set when confirmed
 
     # Admin authentication
+    admin_email = db.Column(db.String(255), nullable=True)
     admin_password_hash = db.Column(db.String(256), nullable=True)
+
+    # Billing / plan
+    plan = db.Column(db.String(20), nullable=True)  # 'trial', 'active', 'suspended'
 
     # Field permissions stored as JSON with structure:
     # {"user_fields": {"Name": "readonly", ...}, "record_fields": {"Grade": "editable", ...}}

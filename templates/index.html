@@ -1,18 +1,55 @@
 {% extends "base.html" %}
 
-{% block title %}Welcome - Portal{% endblock %}
+{% block title %}Simple Client Portal for Airtable{% endblock %}
 
 {% block content %}
-<a href="{{ url_for('admin_login') }}" class="corner-link">Admin Login</a>
-<div class="card centered">
-    <h1>Welcome</h1>
-    <p>Enter your organization code to get started.</p>
-    <form action="{{ url_for('login') }}" method="get" class="form">
-        <div class="form-group">
-            <label for="org">Organization Code</label>
-            <input type="text" id="org" name="org" placeholder="e.g., SCHOOL1" required autofocus>
-        </div>
-        <button type="submit" class="btn btn-primary">Continue</button>
-    </form>
+<div class="marketing-nav">
+    <span class="marketing-brand">Portal</span>
+    <div class="marketing-nav-links">
+        <a href="{{ url_for('login') }}">Sign In</a>
+        <a href="{{ url_for('admin_login') }}" class="btn btn-secondary btn-small">Admin Login</a>
+    </div>
+</div>
+
+<div class="marketing-hero">
+    <h1>A simple client portal<br>for Airtable</h1>
+    <p>Give your clients a clean, private view of their own data —<br>no spreadsheet access, no confusion.</p>
+    <div class="marketing-hero-actions">
+        <a href="{{ url_for('signup') }}" class="btn btn-primary">Get Started</a>
+        <a href="{{ url_for('login') }}" class="btn btn-secondary">Sign In</a>
+    </div>
+</div>
+
+<div class="marketing-features">
+    <div class="feature-card">
+        <div class="feature-icon">🔌</div>
+        <h3>Connect your Airtable base</h3>
+        <p>Plug in your API key and base ID. The portal discovers your tables and fields automatically.</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">📧</div>
+        <h3>Clients log in with email</h3>
+        <p>No passwords to create or forget. Clients get a secure magic link each time they log in.</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <h3>They see only their records</h3>
+        <p>Each client sees and edits only their own data. You control which fields are visible.</p>
+    </div>
+</div>
+
+<div class="marketing-card">
+    <h2>How it works</h2>
+    <ol class="how-it-works">
+        <li><strong>Connect your Airtable base</strong> — enter your API key and base ID to get started.</li>
+        <li><strong>Configure access</strong> — choose which fields clients can see, edit, or are hidden from entirely.</li>
+        <li><strong>Share your portal link</strong> — send clients your URL. They log in with their email and see their own records immediately.</li>
+    </ol>
+</div>
+
+<div class="marketing-cta">
+    <h2>Ready to get started?</h2>
+    <p>Set up your portal in minutes. No credit card required.</p>
+    <a href="{{ url_for('signup') }}" class="btn btn-primary">Create Your Portal</a>
 </div>
 {% endblock %}

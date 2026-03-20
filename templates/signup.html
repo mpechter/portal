@@ -1,52 +1,126 @@
 {% extends "base.html" %}
 
-{% block title %}Create Organization - Portal{% endblock %}
+{% block title %}Get Started - Portal{% endblock %}
 
 {% block content %}
-<div class="card centered" style="max-width: 500px;">
-    <h1>Create Organization</h1>
-    <p>Set up your organization's portal by connecting your Airtable base.</p>
-    <form action="{{ url_for('signup') }}" method="post" class="form" onsubmit="this.querySelector('button[type=submit]').disabled = true; this.querySelector('button[type=submit]').textContent = 'Creating...'">
+<a href="{{ url_for('index') }}" class="back-link">← Back</a>
+<div class="card centered" style="max-width: 520px;">
+    <h1>Create your portal</h1>
+    <p>Connect your Airtable base and you'll be live in minutes.</p>
+    <form action="{{ url_for('signup') }}" method="post" class="form"
+          onsubmit="this.querySelector('button[type=submit]').disabled = true; this.querySelector('button[type=submit]').textContent = 'Creating...'">
+
         <div class="form-group">
             <label for="name">Organization Name</label>
-            <input type="text" id="name" name="name" value="{{ name }}" placeholder="e.g., Lincoln Elementary School" required>
+            <input type="text" id="name" name="name" value="{{ name }}"
+                   placeholder="e.g., Lincoln Elementary School" required autofocus>
         </div>
+
         <div class="form-group">
-            <label for="org_code">Organization Code (optional)</label>
-            <input type="text" id="org_code" name="org_code" value="{{ org_code }}" placeholder="e.g., LINCOLN" maxlength="20" style="text-transform: uppercase;">
-            <p class="field-help">Leave blank to auto-generate. This is what users enter to log in.</p>
+            <label for="admin_email">Your Email</label>
+            <input type="email" id="admin_email" name="admin_email" value="{{ admin_email }}"
+                   placeholder="you@example.com" required>
+            <p class="field-help">Used for admin password recovery.</p>
+        </div>
+
+        <div class="form-group">
+            <label for="org_code">Organization Code</label>
+            <input type="text" id="org_code" name="org_code" value="{{ org_code }}"
+                   placeholder="e.g., LINCOLN" maxlength="20" style="text-transform: uppercase;"
+                   oninput="checkOrgCode(this.value)">
+            <p class="field-help" id="org-code-help">
+                Leave blank to auto-generate. Clients enter this to log in.
+            </p>
+            <p class="org-code-status" id="org-code-status"></p>
         </div>
 
         <hr style="margin: 25px 0; border: none; border-top: 1px solid #eee;">
 
-        <h3 style="margin-bottom: 15px; font-size: 1.1rem;">Airtable Connection</h3>
+        <h3 style="margin-bottom: 5px; font-size: 1.1rem;">Airtable Connection</h3>
+
+        <details class="airtable-guide" style="margin-bottom: 18px;">
+            <summary style="cursor: pointer; color: #007bff; font-size: 0.9rem;">
+                How to create your Airtable token
+            </summary>
+            <div class="airtable-guide-content">
+                <ol>
+                    <li>Go to <a href="https://airtable.com/create/tokens" target="_blank">airtable.com/create/tokens</a></li>
+                    <li>Click <strong>Create new token</strong></li>
+                    <li>Under <strong>Scopes</strong>, add:
+                        <ul>
+                            <li><code>data.records:read</code></li>
+                            <li><code>data.records:write</code></li>
+                            <li><code>schema.bases:read</code></li>
+                        </ul>
+                    </li>
+                    <li>Under <strong>Access</strong>, add the specific base you want to connect</li>
+                    <li>Click <strong>Create token</strong> and copy it</li>
+                </ol>
+            </div>
+        </details>
 
         <div class="form-group">
             <label for="airtable_api_key">Airtable Personal Access Token</label>
             <input type="password" id="airtable_api_key" name="airtable_api_key" placeholder="pat..." required>
-            <p class="field-help">Create one at <a href="https://airtable.com/create/tokens" target="_blank">airtable.com/create/tokens</a></p>
         </div>
         <div class="form-group">
             <label for="airtable_base_id">Airtable Base ID</label>
-            <input type="text" id="airtable_base_id" name="airtable_base_id" value="{{ airtable_base_id }}" placeholder="app..." required>
+            <input type="text" id="airtable_base_id" name="airtable_base_id"
+                   value="{{ airtable_base_id }}" placeholder="app..." required>
             <p class="field-help">Found in your base URL: airtable.com/<strong>appXXXXXX</strong>/...</p>
         </div>
 
         <hr style="margin: 25px 0; border: none; border-top: 1px solid #eee;">
 
-        <h3 style="margin-bottom: 15px; font-size: 1.1rem;">Admin Account</h3>
+        <h3 style="margin-bottom: 15px; font-size: 1.1rem;">Admin Password</h3>
 
         <div class="form-group">
-            <label for="admin_password">Admin Password</label>
-            <input type="password" id="admin_password" name="admin_password" placeholder="At least 6 characters" required>
+            <label for="admin_password">Password</label>
+            <input type="password" id="admin_password" name="admin_password"
+                   placeholder="At least 6 characters" required>
         </div>
         <div class="form-group">
             <label for="admin_password_confirm">Confirm Password</label>
-            <input type="password" id="admin_password_confirm" name="admin_password_confirm" placeholder="Re-enter password" required>
+            <input type="password" id="admin_password_confirm" name="admin_password_confirm"
+                   placeholder="Re-enter password" required>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Create Organization</button>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+            Create Portal
+        </button>
     </form>
-    <p class="text-muted" style="margin-top: 20px;">Already have an organization? <a href="{{ url_for('admin_login') }}">Admin Login</a></p>
+    <p class="text-muted" style="margin-top: 20px;">
+        Already have an account? <a href="{{ url_for('admin_login') }}">Admin Login</a>
+    </p>
 </div>
+
+<script>
+let checkTimeout = null;
+
+function checkOrgCode(value) {
+    const status = document.getElementById('org-code-status');
+    const code = value.trim().toUpperCase();
+
+    if (!code || code.length < 3) {
+        status.textContent = '';
+        return;
+    }
+
+    clearTimeout(checkTimeout);
+    checkTimeout = setTimeout(() => {
+        fetch('/api/check-org-code?code=' + encodeURIComponent(code))
+            .then(r => r.json())
+            .then(data => {
+                if (data.available) {
+                    status.textContent = '✓ Available';
+                    status.className = 'org-code-status org-code-available';
+                } else {
+                    status.textContent = '✗ Already taken';
+                    status.className = 'org-code-status org-code-taken';
+                }
+            })
+            .catch(() => { status.textContent = ''; });
+    }, 400);
+}
+</script>
 {% endblock %}
