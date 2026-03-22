@@ -67,11 +67,12 @@ def load_user(user_id: str):
         return None
 
     fields = user_data.get("fields", {})
-    session["user_cache"] = {"email": fields.get("Email", ""), "name": fields.get("Name", "")}
+    email_field = org.email_field or "Email"
+    session["user_cache"] = {"email": fields.get(email_field, ""), "name": fields.get("Name", "")}
     return User(
         org_code=org_code,
         user_id=airtable_id,
-        email=fields.get("Email", ""),
+        email=fields.get(email_field, ""),
         name=fields.get("Name", ""),
     )
 
@@ -659,12 +660,9 @@ def admin_save_tables():
 
     if users_table_info:
         field_names = {f["name"] for f in users_table_info.get("fields", [])}
-        required_fields = {"Email"}
-        missing_fields = required_fields - field_names
-
-        if missing_fields:
-            flash(f"Warning: Users table is missing required field: Email. "
-                  "Login will not work until this field is added to your Airtable base.", "error")
+        if not field_names:
+            flash("Warning: could not read fields from the selected Users table. "
+                  "Check your Airtable token permissions.", "error")
 
     org.records_table = records_table if records_table else None
     org.link_field = None  # Auto-detected from schema
@@ -711,6 +709,14 @@ def admin_fields():
     user_fields = client.get_all_user_fields()
     record_fields = client.get_all_record_fields() if org.has_linked_records else []
 
+    # Get fields suitable as an email field (email type or plain text)
+    email_fields = []
+    users_table_schema = client.get_table_by_name(org.users_table)
+    if users_table_schema:
+        for field in users_table_schema.get("fields", []):
+            if field.get("type") in ("email", "singleLineText"):
+                email_fields.append(field["name"])
+
     # Get single select fields with their options from schema (not sampled records)
     select_fields = {}
     if org.has_linked_records:
@@ -729,6 +735,7 @@ def admin_fields():
         "admin/fields.html",
         org=org,
         user_fields=user_fields,
+        email_fields=email_fields,
         record_fields=record_fields,
         select_fields=select_fields,
         user_field_config=org.user_field_config,
@@ -787,6 +794,9 @@ def admin_save_fields():
         "user_fields": user_annotations,
         "record_fields": record_annotations,
     }
+
+    # Save email field selection
+    org.email_field = request.form.get("email_field", "").strip() or "Email"
 
     # Save confirmation settings
     org.confirmation_enabled = "confirmation_enabled" in request.form
@@ -990,6 +1000,23 @@ def init_db():
     """Initialize the database."""
     db.create_all()
     print("Database initialized.")
+
+
+@app.cli.command("migrate-db")
+def migrate_db():
+    """Apply incremental schema migrations."""
+    with db.engine.connect() as conn:
+        # Add email_field column if it doesn't exist
+        from sqlalchemy import text, inspect
+        inspector = inspect(db.engine)
+        cols = {c["name"] for c in inspector.get_columns("organizations")}
+        if "email_field" not in cols:
+            conn.execute(text("ALTER TABLE organizations ADD COLUMN email_field VARCHAR(100) DEFAULT 'Email'"))
+            conn.commit()
+            print("Added email_field column.")
+        else:
+            print("email_field column already exists.")
+    print("Migration complete.")
 
 
 @app.cli.command("add-org")

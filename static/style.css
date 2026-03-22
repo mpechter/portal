@@ -831,6 +831,92 @@ input[type="url"] {
     margin: 0;
 }
 
+.marketing-usecase {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 40px;
+    align-items: center;
+    background: #fff;
+    padding: 36px 30px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    margin-bottom: 24px;
+    border-left: 4px solid #007bff;
+}
+
+.usecase-text h2 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #222;
+}
+
+.usecase-text p {
+    font-size: 0.95rem;
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+.usecase-text p:last-child {
+    margin-bottom: 0;
+}
+
+.usecase-example {
+    font-style: italic;
+    color: #777 !important;
+}
+
+.usecase-diagram {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 160px;
+}
+
+.diagram-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.diagram-row-children {
+    gap: 10px;
+}
+
+.diagram-node {
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+.diagram-node-parent {
+    background: #007bff;
+    color: #fff;
+}
+
+.diagram-node-child {
+    background: #e8f0fe;
+    color: #1a56db;
+    border: 1px solid #c3d8fd;
+}
+
+.diagram-arrow {
+    color: #aaa;
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.diagram-caption {
+    font-size: 0.78rem;
+    color: #999;
+    text-align: center;
+    margin-top: 4px;
+}
+
 .marketing-card {
     background: #fff;
     padding: 30px;
@@ -897,7 +983,10 @@ input[type="url"] {
 
 .marketing-cta {
     text-align: center;
-    padding: 40px 20px;
+    padding: 40px 30px;
+    background: #f0f6ff;
+    border-radius: 8px;
+    margin-bottom: 24px;
 }
 
 .marketing-cta h2 {
@@ -909,6 +998,12 @@ input[type="url"] {
 .marketing-cta p {
     color: #666;
     margin-bottom: 24px;
+}
+
+.marketing-cta-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
 }
 
 /* Org code availability status */

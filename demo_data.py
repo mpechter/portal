@@ -201,9 +201,6 @@ class DemoAirtableClient:
         for field in table_info.get("fields", []):
             field_names.add(field["name"])
 
-        # Remove Email field (login identifier)
-        field_names.discard("Email")
-
         # Remove link fields
         for field in table_info.get("linked_fields", []):
             field_names.discard(field["name"])

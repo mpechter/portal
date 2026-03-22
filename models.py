@@ -22,6 +22,7 @@ class Organization(db.Model):
     users_table = db.Column(db.String(100), nullable=True)  # The "parent" table (users log in here)
     records_table = db.Column(db.String(100), nullable=True)  # The "child" table (optional linked records)
     link_field = db.Column(db.String(100), nullable=True)  # Field name in users_table that links to records
+    email_field = db.Column(db.String(100), default="Email")  # Field used for login email lookup
 
     # Customization
     portal_title = db.Column(db.String(200), default="Parent Portal")

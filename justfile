@@ -6,7 +6,7 @@ deploy:
 
 # Run database migrations (creates new tables/columns)
 migrate:
-    fly ssh console -C "uv run python -c \"from app import app, db; app.app_context().push(); db.create_all(); print('Migration complete')\""
+    fly ssh console -C "uv run flask migrate-db"
 
 # View application logs
 logs:

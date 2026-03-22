@@ -8,9 +8,8 @@
     <div class="marketing-nav-links">
         <a href="{{ url_for('about') }}">About</a>
         <a href="{{ url_for('faq') }}">FAQ</a>
-        <a href="{{ feedback_url }}" target="_blank" rel="noopener" class="btn btn-secondary btn-small">Contact</a>
         <a href="{{ url_for('login') }}">Sign In</a>
-        <a href="{{ url_for('admin_login') }}" class="btn btn-secondary btn-small">Admin Login</a>
+        <a href="{{ url_for('signup') }}" class="btn btn-primary btn-small">Get Started</a>
     </div>
 </div>
 
@@ -26,39 +25,56 @@
 <div class="marketing-features">
     <div class="feature-card">
         <div class="feature-icon">🔌</div>
-        <h3>Connect your Airtable base</h3>
-        <p>Plug in your API key and base ID. The portal discovers your tables and fields automatically.</p>
+        <h3>Connects to your Airtable base</h3>
+        <p>Plug in your API key and base ID. The portal discovers your tables and fields automatically. Requires an Airtable Team plan or higher.</p>
     </div>
     <div class="feature-card">
         <div class="feature-icon">📧</div>
-        <h3>Clients log in with email</h3>
+        <h3>Passwordless login for clients</h3>
         <p>No passwords to create or forget. Clients get a secure magic link each time they log in.</p>
     </div>
     <div class="feature-card">
         <div class="feature-icon">🔒</div>
-        <h3>They see only their records</h3>
-        <p>Each client sees and edits only their own data. You control which fields are visible.</p>
+        <h3>Each client sees only their data</h3>
+        <p>Records are filtered per client. You control which fields are visible, editable, or hidden entirely.</p>
+    </div>
+</div>
+
+<div class="marketing-usecase">
+    <div class="usecase-text">
+        <h2>Built for organizations that manage records on behalf of clients</h2>
+        <p>If you work with families, students, or any group where one person relates to multiple records, Airbud handles that natively.</p>
+        <p>A parent logs in with their email and immediately sees all of their children's records — and only theirs. Each record can have its own editable fields, read-only fields, and a confirmation checkbox so you can track who has reviewed what.</p>
+        <p class="usecase-example">Used by schools, tutoring centers, and enrichment programs to replace email back-and-forth with a clean, self-service portal.</p>
+    </div>
+    <div class="usecase-diagram">
+        <div class="diagram-row">
+            <div class="diagram-node diagram-node-parent">Parent logs in</div>
+        </div>
+        <div class="diagram-arrow">↓</div>
+        <div class="diagram-row diagram-row-children">
+            <div class="diagram-node diagram-node-child">Student A</div>
+            <div class="diagram-node diagram-node-child">Student B</div>
+        </div>
+        <div class="diagram-caption">One login — all their records</div>
     </div>
 </div>
 
 <div class="marketing-card">
     <h2>How it works</h2>
     <ol class="how-it-works">
-        <li><strong>Connect your Airtable base</strong> — enter your API key and base ID to get started. Requires an Airtable Team plan or higher.</li>
+        <li><strong>Connect your Airtable base</strong> — enter your API key and base ID to get started.</li>
         <li><strong>Configure access</strong> — choose which fields clients can see, edit, or are hidden from entirely.</li>
         <li><strong>Share your portal link</strong> — send clients your URL. They log in with their email and see their own records immediately.</li>
     </ol>
 </div>
 
-<div class="marketing-card marketing-contact">
-    <h2>Get in touch</h2>
-    <p>Have a question, need help, or want to request a feature? We'd love to hear from you.</p>
-    <a href="{{ feedback_url }}" target="_blank" rel="noopener" class="btn btn-primary">Contact / Feedback</a>
-</div>
-
 <div class="marketing-cta">
     <h2>Ready to get started?</h2>
     <p>Set up your portal in minutes. No credit card required.</p>
-    <a href="{{ url_for('signup') }}" class="btn btn-primary">Create Your Portal</a>
+    <div class="marketing-cta-actions">
+        <a href="{{ url_for('signup') }}" class="btn btn-primary">Create Your Portal</a>
+        <a href="{{ feedback_url }}" target="_blank" rel="noopener" class="btn btn-secondary">Contact / Feedback</a>
+    </div>
 </div>
 {% endblock %}

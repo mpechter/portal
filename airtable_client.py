@@ -147,7 +147,8 @@ class AirtableClient:
 
     def get_user_by_email(self, email: str) -> dict | None:
         """Find a user by email address."""
-        records = self.users_table.all(formula=f"{{Email}} = '{email}'")
+        email_field = self.org.email_field or "Email"
+        records = self.users_table.all(formula=f"{{{email_field}}} = '{email}'")
         if records:
             return records[0]
         return None
@@ -229,9 +230,6 @@ class AirtableClient:
         field_names = set()
         for field in table_info.get("fields", []):
             field_names.add(field["name"])
-
-        # Remove Email field (login identifier, not user-editable)
-        field_names.discard("Email")
 
         # Remove linked record fields (editing these could break relationships)
         for field in table_info.get("linked_fields", []):

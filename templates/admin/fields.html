@@ -18,6 +18,24 @@
     <div class="admin-content">
         <form id="admin-form" action="{{ url_for('admin_save_fields') }}" method="post" class="form">
 
+        <h3>Email Field</h3>
+        <div class="confirmation-config" style="margin-bottom: 24px;">
+            <p class="field-help" style="margin-bottom: 8px;">Select which field in <strong>{{ org.users_table }}</strong> contains the client's email address. This field is used to look up the client at login.</p>
+            <select name="email_field" id="email_field" class="form-select" style="max-width: 320px;"
+                    data-original="{{ org.email_field or 'Email' }}"
+                    onchange="if(typeof checkForChanges==='function') checkForChanges()">
+                {% for field in email_fields %}
+                <option value="{{ field }}" {% if (org.email_field or 'Email') == field %}selected{% endif %}>{{ field }}</option>
+                {% endfor %}
+                {% if not email_fields %}
+                <option value="{{ org.email_field or 'Email' }}" selected>{{ org.email_field or 'Email' }}</option>
+                {% endif %}
+            </select>
+            {% if not email_fields %}
+            <p class="field-help" style="color: #d63939; margin-top: 6px;">No email or text fields found in this table.</p>
+            {% endif %}
+        </div>
+
         <h3>Profile Fields ({{ org.users_table }})</h3>
         <p class="text-muted">Fields shown on the user's own profile. Defaults to hidden if not configured.</p>
 
@@ -257,6 +275,7 @@ function updateConfirmationValues() {
 
     const radios = form.querySelectorAll('input[type="radio"]');
     const annotations = form.querySelectorAll('input.annotation-input');
+    const emailField = document.getElementById('email_field');
     const confirmCheckbox = document.getElementById('confirmation_enabled');
     const confirmField = document.getElementById('confirmation_field');
     const confirmValue = document.getElementById('confirmation_value');
@@ -279,6 +298,13 @@ function updateConfirmationValues() {
                 hasChanges = true;
             }
         });
+
+        // Check email field select
+        if (emailField) {
+            if (emailField.value !== emailField.dataset.original) {
+                hasChanges = true;
+            }
+        }
 
         // Check confirmation checkbox
         if (confirmCheckbox) {
@@ -320,6 +346,9 @@ function updateConfirmationValues() {
         annotations.forEach(input => {
             input.value = input.dataset.original;
         });
+        if (emailField) {
+            emailField.value = emailField.dataset.original;
+        }
         if (confirmCheckbox) {
             confirmCheckbox.checked = confirmCheckbox.dataset.original === 'true';
             toggleConfirmationField();
@@ -342,6 +371,9 @@ function updateConfirmationValues() {
         input.addEventListener('input', checkForChanges);
     });
 
+    if (emailField) {
+        emailField.addEventListener('change', checkForChanges);
+    }
     if (confirmCheckbox) {
         confirmCheckbox.addEventListener('change', checkForChanges);
     }
