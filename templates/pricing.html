@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Pricing — Airbud{% endblock %}
+
+{% block content %}
+<div class="marketing-nav">
+    <a href="{{ url_for('index') }}" class="marketing-brand">Airbud</a>
+    <div class="marketing-nav-links">
+        <a href="{{ url_for('about') }}">About</a>
+        <a href="{{ url_for('faq') }}">FAQ</a>
+        <a href="{{ url_for('pricing') }}">Pricing</a>
+        <a href="{{ url_for('login') }}">Sign In</a>
+        <a href="{{ url_for('signup') }}" class="btn btn-primary btn-small">Get Started</a>
+    </div>
+</div>
+
+<div class="marketing-hero">
+    <h1>Simple, honest pricing</h1>
+    <p>One portal, one price. No per-user fees, no surprise charges.</p>
+</div>
+
+<div class="pricing-grid">
+    <div class="pricing-card featured">
+        <div class="pricing-tier">Starter</div>
+        <div class="pricing-price">$10<span>/month</span></div>
+        <p class="pricing-desc">Everything you need to give clients a clean, private window into their Airtable data.</p>
+        <ul class="pricing-features">
+            <li>1 portal</li>
+            <li>Unlimited clients</li>
+            <li>Unlimited records</li>
+            <li>Passwordless magic link login</li>
+            <li>Linked record support (e.g. parents &amp; students)</li>
+            <li>Field-level access control</li>
+            <li>Client data confirmation / review</li>
+            <li>Email support</li>
+        </ul>
+        <a href="{{ url_for('signup') }}" class="btn btn-primary" style="width: 100%; box-sizing: border-box;">Get Started</a>
+    </div>
+
+    <div class="pricing-card">
+        <div class="pricing-tier">Pro</div>
+        <div class="pricing-price" style="font-size: 1.6rem; padding-top: 6px;">Let's talk</div>
+        <p class="pricing-desc">For organizations that need multiple portals, custom branding, or white-glove setup.</p>
+        <ul class="pricing-features">
+            <li>Multiple portals</li>
+            <li>Custom domain</li>
+            <li>Priority support</li>
+            <li>Custom feature requests</li>
+            <li>Onboarding assistance</li>
+        </ul>
+        <a href="{{ feedback_url }}" target="_blank" rel="noopener" class="btn btn-secondary" style="width: 100%; box-sizing: border-box;">Get in Touch</a>
+    </div>
+</div>
+
+<div class="marketing-cta">
+    <h2>Questions about pricing?</h2>
+    <p>We're happy to help you figure out if Airbud is right for your organization.</p>
+    <div class="marketing-cta-actions">
+        <a href="{{ url_for('signup') }}" class="btn btn-primary">Start Free Trial</a>
+        <a href="{{ feedback_url }}" target="_blank" rel="noopener" class="btn btn-secondary">Contact Us</a>
+    </div>
+</div>
+{% endblock %}

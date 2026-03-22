@@ -25,3 +25,12 @@ class Config:
     # Resend email API
     RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
     EMAIL_FROM = os.environ.get("EMAIL_FROM", "onboarding@resend.dev")
+
+    # Stripe billing
+    STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")
+    STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY")
+    STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET")
+    STRIPE_PRICE_ID = os.environ.get("STRIPE_PRICE_ID")  # Price ID for the base plan
+
+    # Comma-separated list of valid promo codes
+    PROMO_CODES = os.environ.get("PROMO_CODES", "")

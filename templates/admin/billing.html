@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Billing - {{ org.portal_title }}{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="admin-header">
+        <h1>Admin: {{ org.name }}</h1>
+        <a href="{{ url_for('admin_logout') }}" class="admin-logout">Logout</a>
+    </div>
+
+    <nav class="admin-tabs">
+        <a href="{{ url_for('admin_settings') }}" class="tab">Settings</a>
+        <a href="{{ url_for('admin_tables') }}" class="tab">Tables</a>
+        <a href="{{ url_for('admin_fields') }}" class="tab {% if not org.tables_configured %}disabled{% endif %}">Fields</a>
+        <a href="{{ url_for('admin_billing') }}" class="tab active">Billing</a>
+    </nav>
+
+    <div class="admin-content">
+
+        <h3>Plan Status</h3>
+
+        {% if org.plan == 'active' %}
+        <div class="billing-status active">&#10003; Active</div>
+        {% if org.promo_code %}
+        <p class="text-muted">Activated with promo code <strong>{{ org.promo_code }}</strong>.</p>
+        {% elif org.stripe_subscription_id %}
+        <p class="text-muted">Subscribed via Stripe.</p>
+        <form action="{{ url_for('admin_billing_portal') }}" method="post" style="margin-top: 12px;">
+            <button type="submit" class="btn btn-secondary btn-small">Manage Subscription</button>
+        </form>
+        {% endif %}
+
+        {% elif org.plan == 'suspended' %}
+        <div class="billing-status suspended">&#x26A0; Suspended</div>
+        <p class="text-muted">Your subscription has lapsed. Reactivate below to restore client access.</p>
+
+        {% else %}
+        <div class="billing-status trial">&#9654; Trial</div>
+        <p class="text-muted">You're on a free trial. Activate to ensure uninterrupted client access.</p>
+        {% endif %}
+
+        {% if org.plan != 'active' %}
+
+        {% if stripe_enabled %}
+        <h3 style="margin-top: 24px;">Subscribe — $10/month</h3>
+        <p class="text-muted">1 portal, unlimited clients, unlimited records.</p>
+        <form action="{{ url_for('admin_create_checkout') }}" method="post">
+            <button type="submit" class="btn btn-primary">Subscribe with Stripe</button>
+        </form>
+
+        <div class="billing-divider">or</div>
+        {% else %}
+        <h3 style="margin-top: 24px;">Activate with Promo Code</h3>
+        {% endif %}
+
+        <form action="{{ url_for('admin_activate_promo') }}" method="post" style="display: flex; gap: 10px; align-items: flex-start; max-width: 360px;">
+            <div style="flex: 1;">
+                <input type="text" name="promo_code" placeholder="Enter promo code"
+                       class="form-input" style="text-transform: uppercase;" required>
+            </div>
+            <button type="submit" class="btn btn-secondary">Apply</button>
+        </form>
+
+        {% endif %}
+
+        <div class="danger-zone">
+            <h3>Close Account</h3>
+            <p>Permanently deletes your organization, all configuration, and cancels any active subscription. Client data in Airtable is not affected. This cannot be undone.</p>
+            <form action="{{ url_for('admin_close_account') }}" method="post"
+                  onsubmit="return confirm('Are you sure? This will permanently delete your account and cannot be undone.')">
+                <button type="submit" class="btn btn-danger btn-small">Close Account</button>
+            </form>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

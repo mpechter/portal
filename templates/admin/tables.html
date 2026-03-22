@@ -13,6 +13,7 @@
         <a href="{{ url_for('admin_settings') }}" class="tab">Settings</a>
         <a href="{{ url_for('admin_tables') }}" class="tab active">Tables</a>
         <a href="{{ url_for('admin_fields') }}" class="tab {% if not org.tables_configured %}disabled{% endif %}">Fields</a>
+        <a href="{{ url_for('admin_billing') }}" class="tab">Billing</a>
     </nav>
 
     <div class="admin-content">

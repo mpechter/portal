@@ -115,6 +115,12 @@ def faq():
     return render_template("faq.html")
 
 
+@app.route("/pricing")
+def pricing():
+    """Pricing page."""
+    return render_template("pricing.html")
+
+
 @app.route("/api/check-org-code")
 def check_org_code():
     """Check whether an org code is available (used by signup form)."""
@@ -809,6 +815,155 @@ def admin_save_fields():
     return redirect(url_for("admin_fields"))
 
 
+# --- Billing Routes ---
+
+
+@app.route("/admin/billing")
+@admin_required
+def admin_billing():
+    """Admin billing page."""
+    org = Organization.get_by_code(session["admin_org_code"])
+    if not org:
+        return redirect(url_for("admin_login"))
+    stripe_enabled = bool(Config.STRIPE_SECRET_KEY and Config.STRIPE_PRICE_ID)
+    return render_template("admin/billing.html", org=org, stripe_enabled=stripe_enabled)
+
+
+@app.route("/admin/billing/create-checkout", methods=["POST"])
+@admin_required
+def admin_create_checkout():
+    """Start a Stripe Checkout session for the base plan."""
+    import stripe as stripe_lib
+    org = Organization.get_by_code(session["admin_org_code"])
+    if not org:
+        return redirect(url_for("admin_login"))
+
+    stripe_lib.api_key = Config.STRIPE_SECRET_KEY
+    try:
+        checkout = stripe_lib.checkout.Session.create(
+            payment_method_types=["card"],
+            mode="subscription",
+            line_items=[{"price": Config.STRIPE_PRICE_ID, "quantity": 1}],
+            success_url=url_for("admin_billing_success", _external=True) + "?session_id={CHECKOUT_SESSION_ID}",
+            cancel_url=url_for("admin_billing", _external=True),
+            customer_email=org.admin_email,
+            metadata={"org_code": org.org_code},
+        )
+        return redirect(checkout.url)
+    except Exception as e:
+        flash(f"Could not start checkout: {e}", "error")
+        return redirect(url_for("admin_billing"))
+
+
+@app.route("/admin/billing/success")
+@admin_required
+def admin_billing_success():
+    """Stripe redirects here after successful checkout."""
+    flash("Subscription activated! Your portal is now fully active.", "success")
+    return redirect(url_for("admin_billing"))
+
+
+@app.route("/admin/billing/portal", methods=["POST"])
+@admin_required
+def admin_billing_portal():
+    """Open Stripe Customer Portal to manage/cancel subscription."""
+    import stripe as stripe_lib
+    org = Organization.get_by_code(session["admin_org_code"])
+    if not org or not org.stripe_customer_id:
+        flash("No billing account found.", "error")
+        return redirect(url_for("admin_billing"))
+
+    stripe_lib.api_key = Config.STRIPE_SECRET_KEY
+    try:
+        portal = stripe_lib.billing_portal.Session.create(
+            customer=org.stripe_customer_id,
+            return_url=url_for("admin_billing", _external=True),
+        )
+        return redirect(portal.url)
+    except Exception as e:
+        flash(f"Could not open billing portal: {e}", "error")
+        return redirect(url_for("admin_billing"))
+
+
+@app.route("/admin/billing/activate-promo", methods=["POST"])
+@admin_required
+def admin_activate_promo():
+    """Activate portal with a promo code."""
+    org = Organization.get_by_code(session["admin_org_code"])
+    if not org:
+        return redirect(url_for("admin_login"))
+
+    code = request.form.get("promo_code", "").strip().upper()
+    valid_codes = {c.strip().upper() for c in (Config.PROMO_CODES or "").split(",") if c.strip()}
+
+    if code and code in valid_codes:
+        org.plan = "active"
+        org.promo_code = code
+        db.session.commit()
+        flash("Promo code accepted. Your portal is now active!", "success")
+    else:
+        flash("Invalid promo code.", "error")
+    return redirect(url_for("admin_billing"))
+
+
+@app.route("/admin/close-account", methods=["POST"])
+@admin_required
+def admin_close_account():
+    """Permanently delete the organization and cancel any Stripe subscription."""
+    org = Organization.get_by_code(session["admin_org_code"])
+    if not org:
+        return redirect(url_for("admin_login"))
+
+    # Cancel Stripe subscription if active
+    if org.stripe_subscription_id and Config.STRIPE_SECRET_KEY:
+        try:
+            import stripe as stripe_lib
+            stripe_lib.api_key = Config.STRIPE_SECRET_KEY
+            stripe_lib.Subscription.cancel(org.stripe_subscription_id)
+        except Exception as e:
+            print(f"Could not cancel Stripe subscription for {org.org_code}: {e}", flush=True)
+
+    session.pop("admin_org_code", None)
+    db.session.delete(org)
+    db.session.commit()
+
+    flash("Your account has been closed.", "info")
+    return redirect(url_for("index"))
+
+
+@app.route("/stripe/webhook", methods=["POST"])
+def stripe_webhook():
+    """Handle Stripe webhook events."""
+    import stripe as stripe_lib
+    stripe_lib.api_key = Config.STRIPE_SECRET_KEY
+    payload = request.get_data()
+    sig_header = request.headers.get("Stripe-Signature")
+
+    try:
+        event = stripe_lib.Webhook.construct_event(payload, sig_header, Config.STRIPE_WEBHOOK_SECRET)
+    except Exception:
+        return "", 400
+
+    if event["type"] == "checkout.session.completed":
+        s = event["data"]["object"]
+        org_code = (s.get("metadata") or {}).get("org_code")
+        org = Organization.get_by_code(org_code) if org_code else None
+        if org:
+            org.plan = "active"
+            org.stripe_customer_id = s.get("customer")
+            org.stripe_subscription_id = s.get("subscription")
+            db.session.commit()
+
+    elif event["type"] in ("customer.subscription.deleted",):
+        sub = event["data"]["object"]
+        org = Organization.query.filter_by(stripe_subscription_id=sub["id"]).first()
+        if org:
+            org.plan = "suspended"
+            db.session.commit()
+
+    return "", 200
+
+
 # --- Admin Password Recovery ---
 
 
@@ -1010,12 +1165,19 @@ def migrate_db():
         from sqlalchemy import text, inspect
         inspector = inspect(db.engine)
         cols = {c["name"] for c in inspector.get_columns("organizations")}
-        if "email_field" not in cols:
-            conn.execute(text("ALTER TABLE organizations ADD COLUMN email_field VARCHAR(100) DEFAULT 'Email'"))
-            conn.commit()
-            print("Added email_field column.")
-        else:
-            print("email_field column already exists.")
+        new_cols = {
+            "email_field": "VARCHAR(100) DEFAULT 'Email'",
+            "stripe_customer_id": "VARCHAR(100)",
+            "stripe_subscription_id": "VARCHAR(100)",
+            "promo_code": "VARCHAR(100)",
+        }
+        for col, col_def in new_cols.items():
+            if col not in cols:
+                conn.execute(text(f"ALTER TABLE organizations ADD COLUMN {col} {col_def}"))
+                conn.commit()
+                print(f"Added {col} column.")
+            else:
+                print(f"{col} already exists.")
     print("Migration complete.")
 
 

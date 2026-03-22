@@ -39,6 +39,9 @@ class Organization(db.Model):
 
     # Billing / plan
     plan = db.Column(db.String(20), nullable=True)  # 'trial', 'active', 'suspended'
+    stripe_customer_id = db.Column(db.String(100), nullable=True)
+    stripe_subscription_id = db.Column(db.String(100), nullable=True)
+    promo_code = db.Column(db.String(100), nullable=True)  # Code used to activate without payment
 
     # Field permissions stored as JSON with structure:
     # {"user_fields": {"Name": "readonly", ...}, "record_fields": {"Grade": "editable", ...}}
