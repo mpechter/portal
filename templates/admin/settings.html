@@ -79,6 +79,26 @@
                 <input type="text" id="airtable_base_id" name="airtable_base_id" value="{{ org.airtable_base_id }}" class="form-input" required placeholder="appXXXXXXXXXXXXXX" data-original="{{ org.airtable_base_id }}">
             </div>
 
+            <h3>Admin Account</h3>
+
+            <div class="form-group">
+                <label for="admin_email">Admin Email</label>
+                <p class="field-help">Used for password reset and billing notifications.</p>
+                <input type="email" id="admin_email" name="admin_email" value="{{ org.admin_email or '' }}" class="form-input" data-original="{{ org.admin_email or '' }}">
+            </div>
+
+            <div class="form-group">
+                <label for="new_password">New Password</label>
+                <p class="field-help">Leave blank to keep your current password.</p>
+                <input type="password" id="new_password" name="new_password" class="form-input" data-original="" autocomplete="new-password">
+                <button type="button" class="btn-text" onclick="togglePassword('new_password')">Show</button>
+            </div>
+
+            <div class="form-group" id="confirm-password-group" style="display: none;">
+                <label for="new_password_confirm">Confirm New Password</label>
+                <input type="password" id="new_password_confirm" name="new_password_confirm" class="form-input" autocomplete="new-password">
+            </div>
+
             <div class="form-actions">
                 <button type="submit" id="save-btn" class="btn btn-save" disabled>Save Settings</button>
                 <button type="button" id="discard-btn" class="btn btn-secondary" disabled>Discard Changes</button>
@@ -127,19 +147,25 @@ function togglePassword(fieldId) {
         }
     }
 
-    function discardChanges() {
-        inputs.forEach(input => {
-            input.value = input.dataset.original;
-        });
-        checkForChanges();
-    }
-
     inputs.forEach(input => {
         input.addEventListener('input', checkForChanges);
     });
 
+    // Show confirm field when password is entered
+    const newPasswordInput = document.getElementById('new_password');
+    const confirmGroup = document.getElementById('confirm-password-group');
+    if (newPasswordInput && confirmGroup) {
+        newPasswordInput.addEventListener('input', function() {
+            confirmGroup.style.display = this.value ? 'block' : 'none';
+        });
+    }
+
     if (discardBtn) {
-        discardBtn.addEventListener('click', discardChanges);
+        discardBtn.addEventListener('click', function() {
+            inputs.forEach(input => { input.value = input.dataset.original; });
+            if (confirmGroup) confirmGroup.style.display = 'none';
+            checkForChanges();
+        });
     }
 })();
 </script>

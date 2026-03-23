@@ -24,7 +24,7 @@
             <p class="field-help" style="margin-bottom: 8px;">Select which field in <strong>{{ org.users_table }}</strong> contains the client's email address. This field is used to look up the client at login.</p>
             <select name="email_field" id="email_field" class="form-select" style="max-width: 320px;"
                     data-original="{{ org.email_field or 'Email' }}"
-                    onchange="if(typeof checkForChanges==='function') checkForChanges()">
+                    onchange="updateEmailFieldRows(); if(typeof checkForChanges==='function') checkForChanges()">
                 {% for field in email_fields %}
                 <option value="{{ field }}" {% if (org.email_field or 'Email') == field %}selected{% endif %}>{{ field }}</option>
                 {% endfor %}
@@ -54,7 +54,7 @@
                 {% for field_name in user_fields %}
                 {% set current = user_field_config.get(field_name, 'hidden') %}
                 {% set annotation = user_annotations.get(field_name, '') %}
-                <tr>
+                <tr data-user-field-name="{{ field_name }}" {% if (org.email_field or 'Email') == field_name %}style="display: none;"{% endif %}>
                     <td><strong>{{ field_name }}</strong></td>
                     <td>
                         <input type="text"
@@ -204,6 +204,14 @@
 </div>
 
 <script>
+function updateEmailFieldRows() {
+    const emailField = document.getElementById('email_field');
+    const selectedField = emailField ? emailField.value : '';
+    document.querySelectorAll('tr[data-user-field-name]').forEach(row => {
+        row.style.display = row.dataset.userFieldName === selectedField ? 'none' : '';
+    });
+}
+
 function toggleConfirmationField() {
     const checkbox = document.getElementById('confirmation_enabled');
     const fieldSelect = document.getElementById('confirmation-field-select');
@@ -349,6 +357,7 @@ function updateConfirmationValues() {
         });
         if (emailField) {
             emailField.value = emailField.dataset.original;
+            updateEmailFieldRows();
         }
         if (confirmCheckbox) {
             confirmCheckbox.checked = confirmCheckbox.dataset.original === 'true';
@@ -389,7 +398,8 @@ function updateConfirmationValues() {
         discardBtn.addEventListener('click', discardChanges);
     }
 
-    // Initialize row visibility based on current confirmation field
+    // Initialize row visibility based on current email and confirmation fields
+    updateEmailFieldRows();
     updateConfirmationValues();
 })();
 </script>

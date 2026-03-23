@@ -620,6 +620,22 @@ def admin_save_settings():
         db.session.commit()
         return redirect(url_for("admin_tables"))
 
+    # Admin account updates
+    admin_email = request.form.get("admin_email", "").strip().lower()
+    if admin_email:
+        org.admin_email = admin_email
+
+    new_password = request.form.get("new_password", "").strip()
+    if new_password:
+        new_password_confirm = request.form.get("new_password_confirm", "").strip()
+        if len(new_password) < 6:
+            flash("New password must be at least 6 characters.", "error")
+            return redirect(url_for("admin_settings"))
+        if new_password != new_password_confirm:
+            flash("Passwords do not match.", "error")
+            return redirect(url_for("admin_settings"))
+        org.set_admin_password(new_password)
+
     db.session.commit()
     flash("Settings saved.", "success")
     return redirect(url_for("admin_settings"))
@@ -875,10 +891,16 @@ def admin_billing_portal():
 
     stripe_lib.api_key = Config.STRIPE_SECRET_KEY
     try:
-        portal = stripe_lib.billing_portal.Session.create(
+        kwargs = dict(
             customer=org.stripe_customer_id,
             return_url=url_for("admin_billing", _external=True),
         )
+        # Deep-link to payment method update if requested
+        if request.form.get("action") == "payment":
+            kwargs["flow_data"] = {
+                "type": "payment_method_update",
+            }
+        portal = stripe_lib.billing_portal.Session.create(**kwargs)
         return redirect(portal.url)
     except Exception as e:
         flash(f"Could not open billing portal: {e}", "error")
