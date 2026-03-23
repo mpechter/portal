@@ -1247,9 +1247,20 @@ input[type="url"] {
         padding: 16px;
     }
 
-    /* Marketing nav — hide plain text links, keep brand + CTA */
-    .marketing-nav-links a:not(.btn) {
-        display: none;
+    /* Marketing nav — stack brand above links */
+    .marketing-nav {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .marketing-nav-links {
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .marketing-nav-links a {
+        font-size: 0.9rem;
     }
 
     .marketing-hero {
