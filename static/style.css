@@ -1237,6 +1237,198 @@ input[type="url"] {
     font-size: 0.85rem;
 }
 
+/* ============================================================
+   RESPONSIVE — mobile-first breakpoints
+   ============================================================ */
+
+/* Tablet and below (≤768px) */
+@media (max-width: 768px) {
+    .container {
+        padding: 16px;
+    }
+
+    /* Marketing nav — hide plain text links, keep brand + CTA */
+    .marketing-nav-links a:not(.btn) {
+        display: none;
+    }
+
+    .marketing-hero {
+        padding: 40px 10px 32px;
+    }
+
+    .marketing-hero h1 {
+        font-size: 1.75rem;
+    }
+
+    .marketing-hero h1 br {
+        display: none;
+    }
+
+    .marketing-hero p {
+        font-size: 1rem;
+    }
+
+    .marketing-hero-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .marketing-hero-actions .btn {
+        width: 100%;
+        max-width: 280px;
+    }
+
+    /* Feature cards: single column */
+    .marketing-features {
+        grid-template-columns: 1fr;
+    }
+
+    /* Usecase: stack, hide diagram */
+    .marketing-usecase {
+        grid-template-columns: 1fr;
+    }
+
+    .usecase-diagram {
+        display: none;
+    }
+
+    /* Pricing: single column */
+    .pricing-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* CTA actions: stack */
+    .marketing-cta-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .marketing-cta-actions .btn {
+        width: 100%;
+        max-width: 280px;
+    }
+
+    /* Admin dashboard */
+    .admin-dashboard {
+        padding: 16px;
+        border-radius: 0;
+    }
+
+    .admin-header h1 {
+        font-size: 1.1rem;
+    }
+
+    /* Admin tabs: allow wrap, tighter padding */
+    .admin-tabs {
+        flex-wrap: wrap;
+    }
+
+    .admin-tabs .tab {
+        padding: 8px 14px;
+        font-size: 0.85rem;
+    }
+
+    /* Field config table: horizontal scroll */
+    .field-config-table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        font-size: 0.85rem;
+    }
+
+    .field-config-table th,
+    .field-config-table td {
+        padding: 8px 10px;
+        white-space: nowrap;
+    }
+
+    /* Data table: horizontal scroll */
+    .data-table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Profile field label: no fixed min-width */
+    .field-label {
+        min-width: 100px;
+        font-size: 0.9rem;
+    }
+
+    /* Card centered: reduce top margin */
+    .card.centered {
+        margin: 24px auto;
+        max-width: 100%;
+    }
+
+    /* Form actions: stack on small screens */
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+    }
+
+    /* Section header wraps */
+    .section-header {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+}
+
+/* Phone only (≤480px) */
+@media (max-width: 480px) {
+    .marketing-hero h1 {
+        font-size: 1.5rem;
+    }
+
+    .marketing-card,
+    .marketing-usecase,
+    .marketing-cta {
+        padding: 20px 16px;
+    }
+
+    .admin-dashboard {
+        padding: 12px;
+    }
+
+    /* Navbar wraps on very small screens */
+    .navbar {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    /* Profile fields: stack label above value */
+    .profile-field {
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .field-label {
+        min-width: unset;
+    }
+
+    /* Billing promo form: stack */
+    form[action*="activate-promo"] {
+        flex-direction: column !important;
+    }
+
+    form[action*="activate-promo"] > div {
+        width: 100%;
+    }
+
+    form[action*="activate-promo"] .btn {
+        width: 100%;
+    }
+
+    /* Code input: smaller on tiny screens */
+    .code-input {
+        font-size: 1.5rem !important;
+        letter-spacing: 4px;
+    }
+}
+
 /* Demo mode code display */
 .demo-code-box {
     background: #fff3cd;
