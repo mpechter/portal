@@ -1271,11 +1271,7 @@ input[type="url"] {
         font-size: 1.75rem;
     }
 
-    .marketing-hero h1 br {
-        display: none;
-    }
-
-    .marketing-hero p {
+.marketing-hero p {
         font-size: 1rem;
     }
 
