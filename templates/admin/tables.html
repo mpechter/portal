@@ -101,8 +101,9 @@
         });
 
         if (linkedTableNames.size === 0) {
-            allOptions.forEach(opt => opt.hidden = false);
-            recordsHint.textContent = 'No tables with a link to the Users table were found. Any table can still be selected.';
+            allOptions.forEach(opt => { if (opt.value) opt.hidden = true; });
+            recordsTableSelect.value = '';
+            recordsHint.textContent = 'No tables with a link field pointing to the Users table were found. Add a linked record field in Airtable first.';
             recordsHint.style.display = 'block';
         } else {
             allOptions.forEach(opt => {
