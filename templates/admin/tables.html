@@ -22,11 +22,7 @@
 
         <div class="setup-instructions" style="background: #f0f7ff; border: 1px solid #c0d8f0; border-radius: 6px; padding: 16px; margin-bottom: 24px;">
             <h3 style="margin-top: 0; font-size: 14px; color: #1a5dad;">Airtable Setup Requirements</h3>
-            <p style="margin-bottom: 8px; font-size: 13px;">Your <strong>Users Table</strong> must have a field containing each user's email address. You'll select which field that is on the <strong>Fields</strong> tab.</p>
-            <p style="margin-top: 8px; font-size: 13px; color: #666;">Login codes are securely stored in the portal database, not in Airtable.</p>
-            <p style="margin-top: 12px; margin-bottom: 0; font-size: 13px; color: #666;">
-                If using linked records, the Records table should have a <strong>Link to Users</strong> field.
-            </p>
+            <p style="margin-bottom: 0; font-size: 13px;">Your <strong>Users Table</strong> must have a field containing each user's email address. You'll select which field that is on the <strong>Fields</strong> tab.</p>
         </div>
 
         <form id="tables-form" action="{{ url_for('admin_save_tables') }}" method="post" class="form">
@@ -45,15 +41,16 @@
 
             <div class="form-group">
                 <label for="records_table">Linked Records Table (Optional)</label>
-                <p class="field-help">If users have linked records (like children, projects, etc.), select that table here. The link field will be auto-detected.</p>
+                <p class="field-help">If users have linked records (like children, projects, etc.), select that table here. Airbud will auto-detect the link field.</p>
                 <select id="records_table" name="records_table" class="form-select">
                     <option value="">-- No linked records --</option>
                     {% for table in tables %}
-                    <option value="{{ table.name }}" {% if org.records_table == table.name %}selected{% endif %}>
+                    <option value="{{ table.name }}" data-table-id="{{ table.id }}" {% if org.records_table == table.name %}selected{% endif %}>
                         {{ table.name }}
                     </option>
                     {% endfor %}
                 </select>
+                <p id="records-table-hint" class="field-help text-muted" style="display: none; margin-top: 6px;"></p>
             </div>
 
             <div class="form-actions">
@@ -65,14 +62,60 @@
 
 <script>
 (function() {
+    const tablesData = {{ tables | tojson }};
     const form = document.getElementById('tables-form');
     const usersTableSelect = document.getElementById('users_table');
     const recordsTableSelect = document.getElementById('records_table');
+    const recordsHint = document.getElementById('records-table-hint');
     const saveBtn = document.getElementById('save-btn');
 
-    // Store original values
     const originalUsersTable = usersTableSelect.value;
     const originalRecordsTable = recordsTableSelect.value;
+
+    function getTableId(tableName) {
+        const t = tablesData.find(t => t.name === tableName);
+        return t ? t.id : null;
+    }
+
+    function filterRecordsTables() {
+        const usersTableId = getTableId(usersTableSelect.value);
+        const currentVal = recordsTableSelect.value;
+        const allOptions = Array.from(recordsTableSelect.options);
+
+        if (!usersTableId) {
+            allOptions.forEach(opt => opt.hidden = false);
+            recordsHint.style.display = 'none';
+            return;
+        }
+
+        // Find tables that have a multipleRecordLinks field pointing to the users table
+        const linkedTableNames = new Set();
+        tablesData.forEach(table => {
+            if (table.name === usersTableSelect.value) return;
+            for (const field of (table.linked_fields || [])) {
+                if (field.linked_table_id === usersTableId) {
+                    linkedTableNames.add(table.name);
+                    break;
+                }
+            }
+        });
+
+        if (linkedTableNames.size === 0) {
+            allOptions.forEach(opt => opt.hidden = false);
+            recordsHint.textContent = 'No tables with a link to the Users table were found. Any table can still be selected.';
+            recordsHint.style.display = 'block';
+        } else {
+            allOptions.forEach(opt => {
+                if (!opt.value) { opt.hidden = false; return; }
+                opt.hidden = !linkedTableNames.has(opt.value);
+            });
+            // If current selection was hidden, reset to blank
+            if (currentVal && !linkedTableNames.has(currentVal)) {
+                recordsTableSelect.value = '';
+            }
+            recordsHint.style.display = 'none';
+        }
+    }
 
     function checkForChanges() {
         const hasChanges = usersTableSelect.value !== originalUsersTable ||
@@ -83,7 +126,6 @@
             saveBtn.disabled = false;
             saveBtn.classList.add('has-changes');
         } else if (hasSelection && !originalUsersTable) {
-            // New setup - enable save if table selected
             saveBtn.disabled = false;
             saveBtn.classList.add('has-changes');
         } else {
@@ -92,10 +134,14 @@
         }
     }
 
-    usersTableSelect.addEventListener('change', checkForChanges);
+    usersTableSelect.addEventListener('change', function() {
+        filterRecordsTables();
+        checkForChanges();
+    });
     recordsTableSelect.addEventListener('change', checkForChanges);
 
-    // Initial check
+    // Initial filter and check
+    filterRecordsTables();
     checkForChanges();
 })();
 </script>
