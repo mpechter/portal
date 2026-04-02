@@ -3,11 +3,12 @@ from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, flash, session, abort, jsonify
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from config import Config
-from models import db, Organization
+from models import db, Organization, LoginAttempt, LoginCode
 from airtable_client import get_client_for_org
 from auth import (send_login_code, verify_login_code, verify_magic_link,
                   is_locked_out, get_lockout_remaining,
-                  send_admin_reset_email, verify_admin_reset_token)
+                  send_admin_reset_email, verify_admin_reset_token,
+                  send_admin_email_verification, verify_admin_email_token)
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -620,10 +621,22 @@ def admin_save_settings():
         db.session.commit()
         return redirect(url_for("admin_tables"))
 
-    # Admin account updates
+    # Admin email — require verification before committing a change
     admin_email = request.form.get("admin_email", "").strip().lower()
-    if admin_email:
-        org.admin_email = admin_email
+    if admin_email and admin_email != (org.admin_email or ""):
+        base_url = request.url_root.rstrip("/")
+        sent = send_admin_email_verification(org, admin_email, base_url)
+        if sent:
+            org.pending_admin_email = admin_email
+            db.session.commit()
+            flash(
+                f"A verification link has been sent to {admin_email}. "
+                "Your admin email will not change until you click that link.",
+                "info",
+            )
+        else:
+            flash("Could not send verification email. Check your email configuration.", "error")
+        return redirect(url_for("admin_settings"))
 
     new_password = request.form.get("new_password", "").strip()
     if new_password:
@@ -945,6 +958,10 @@ def admin_close_account():
         except Exception as e:
             print(f"Could not cancel Stripe subscription for {org.org_code}: {e}", flush=True)
 
+    # Remove child rows that have a FK to this org before deleting the org itself
+    LoginAttempt.query.filter_by(org_id=org.id).delete()
+    LoginCode.query.filter_by(org_id=org.id).delete()
+
     session.pop("admin_org_code", None)
     db.session.delete(org)
     db.session.commit()
@@ -996,11 +1013,17 @@ def admin_forgot_password():
         org_code = request.form.get("org_code", "").strip().upper()
         org = Organization.get_by_code(org_code)
 
-        # Always show the same message — don't reveal whether org/email exists
         if org and org.admin_email:
             base_url = request.url_root.rstrip("/")
-            send_admin_reset_email(org, base_url)
-
+            sent = send_admin_reset_email(org, base_url)
+            if not sent:
+                flash(
+                    "Could not send the reset email — there may be an issue with your email configuration. "
+                    "Check that RESEND_API_KEY and EMAIL_FROM are set correctly.",
+                    "error",
+                )
+                return redirect(url_for("admin_forgot_password"))
+        # Always show the same generic confirmation — don't reveal whether org/email exists
         flash("If that organization has an admin email on file, you'll receive a reset link shortly.", "info")
         return redirect(url_for("admin_forgot_password"))
 
@@ -1039,6 +1062,47 @@ def admin_reset_password(token):
         return redirect(url_for("admin_login", org=org.org_code))
 
     return render_template("admin/reset_password.html", token=token, org=org)
+
+
+@app.route("/admin/cancel-pending-email", methods=["POST"])
+@admin_required
+def admin_cancel_pending_email():
+    """Cancel a pending admin email change."""
+    org = Organization.get_by_code(session["admin_org_code"])
+    if org and org.pending_admin_email:
+        org.pending_admin_email = None
+        db.session.commit()
+        flash("Pending email change cancelled.", "info")
+    return redirect(url_for("admin_settings"))
+
+
+@app.route("/admin/verify-email/<token>")
+def admin_verify_email(token):
+    """Confirm an admin email change via token."""
+    result = verify_admin_email_token(token)
+    if not result:
+        flash("This verification link is invalid or has expired.", "error")
+        return redirect(url_for("admin_login"))
+
+    org_id, new_email = result
+    org = Organization.query.get(org_id)
+    if not org:
+        flash("Organization not found.", "error")
+        return redirect(url_for("admin_login"))
+
+    if org.pending_admin_email != new_email:
+        flash("This verification link is no longer valid (a newer request may have superseded it).", "error")
+        return redirect(url_for("admin_login"))
+
+    org.admin_email = new_email
+    org.pending_admin_email = None
+    db.session.commit()
+    flash(f"Admin email updated to {new_email}.", "success")
+
+    # If already logged in as this org, send them to settings; otherwise login.
+    if session.get("admin_org_code") == org.org_code:
+        return redirect(url_for("admin_settings"))
+    return redirect(url_for("admin_login", org=org.org_code))
 
 
 # --- CLI Commands ---
@@ -1192,6 +1256,7 @@ def migrate_db():
             "stripe_customer_id": "VARCHAR(100)",
             "stripe_subscription_id": "VARCHAR(100)",
             "promo_code": "VARCHAR(100)",
+            "pending_admin_email": "VARCHAR(255)",
         }
         for col, col_def in new_cols.items():
             if col not in cols:

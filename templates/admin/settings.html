@@ -81,10 +81,34 @@
 
             <h3>Admin Account</h3>
 
+            {% if org.pending_admin_email %}
+            <div style="background: #fff8e1; border: 1px solid #f5c518; border-radius: 6px; padding: 14px 16px; margin-bottom: 20px; font-size: 13px;">
+                <strong>Verification pending:</strong> A confirmation link was sent to
+                <strong>{{ org.pending_admin_email }}</strong>. Your admin email will not change until you click that link.
+                <form action="{{ url_for('admin_cancel_pending_email') }}" method="post" style="display:inline; margin-left: 12px;">
+                    <button type="submit" class="btn-text" style="color: #c00;">Cancel</button>
+                </form>
+            </div>
+            {% endif %}
+
             <div class="form-group">
-                <label for="admin_email">Admin Email</label>
-                <p class="field-help">Used for password reset and billing notifications.</p>
-                <input type="email" id="admin_email" name="admin_email" value="{{ org.admin_email or '' }}" class="form-input" data-original="{{ org.admin_email or '' }}">
+                <label for="admin_email">Admin Email <span style="color:#c00; font-weight:600;">*</span></label>
+                <p class="field-help">
+                    <strong>Critical — required for password reset and billing notifications.</strong>
+                    Changing this address will send a verification link to the new address before taking effect.
+                </p>
+                {% if org.admin_email %}
+                <p style="font-size: 13px; margin-bottom: 6px; color: #444;">
+                    Current: <strong>{{ org.admin_email }}</strong>
+                </p>
+                {% else %}
+                <p style="font-size: 13px; margin-bottom: 6px; color: #c00;">
+                    No admin email is set — you won't be able to recover your password without one.
+                </p>
+                {% endif %}
+                <input type="email" id="admin_email" name="admin_email" value="" class="form-input"
+                       placeholder="{{ org.admin_email or 'Enter admin email' }}"
+                       data-original="">
             </div>
 
             <div class="form-group">

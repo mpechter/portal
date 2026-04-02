@@ -362,6 +362,74 @@ def send_admin_reset_email(org, base_url: str) -> bool:
         return True
 
 
+def generate_admin_email_token(org_id: int, new_email: str) -> str:
+    """Generate a signed token to verify an admin email change."""
+    serializer = URLSafeTimedSerializer(Config.SECRET_KEY, salt="admin-email-change")
+    return serializer.dumps({"org_id": org_id, "new_email": new_email})
+
+
+def verify_admin_email_token(token: str, max_age: int = 86400) -> tuple[int, str] | None:
+    """
+    Verify an admin email-change token (24-hour expiry).
+
+    Returns:
+        (org_id, new_email) if valid, None otherwise
+    """
+    serializer = URLSafeTimedSerializer(Config.SECRET_KEY, salt="admin-email-change")
+    try:
+        data = serializer.loads(token, max_age=max_age)
+        return data.get("org_id"), data.get("new_email")
+    except (BadSignature, SignatureExpired):
+        return None
+
+
+def send_admin_email_verification(org, new_email: str, base_url: str) -> bool:
+    """
+    Send a verification link to the new admin email address.
+
+    Returns True if sent (or printed to console), False on error.
+    """
+    token = generate_admin_email_token(org.id, new_email)
+    verify_link = f"{base_url}/admin/verify-email/{token}"
+
+    if Config.RESEND_API_KEY:
+        try:
+            resend.api_key = Config.RESEND_API_KEY
+            html_content = f"""
+                <h2>Confirm your new admin email</h2>
+                <p>You requested to change the admin email for
+                   <strong>{org.name}</strong> ({org.org_code}) to this address.</p>
+                <p style="margin: 25px 0;">
+                    <a href="{verify_link}"
+                       style="background: #007bff; color: white; padding: 12px 24px;
+                              text-decoration: none; border-radius: 6px; font-weight: 500;">
+                        Confirm New Email
+                    </a>
+                </p>
+                <p style="color: #666; font-size: 14px;">This link expires in 24 hours.</p>
+                <p style="color: #666; font-size: 12px;">
+                    If you didn't request this change, you can safely ignore this email.
+                </p>
+            """
+            resend.Emails.send({
+                "from": Config.EMAIL_FROM,
+                "to": new_email,
+                "subject": f"Confirm admin email change for {org.org_code}",
+                "html": html_content,
+            })
+            return True
+        except Exception as e:
+            print(f"Error sending email verification: {e}", file=sys.stderr)
+            return False
+    else:
+        print("\n" + "=" * 60, file=sys.stderr)
+        print(f"Admin email verification for {org.org_code}:", file=sys.stderr)
+        print(f"  New email: {new_email}", file=sys.stderr)
+        print(f"  Link: {verify_link}", file=sys.stderr)
+        print("=" * 60 + "\n", file=sys.stderr)
+        return True
+
+
 def verify_magic_link(token: str):
     """
     Verify a magic link token and return the user and org if valid.

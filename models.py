@@ -35,6 +35,7 @@ class Organization(db.Model):
 
     # Admin authentication
     admin_email = db.Column(db.String(255), nullable=True)
+    pending_admin_email = db.Column(db.String(255), nullable=True)  # Awaiting email-change verification
     admin_password_hash = db.Column(db.String(256), nullable=True)
 
     # Billing / plan

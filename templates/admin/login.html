@@ -16,7 +16,7 @@
             <label for="password">Admin Password</label>
             <input type="password" id="password" name="password" required>
         </div>
-        <button type="submit" class="btn btn-primary">Log In</button>
+        <button type="submit" id="login-btn" class="btn btn-primary">Log In</button>
     </form>
     <p class="text-muted" style="margin-top: 20px;">
         <a href="{{ url_for('admin_forgot_password', org=org_code) if org_code else url_for('admin_forgot_password') }}">
@@ -24,4 +24,15 @@
         </a>
     </p>
 </div>
+<script>
+(function() {
+    var form = document.querySelector('form');
+    var btn = document.getElementById('login-btn');
+    if (!form || !btn) return;
+    form.addEventListener('submit', function() {
+        btn.disabled = true;
+        btn.textContent = 'Logging in…';
+    });
+})();
+</script>
 {% endblock %}
