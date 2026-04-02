@@ -2,14 +2,19 @@
 
 ## Next Up
 
-1. Implement trial period logic
+1. **Enable transactional email (Resend domain verification)**
+   - Buy a domain (e.g. `myportal.com`) — does NOT need to host the app, Fly URL can stay
+   - Go to resend.com/domains → Add Domain → add the DNS records at your registrar (TXT/MX)
+   - Once verified, run: `fly secrets set EMAIL_FROM=noreply@yourdomain.com --app portal-rough-hill-8364`
+   - This unblocks: admin password reset emails, admin email-change verification
+   - *Root cause: Resend test mode only sends to mpechter@gmail.com until a domain is verified*
 
-2. **Organization logos (upload)**
+2. Implement trial period logic
+
+3. **Organization logos (upload)**
    - Currently supports logo via URL
    - Future: Allow admins to upload directly
    - Would need cloud storage (S3, Cloudflare R2, etc.)
-
-3. Add Flask-Migrate for database schema migrations
 
 ---
 
@@ -35,7 +40,7 @@
 - Stale code cleanup
 - README with setup instructions
 - Multi-tenant org support with org codes
-- 6-digit login codes (no email provider required yet)
+- 6-digit login codes + magic links via Resend
 - Admin panel with 3 tabs: Settings, Tables, Fields
 - Table selection from Airtable base schema
 - Optional linked records (parent → child relationship)
