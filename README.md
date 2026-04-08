@@ -267,6 +267,23 @@ EMAIL_FROM=noreply@yourdomain.com
 
 In demo mode or when `RESEND_API_KEY` is not set, login codes are printed to the console instead.
 
+## Services
+
+| Service | Purpose | Required? |
+|---------|---------|-----------|
+| [Airtable](https://airtable.com) | Data store — user records live here | Yes |
+| [Fly.io](https://fly.io) | App hosting and deployment | For production |
+| [Fly.io Postgres](https://fly.io/docs/postgres/) | Persistent database for orgs, login codes, rate limiting | For production (SQLite locally) |
+| [Resend](https://resend.com) | Transactional email — sends login codes and magic links | For production |
+| [Cloudflare](https://cloudflare.com) | DNS and domain management | Optional |
+
+### Notes
+
+- **Airtable**: You need a Personal Access Token with `data.records:read`, `data.records:write`, and `schema.bases:read` scopes. Each organization has its own token and base.
+- **Fly.io**: Handles TLS automatically. The app is configured to auto-stop when idle (`min_machines_running = 0`) to minimize cost.
+- **Resend**: Required for email in production. Without it, login codes are printed to the console (useful in dev/demo mode). You must verify a sending domain in Resend and set `EMAIL_FROM` to an address on that domain.
+- **Cloudflare**: Used for DNS if you have a custom domain. Not required — the app works on the default `fly.dev` subdomain.
+
 ## License
 
 MIT

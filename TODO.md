@@ -2,14 +2,7 @@
 
 ## Next Up
 
-1. **Enable transactional email (Resend domain verification)**
-   - Buy a domain (e.g. `myportal.com`) — does NOT need to host the app, Fly URL can stay
-   - Go to resend.com/domains → Add Domain → add the DNS records at your registrar (TXT/MX)
-   - Once verified, run: `fly secrets set EMAIL_FROM=noreply@yourdomain.com --app portal-rough-hill-8364`
-   - This unblocks: admin password reset emails, admin email-change verification
-   - *Root cause: Resend test mode only sends to mpechter@gmail.com until a domain is verified*
-
-2. Implement trial period logic
+1. Implement trial period logic
 
 3. **Organization logos (upload)**
    - Currently supports logo via URL
@@ -29,6 +22,8 @@
 - Document required Airtable token scopes in admin Settings
 - Fly.io deployment with Postgres
 - Resend email integration for login codes
+- Custom domain (airbud.app) with Cloudflare + Fly.io TLS
+- Transactional email verified via Resend (info@airbud.app)
 - Validate Users table has required Email field during setup
 - Prevent link fields from being Editable (hidden from admin Fields panel)
 - Auto-detect link field from Airtable schema
