@@ -6,7 +6,8 @@
         <a href="{{ url_for('faq') }}"{% if active == 'faq' %} class="active"{% endif %}>FAQ</a>
         <a href="{{ url_for('pricing') }}"{% if active == 'pricing' %} class="active"{% endif %}>Pricing</a>
         <a href="{{ url_for('contact') }}"{% if active == 'contact' %} class="active"{% endif %}>Contact</a>
-        <a href="{{ url_for('admin_login') }}"{% if active == 'login' %} class="active"{% endif %}>Sign In</a>
+        <a href="{{ url_for('login') }}"{% if active == 'client-login' %} class="active"{% endif %}>Client Login</a>
+        <a href="{{ url_for('admin_login') }}" style="font-size:0.85rem; color: var(--color-text-muted);"{% if active == 'login' %} class="active"{% endif %}>Admin</a>
         <a href="{{ url_for('signup') }}" class="btn btn-primary btn-small{% if active == 'signup' %} active{% endif %}">Get Started</a>
     </div>
 </div>
