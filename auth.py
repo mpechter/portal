@@ -541,3 +541,57 @@ def verify_magic_link(token: str):
     # Success
     clear_failed_attempts(org_id, email)
     return user, org
+
+
+def send_contact_email(name: str, email: str, message: str) -> bool:
+    """Send a contact form submission to info@airbud.app."""
+    import html
+    safe_name = html.escape(name)
+    safe_email = html.escape(email)
+    safe_message = html.escape(message).replace("\n", "<br>")
+
+    if Config.RESEND_API_KEY:
+        try:
+            resend.api_key = Config.RESEND_API_KEY
+            resend.Emails.send({
+                "from": Config.EMAIL_FROM,
+                "to": "info@airbud.app",
+                "reply_to": email,
+                "subject": f"Contact: {safe_name}",
+                "html": f"""
+                    <p><strong>From:</strong> {safe_name} &lt;{safe_email}&gt;</p>
+                    <p><strong>Message:</strong></p>
+                    <p>{safe_message}</p>
+                """,
+            })
+            return True
+        except Exception as e:
+            print(f"Error sending contact email: {e}", file=sys.stderr)
+            return False
+    else:
+        print(f"\nContact from {name} <{email}>:\n{message}\n", file=sys.stderr)
+        return True
+
+
+def send_signup_notification(org_name: str, admin_email: str, plan: str) -> None:
+    """Fire-and-forget notification to info@airbud.app when a new account is created."""
+    import html as _html
+    if not Config.RESEND_API_KEY:
+        return
+    try:
+        resend.api_key = Config.RESEND_API_KEY
+        resend.Emails.send({
+            "from": Config.EMAIL_FROM,
+            "to": "info@airbud.app",
+            "subject": f"New signup: {_html.escape(org_name)}",
+            "html": f"""
+                <p>A new Airbud account was just created.</p>
+                <ul>
+                    <li><strong>Org:</strong> {_html.escape(org_name)}</li>
+                    <li><strong>Email:</strong> {_html.escape(admin_email)}</li>
+                    <li><strong>Plan:</strong> {_html.escape(plan)}</li>
+                </ul>
+            """,
+        })
+    except Exception as e:
+        print(f"Error sending signup notification: {e}", file=sys.stderr)

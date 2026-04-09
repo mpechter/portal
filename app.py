@@ -10,7 +10,8 @@ from auth import (send_login_code, verify_login_code, verify_magic_link,
                   send_admin_reset_email, verify_admin_reset_token,
                   send_admin_email_verification, verify_admin_email_token,
                   generate_signup_token, verify_signup_token,
-                  send_signup_verification_email)
+                  send_signup_verification_email,
+                  send_contact_email, send_signup_notification)
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -122,6 +123,29 @@ def faq():
 def pricing():
     """Pricing page."""
     return render_template("pricing.html")
+
+
+@app.route("/contact", methods=["GET", "POST"])
+def contact():
+    """Contact form page."""
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip()
+        message = request.form.get("message", "").strip()
+
+        if not name or not email or not message:
+            flash("All fields are required.", "error")
+            return render_template("contact.html", name=name, email=email, message=message)
+
+        sent = send_contact_email(name, email, message)
+        if sent:
+            flash("Message sent! We'll get back to you soon.", "success")
+            return redirect(url_for("contact"))
+        else:
+            flash("Could not send your message. Please try again.", "error")
+            return render_template("contact.html", name=name, email=email, message=message)
+
+    return render_template("contact.html", name="", email="", message="")
 
 
 @app.route("/api/check-org-code")
@@ -1291,6 +1315,8 @@ def signup_setup():
 
         db.session.add(org)
         db.session.commit()
+
+        send_signup_notification(org.name, org.admin_email, plan)
 
         session.pop("pending_signup", None)
         session["admin_org_code"] = org.org_code

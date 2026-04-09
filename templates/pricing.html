@@ -40,7 +40,7 @@
             <li>Custom feature requests</li>
             <li>Onboarding assistance</li>
         </ul>
-        <a href="{{ feedback_url }}" target="_blank" rel="noopener" class="btn btn-pro" style="width: 100%; box-sizing: border-box;">Contact Us</a>
+        <a href="{{ url_for('contact') }}" class="btn btn-pro" style="width: 100%; box-sizing: border-box;">Contact Us</a>
     </div>
 </div>
 
@@ -49,7 +49,7 @@
     <p>We're happy to help you figure out if Airbud is right for your organization.</p>
     <div class="marketing-cta-actions">
         <a href="{{ url_for('signup') }}" class="btn btn-primary">Start Free Trial</a>
-        <a href="{{ feedback_url }}" target="_blank" rel="noopener" class="btn btn-secondary">Contact Us</a>
+        <a href="{{ url_for('contact') }}" class="btn btn-secondary">Contact Us</a>
     </div>
 </div>
 

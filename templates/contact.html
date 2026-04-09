@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "macros/marketing_nav.html" import marketing_nav %}
+
+{% block title %}Contact — Airbud{% endblock %}
+
+{% block content %}
+{{ marketing_nav('contact') }}
+
+<div class="marketing-hero">
+    <h1>Contact Us</h1>
+    <p>We'd love to hear from you.</p>
+</div>
+
+<div class="card centered" style="max-width: 520px;">
+    <form action="{{ url_for('contact') }}" method="post" class="form">
+        <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" value="{{ name }}" placeholder="Your name" required autofocus>
+        </div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" value="{{ email }}" placeholder="you@example.com" required>
+        </div>
+        <div class="form-group">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" rows="5" placeholder="How can we help?" required style="resize: vertical;">{{ message }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Send Message</button>
+    </form>
+</div>
+{% endblock %}
