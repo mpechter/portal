@@ -829,6 +829,7 @@ input[type="url"] {
 .feature-icon {
     font-size: 1.8rem;
     margin-bottom: 12px;
+    color: #4a90d9;
 }
 
 .feature-card h3 {
