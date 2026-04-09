@@ -18,6 +18,17 @@
     </nav>
 
     <div class="admin-content">
+
+        {% if org.pending_admin_email %}
+        <div style="background: #fff8e1; border: 1px solid #f5c518; border-radius: 6px; padding: 14px 16px; margin-bottom: 20px; font-size: 13px;">
+            <strong>Verification pending:</strong> A confirmation link was sent to
+            <strong>{{ org.pending_admin_email }}</strong>. Your admin email will not change until you click that link.
+            <form action="{{ url_for('admin_cancel_pending_email') }}" method="post" style="display:inline; margin-left: 12px;">
+                <button type="submit" class="btn-text" style="color: #c00;">Cancel</button>
+            </form>
+        </div>
+        {% endif %}
+
         <form id="settings-form" action="{{ url_for('admin_save_settings') }}" method="post" class="form">
 
             <h3>Organization</h3>
@@ -82,15 +93,6 @@
 
             <h3>Admin Account</h3>
 
-            {% if org.pending_admin_email %}
-            <div style="background: #fff8e1; border: 1px solid #f5c518; border-radius: 6px; padding: 14px 16px; margin-bottom: 20px; font-size: 13px;">
-                <strong>Verification pending:</strong> A confirmation link was sent to
-                <strong>{{ org.pending_admin_email }}</strong>. Your admin email will not change until you click that link.
-                <form action="{{ url_for('admin_cancel_pending_email') }}" method="post" style="display:inline; margin-left: 12px;">
-                    <button type="submit" class="btn-text" style="color: #c00;">Cancel</button>
-                </form>
-            </div>
-            {% endif %}
 
             <div class="form-group">
                 <label for="admin_email">Admin Email <span style="color:#c00; font-weight:600;">*</span></label>
