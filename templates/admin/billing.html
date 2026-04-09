@@ -6,7 +6,10 @@
 <div class="admin-dashboard">
     <div class="admin-header">
         <h1>Admin: {{ org.name }}</h1>
-        <a href="{{ url_for('admin_logout') }}" class="admin-logout">Logout</a>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <a href="{{ url_for('login', org=org.org_code) }}" target="_blank" rel="noopener" class="btn btn-primary btn-small">View Portal</a>
+            <a href="{{ url_for('admin_logout') }}" class="admin-logout">Logout</a>
+        </div>
     </div>
 
     <nav class="admin-tabs">
