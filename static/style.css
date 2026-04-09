@@ -1223,6 +1223,29 @@ input[type="url"] {
     color: var(--color-text-muted);
 }
 
+/* Trial banners */
+.trial-banner {
+    padding: 10px 20px;
+    font-size: 0.875rem;
+    text-align: center;
+    font-weight: 500;
+}
+
+.trial-banner a {
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+.trial-banner-warning {
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+}
+
+.trial-banner-expired {
+    background: var(--color-danger-bg);
+    color: var(--color-danger-text);
+}
+
 /* Billing admin */
 .billing-status {
     display: inline-flex;

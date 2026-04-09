@@ -176,6 +176,11 @@ def login():
             flash("This organization is not yet configured. Please contact your administrator.", "error")
             return render_template("login.html", org_code=org_code, email=email)
 
+        # Check if trial has expired
+        if org.trial_expired:
+            flash("This portal is not currently active. Please contact your administrator.", "error")
+            return render_template("login.html", org_code=org_code, email=email)
+
         # Check if locked out
         if is_locked_out(org.id, email):
             remaining = get_lockout_remaining(org.id, email)
@@ -335,6 +340,11 @@ def dashboard():
         logout_user()
         return redirect(url_for("login"))
 
+    if org.trial_expired:
+        logout_user()
+        flash("This portal is not currently active. Please contact your administrator.", "error")
+        return redirect(url_for("login"))
+
     client = get_client_for_org(org)
 
     # Get user's own profile data
@@ -378,6 +388,12 @@ def edit_record(record_id: str):
     if not org:
         logout_user()
         return redirect(url_for("login"))
+
+    if org.trial_expired:
+        logout_user()
+        flash("This portal is not currently active. Please contact your administrator.", "error")
+        return redirect(url_for("login"))
+
 
     client = get_client_for_org(org)
 
@@ -1353,6 +1369,7 @@ def signup_setup():
             session.pop("pending_signup", None)
             return redirect(url_for("signup"))
 
+        from datetime import datetime, timezone as _tz
         org = Organization(
             org_code=org_code,
             name=name,
@@ -1362,6 +1379,7 @@ def signup_setup():
             portal_title=f"{name} Portal",
             plan=plan,
             promo_code=valid_promo,
+            trial_started_at=datetime.now(_tz.utc) if plan == "trial" else None,
         )
         org.admin_password_hash = pending["password_hash"]
 
@@ -1400,6 +1418,7 @@ def migrate_db():
             "stripe_subscription_id": "VARCHAR(100)",
             "promo_code": "VARCHAR(100)",
             "pending_admin_email": "VARCHAR(255)",
+            "trial_started_at": "TIMESTAMP WITH TIME ZONE",
         }
         for col, col_def in new_cols.items():
             if col not in cols:

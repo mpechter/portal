@@ -40,6 +40,7 @@ class Organization(db.Model):
 
     # Billing / plan
     plan = db.Column(db.String(20), nullable=True)  # 'trial', 'active', 'suspended'
+    trial_started_at = db.Column(db.DateTime(timezone=True), nullable=True)
     stripe_customer_id = db.Column(db.String(100), nullable=True)
     stripe_subscription_id = db.Column(db.String(100), nullable=True)
     promo_code = db.Column(db.String(100), nullable=True)  # Code used to activate without payment
@@ -54,6 +55,29 @@ class Organization(db.Model):
     _field_annotations = db.Column("field_annotations", db.Text, default="{}")
 
     is_active = db.Column(db.Boolean, default=True)
+
+    TRIAL_DAYS = 7
+
+    @property
+    def trial_expired(self) -> bool:
+        """True if the org is on a trial that has passed 7 days."""
+        if self.plan != "trial":
+            return False
+        if self.trial_started_at is None:
+            return False
+        from datetime import datetime, timezone
+        return (datetime.now(timezone.utc) - self.trial_started_at).days >= self.TRIAL_DAYS
+
+    @property
+    def trial_days_remaining(self) -> int:
+        """Days left in the trial (0 if expired or no start date yet)."""
+        if self.plan != "trial":
+            return 0
+        if self.trial_started_at is None:
+            return self.TRIAL_DAYS
+        from datetime import datetime, timezone
+        elapsed = (datetime.now(timezone.utc) - self.trial_started_at).days
+        return max(0, self.TRIAL_DAYS - elapsed)
 
     def __repr__(self):
         return f"<Organization {self.org_code}: {self.name}>"

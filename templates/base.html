@@ -23,6 +23,18 @@
         </nav>
         {% endif %}
 
+        {% if org and org.plan == 'trial' %}
+        {% if org.trial_expired %}
+        <div class="trial-banner trial-banner-expired">
+            Trial expired — <a href="{{ url_for('admin_billing') }}">activate your account</a> to restore client access.
+        </div>
+        {% elif org.trial_days_remaining <= 2 %}
+        <div class="trial-banner trial-banner-warning">
+            {% if org.trial_days_remaining == 0 %}Trial expires today{% elif org.trial_days_remaining == 1 %}1 day left in your trial{% else %}{{ org.trial_days_remaining }} days left in your trial{% endif %} — <a href="{{ url_for('admin_billing') }}">activate now</a>.
+        </div>
+        {% endif %}
+        {% endif %}
+
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}

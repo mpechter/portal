@@ -39,8 +39,20 @@
         <p class="text-muted">Your subscription has lapsed. Reactivate below to restore client access.</p>
 
         {% else %}
+        {% if org.trial_expired %}
+        <div class="billing-status suspended">&#x26A0; Trial Expired</div>
+        <p class="text-muted">Your trial has ended. Client access is suspended until you activate.</p>
+        {% else %}
         <div class="billing-status trial">&#9654; Trial</div>
-        <p class="text-muted">You're on a free trial. Activate to ensure uninterrupted client access.</p>
+        {% set days = org.trial_days_remaining %}
+        {% if days == 0 %}
+        <p class="text-muted">Your trial expires <strong>today</strong>. Activate now to keep client access uninterrupted.</p>
+        {% elif days == 1 %}
+        <p class="text-muted"><strong>1 day remaining</strong> in your trial. Activate to keep client access uninterrupted.</p>
+        {% else %}
+        <p class="text-muted"><strong>{{ days }} days remaining</strong> in your trial. Activate before it ends to keep client access uninterrupted.</p>
+        {% endif %}
+        {% endif %}
         {% endif %}
 
         {% if org.plan != 'active' %}
