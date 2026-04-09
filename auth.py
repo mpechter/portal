@@ -430,6 +430,61 @@ def send_admin_email_verification(org, new_email: str, base_url: str) -> bool:
         return True
 
 
+def generate_signup_token(email: str, password_hash: str) -> str:
+    """Generate a signed token for email verification during signup."""
+    serializer = URLSafeTimedSerializer(Config.SECRET_KEY, salt="signup-verify")
+    return serializer.dumps({"email": email, "password_hash": password_hash})
+
+
+def verify_signup_token(token: str, max_age: int = 86400) -> dict | None:
+    """Verify a signup email verification token (24-hour expiry)."""
+    serializer = URLSafeTimedSerializer(Config.SECRET_KEY, salt="signup-verify")
+    try:
+        return serializer.loads(token, max_age=max_age)
+    except (BadSignature, SignatureExpired):
+        return None
+
+
+def send_signup_verification_email(email: str, token: str, base_url: str) -> bool:
+    """Send a verification link to confirm signup email."""
+    verify_link = f"{base_url}/signup/verify/{token}"
+
+    if Config.RESEND_API_KEY:
+        try:
+            resend.api_key = Config.RESEND_API_KEY
+            html_content = f"""
+                <h2>Verify your email for Airbud</h2>
+                <p>Click the button below to verify your email and continue setting up your portal:</p>
+                <p style="margin: 25px 0;">
+                    <a href="{verify_link}"
+                       style="background: #4a90d9; color: white; padding: 12px 24px;
+                              text-decoration: none; border-radius: 6px; font-weight: 500;">
+                        Verify Email &amp; Continue
+                    </a>
+                </p>
+                <p style="color: #666; font-size: 14px;">This link expires in 24 hours.</p>
+                <p style="color: #666; font-size: 12px;">
+                    If you didn't sign up for Airbud, you can safely ignore this email.
+                </p>
+            """
+            resend.Emails.send({
+                "from": Config.EMAIL_FROM,
+                "to": email,
+                "subject": "Verify your email for Airbud",
+                "html": html_content,
+            })
+            return True
+        except Exception as e:
+            print(f"Error sending signup verification: {e}", file=sys.stderr)
+            return False
+    else:
+        print("\n" + "=" * 60, file=sys.stderr)
+        print(f"Signup verification for {email}:", file=sys.stderr)
+        print(f"  Link: {verify_link}", file=sys.stderr)
+        print("=" * 60 + "\n", file=sys.stderr)
+        return True
+
+
 def verify_magic_link(token: str):
     """
     Verify a magic link token and return the user and org if valid.

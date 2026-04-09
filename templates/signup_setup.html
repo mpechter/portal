@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Set Up Your Portal — Airbud{% endblock %}
+
+{% block content %}
+<div class="card centered" style="max-width: 520px;">
+    <div style="margin-bottom: 20px;">
+        <span style="font-size: 12px; font-weight: 600; color: #4a90d9; text-transform: uppercase; letter-spacing: 0.5px;">Step 2 of 2</span>
+        <h1 style="margin-top: 6px;">Set up your portal</h1>
+        <p>Connect your Airtable base and you'll be live in minutes.</p>
+    </div>
+
+    <form action="{{ url_for('signup_setup') }}" method="post" class="form" id="setup-form">
+
+        <div class="form-group">
+            <label for="name">Organization Name</label>
+            <input type="text" id="name" name="name" value="{{ name }}"
+                   placeholder="e.g., Lincoln Elementary School" required autofocus>
+        </div>
+
+        <div class="form-group">
+            <label for="org_code">Organization Code</label>
+            <input type="text" id="org_code" name="org_code" value="{{ org_code }}"
+                   placeholder="e.g., LINCOLN" maxlength="20" style="text-transform: uppercase;"
+                   oninput="checkOrgCode(this.value)">
+            <p class="field-help" id="org-code-help">
+                Leave blank to auto-generate. Clients enter this to log in.
+            </p>
+            <p class="org-code-status" id="org-code-status"></p>
+        </div>
+
+        <div class="form-group">
+            <label for="promo_code">Promo Code <span class="text-muted" style="font-weight: normal;">(optional)</span></label>
+            <input type="text" id="promo_code" name="promo_code" value="{{ promo_code }}"
+                   placeholder="Enter code if you have one" style="text-transform: uppercase;">
+            <p class="field-help">Leave blank to start on a free trial.</p>
+        </div>
+
+        <hr style="margin: 25px 0; border: none; border-top: 1px solid #eee;">
+
+        <h3 style="margin-bottom: 5px; font-size: 1.1rem;">Airtable Connection</h3>
+
+        <details class="airtable-guide" style="margin-bottom: 18px;">
+            <summary style="cursor: pointer; color: #007bff; font-size: 0.9rem;">
+                How to create your Airtable token
+            </summary>
+            <div class="airtable-guide-content">
+                <ol>
+                    <li>Go to <a href="https://airtable.com/create/tokens" target="_blank">airtable.com/create/tokens</a></li>
+                    <li>Click <strong>Create new token</strong></li>
+                    <li>Under <strong>Scopes</strong>, add:
+                        <ul>
+                            <li><code>data.records:read</code></li>
+                            <li><code>data.records:write</code></li>
+                            <li><code>schema.bases:read</code></li>
+                        </ul>
+                    </li>
+                    <li>Under <strong>Access</strong>, add the specific base you want to connect</li>
+                    <li>Click <strong>Create token</strong> and copy it</li>
+                </ol>
+            </div>
+        </details>
+
+        <div class="form-group">
+            <label for="airtable_api_key">Airtable Personal Access Token</label>
+            <input type="password" id="airtable_api_key" name="airtable_api_key" placeholder="pat..." required>
+        </div>
+        <div class="form-group">
+            <label for="airtable_base_id">Airtable Base ID</label>
+            <input type="text" id="airtable_base_id" name="airtable_base_id"
+                   value="{{ airtable_base_id }}" placeholder="app..." required>
+            <p class="field-help">Found in your base URL: airtable.com/<strong>appXXXXXX</strong>/...</p>
+        </div>
+
+        <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+            Create Portal
+        </button>
+    </form>
+</div>
+
+<script>
+let checkTimeout = null;
+
+function checkOrgCode(value) {
+    const status = document.getElementById('org-code-status');
+    const code = value.trim().toUpperCase();
+
+    if (!code || code.length < 3) {
+        status.textContent = '';
+        return;
+    }
+
+    clearTimeout(checkTimeout);
+    checkTimeout = setTimeout(() => {
+        fetch('/api/check-org-code?code=' + encodeURIComponent(code))
+            .then(r => r.json())
+            .then(data => {
+                if (data.available) {
+                    status.textContent = '✓ Available';
+                    status.className = 'org-code-status org-code-available';
+                } else {
+                    status.textContent = '✗ Already taken';
+                    status.className = 'org-code-status org-code-taken';
+                }
+            })
+            .catch(() => { status.textContent = ''; });
+    }, 400);
+}
+
+(function() {
+    const form = document.getElementById('setup-form');
+    const btn = document.getElementById('submit-btn');
+    if (!form || !btn) return;
+    form.addEventListener('submit', function() {
+        btn.disabled = true;
+        btn.textContent = 'Creating…';
+    });
+})();
+</script>
+{% endblock %}

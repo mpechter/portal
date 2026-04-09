@@ -1,126 +1,99 @@
 {% extends "base.html" %}
 
-{% block title %}Get Started - Portal{% endblock %}
+{% block title %}Get Started — Airbud{% endblock %}
 
 {% block content %}
-<a href="{{ url_for('index') }}" class="back-link">← Back</a>
-<div class="card centered" style="max-width: 520px;">
-    <h1>Create your portal</h1>
-    <p>Connect your Airtable base and you'll be live in minutes.</p>
-    <form action="{{ url_for('signup') }}" method="post" class="form"
-          onsubmit="this.querySelector('button[type=submit]').disabled = true; this.querySelector('button[type=submit]').textContent = 'Creating...'">
+<div class="marketing-nav">
+    <a href="{{ url_for('index') }}" class="marketing-brand">Airbud</a>
+    <div class="marketing-nav-links">
+        <a href="{{ url_for('about') }}">About</a>
+        <a href="{{ url_for('faq') }}">FAQ</a>
+        <a href="{{ url_for('pricing') }}">Pricing</a>
+        <a href="{{ url_for('admin_login') }}">Sign In</a>
+    </div>
+</div>
+
+<div class="card centered" style="max-width: 460px;">
+    <div style="margin-bottom: 20px;">
+        <span style="font-size: 12px; font-weight: 600; color: #4a90d9; text-transform: uppercase; letter-spacing: 0.5px;">Step 1 of 2</span>
+        <h1 style="margin-top: 6px;">Create your account</h1>
+        <p>Enter your email and choose a password.</p>
+    </div>
+
+    <form action="{{ url_for('signup') }}" method="post" class="form" id="signup-form">
 
         <div class="form-group">
-            <label for="name">Organization Name</label>
-            <input type="text" id="name" name="name" value="{{ name }}"
-                   placeholder="e.g., Lincoln Elementary School" required autofocus>
-        </div>
-
-        <div class="form-group">
-            <label for="admin_email">Your Email</label>
+            <label for="admin_email">Email Address</label>
             <input type="email" id="admin_email" name="admin_email" value="{{ admin_email }}"
-                   placeholder="you@example.com" required>
-            <p class="field-help">Used for admin password recovery.</p>
+                   placeholder="you@example.com" required autofocus>
         </div>
-
-        <div class="form-group">
-            <label for="org_code">Organization Code</label>
-            <input type="text" id="org_code" name="org_code" value="{{ org_code }}"
-                   placeholder="e.g., LINCOLN" maxlength="20" style="text-transform: uppercase;"
-                   oninput="checkOrgCode(this.value)">
-            <p class="field-help" id="org-code-help">
-                Leave blank to auto-generate. Clients enter this to log in.
-            </p>
-            <p class="org-code-status" id="org-code-status"></p>
-        </div>
-
-        <hr style="margin: 25px 0; border: none; border-top: 1px solid #eee;">
-
-        <h3 style="margin-bottom: 5px; font-size: 1.1rem;">Airtable Connection</h3>
-
-        <details class="airtable-guide" style="margin-bottom: 18px;">
-            <summary style="cursor: pointer; color: #007bff; font-size: 0.9rem;">
-                How to create your Airtable token
-            </summary>
-            <div class="airtable-guide-content">
-                <ol>
-                    <li>Go to <a href="https://airtable.com/create/tokens" target="_blank">airtable.com/create/tokens</a></li>
-                    <li>Click <strong>Create new token</strong></li>
-                    <li>Under <strong>Scopes</strong>, add:
-                        <ul>
-                            <li><code>data.records:read</code></li>
-                            <li><code>data.records:write</code></li>
-                            <li><code>schema.bases:read</code></li>
-                        </ul>
-                    </li>
-                    <li>Under <strong>Access</strong>, add the specific base you want to connect</li>
-                    <li>Click <strong>Create token</strong> and copy it</li>
-                </ol>
-            </div>
-        </details>
-
-        <div class="form-group">
-            <label for="airtable_api_key">Airtable Personal Access Token</label>
-            <input type="password" id="airtable_api_key" name="airtable_api_key" placeholder="pat..." required>
-        </div>
-        <div class="form-group">
-            <label for="airtable_base_id">Airtable Base ID</label>
-            <input type="text" id="airtable_base_id" name="airtable_base_id"
-                   value="{{ airtable_base_id }}" placeholder="app..." required>
-            <p class="field-help">Found in your base URL: airtable.com/<strong>appXXXXXX</strong>/...</p>
-        </div>
-
-        <hr style="margin: 25px 0; border: none; border-top: 1px solid #eee;">
-
-        <h3 style="margin-bottom: 15px; font-size: 1.1rem;">Admin Password</h3>
 
         <div class="form-group">
             <label for="admin_password">Password</label>
             <input type="password" id="admin_password" name="admin_password"
                    placeholder="At least 6 characters" required>
         </div>
+
         <div class="form-group">
             <label for="admin_password_confirm">Confirm Password</label>
             <input type="password" id="admin_password_confirm" name="admin_password_confirm"
                    placeholder="Re-enter password" required>
+            <p id="password-match-msg" style="display:none; font-size: 13px; margin-top: 4px;"></p>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
-            Create Portal
+        <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+            Continue →
         </button>
     </form>
+
     <p class="text-muted" style="margin-top: 20px;">
-        Already have an account? <a href="{{ url_for('admin_login') }}">Admin Login</a>
+        Already have an account? <a href="{{ url_for('admin_login') }}">Sign in</a>
     </p>
 </div>
 
 <script>
-let checkTimeout = null;
+(function() {
+    const form = document.getElementById('signup-form');
+    const passwordInput = document.getElementById('admin_password');
+    const confirmInput = document.getElementById('admin_password_confirm');
+    const matchMsg = document.getElementById('password-match-msg');
+    const submitBtn = document.getElementById('submit-btn');
 
-function checkOrgCode(value) {
-    const status = document.getElementById('org-code-status');
-    const code = value.trim().toUpperCase();
-
-    if (!code || code.length < 3) {
-        status.textContent = '';
-        return;
+    function checkPasswordMatch() {
+        if (!confirmInput.value) {
+            matchMsg.style.display = 'none';
+            return;
+        }
+        if (passwordInput.value === confirmInput.value) {
+            matchMsg.textContent = 'Passwords match.';
+            matchMsg.style.color = '#2e7d32';
+            matchMsg.style.display = 'block';
+        } else {
+            matchMsg.textContent = 'Passwords do not match.';
+            matchMsg.style.color = '#c00';
+            matchMsg.style.display = 'block';
+        }
     }
 
-    clearTimeout(checkTimeout);
-    checkTimeout = setTimeout(() => {
-        fetch('/api/check-org-code?code=' + encodeURIComponent(code))
-            .then(r => r.json())
-            .then(data => {
-                if (data.available) {
-                    status.textContent = '✓ Available';
-                    status.className = 'org-code-status org-code-available';
-                } else {
-                    status.textContent = '✗ Already taken';
-                    status.className = 'org-code-status org-code-taken';
-                }
-            })
-            .catch(() => { status.textContent = ''; });
-    }, 400);
-}
+    if (confirmInput) confirmInput.addEventListener('input', checkPasswordMatch);
+    if (passwordInput) passwordInput.addEventListener('input', function() {
+        if (confirmInput.value) checkPasswordMatch();
+    });
+
+    if (form && submitBtn) {
+        form.addEventListener('submit', function(e) {
+            if (passwordInput.value !== confirmInput.value) {
+                e.preventDefault();
+                matchMsg.textContent = 'Passwords do not match.';
+                matchMsg.style.color = '#c00';
+                matchMsg.style.display = 'block';
+                confirmInput.focus();
+                return;
+            }
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending verification…';
+        });
+    }
+})();
 </script>
 {% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Check Your Email — Airbud{% endblock %}
+
+{% block content %}
+<div class="marketing-nav">
+    <a href="{{ url_for('index') }}" class="marketing-brand">Airbud</a>
+    <div class="marketing-nav-links">
+        <a href="{{ url_for('about') }}">About</a>
+        <a href="{{ url_for('faq') }}">FAQ</a>
+        <a href="{{ url_for('pricing') }}">Pricing</a>
+        <a href="{{ url_for('admin_login') }}">Sign In</a>
+    </div>
+</div>
+
+<div class="card centered" style="max-width: 460px; text-align: center;">
+    <div style="font-size: 48px; margin-bottom: 16px;">📬</div>
+    <h1>Check your email</h1>
+    <p>We sent a verification link to <strong>{{ email }}</strong>.</p>
+    <p class="text-muted" style="margin-top: 12px;">
+        Click the link in the email to continue setting up your portal.<br>
+        The link expires in 24 hours.
+    </p>
+    <p class="text-muted" style="margin-top: 20px; font-size: 13px;">
+        Wrong email? <a href="{{ url_for('signup') }}">Start over</a>
+    </p>
+</div>
+{% endblock %}

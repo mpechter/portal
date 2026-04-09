@@ -8,7 +8,9 @@ from airtable_client import get_client_for_org
 from auth import (send_login_code, verify_login_code, verify_magic_link,
                   is_locked_out, get_lockout_remaining,
                   send_admin_reset_email, verify_admin_reset_token,
-                  send_admin_email_verification, verify_admin_email_token)
+                  send_admin_email_verification, verify_admin_email_token,
+                  generate_signup_token, verify_signup_token,
+                  send_signup_verification_email)
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -1156,28 +1158,82 @@ def validate_airtable_credentials(api_key: str, base_id: str) -> tuple[bool, str
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
-    """Organization signup / get-started page."""
+    """Step 1: Create account — email + password, then send verification email."""
     if request.method == "POST":
-        # Get form values
-        name = request.form.get("name", "").strip()
+        from werkzeug.security import generate_password_hash
         admin_email = request.form.get("admin_email", "").strip().lower()
-        org_code = request.form.get("org_code", "").strip().upper()
-        airtable_api_key = request.form.get("airtable_api_key", "").strip()
-        airtable_base_id = request.form.get("airtable_base_id", "").strip()
         admin_password = request.form.get("admin_password", "").strip()
         admin_password_confirm = request.form.get("admin_password_confirm", "").strip()
 
-        # Validation
         errors = []
+        if not admin_email:
+            errors.append("Email is required.")
+        if not admin_password:
+            errors.append("Password is required.")
+        elif len(admin_password) < 6:
+            errors.append("Password must be at least 6 characters.")
+        elif admin_password != admin_password_confirm:
+            errors.append("Passwords do not match.")
 
+        if not errors:
+            if Organization.query.filter_by(admin_email=admin_email).first():
+                errors.append("An account with this email already exists.")
+
+        if errors:
+            for error in errors:
+                flash(error, "error")
+            return render_template("signup.html", admin_email=admin_email)
+
+        password_hash = generate_password_hash(admin_password)
+        token = generate_signup_token(admin_email, password_hash)
+        base_url = request.url_root.rstrip("/")
+        sent = send_signup_verification_email(admin_email, token, base_url)
+
+        if sent:
+            return render_template("signup_check_email.html", email=admin_email)
+        else:
+            flash("Could not send verification email. Please try again.", "error")
+            return render_template("signup.html", admin_email=admin_email)
+
+    return render_template("signup.html", admin_email="")
+
+
+@app.route("/signup/verify/<token>")
+def signup_verify(token):
+    """Verify the email token from the signup confirmation link."""
+    data = verify_signup_token(token)
+    if not data:
+        flash("This verification link has expired or is invalid.", "error")
+        return redirect(url_for("signup"))
+
+    # Store credentials in session so step 2 can use them
+    session["pending_signup"] = {
+        "email": data["email"],
+        "password_hash": data["password_hash"],
+    }
+    return redirect(url_for("signup_setup"))
+
+
+@app.route("/signup/setup", methods=["GET", "POST"])
+def signup_setup():
+    """Step 2: Set up the portal — org name, promo code, Airtable keys."""
+    pending = session.get("pending_signup")
+    if not pending:
+        flash("Please start signup from the beginning.", "error")
+        return redirect(url_for("signup"))
+
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        org_code = request.form.get("org_code", "").strip().upper()
+        promo_code = request.form.get("promo_code", "").strip().upper()
+        airtable_api_key = request.form.get("airtable_api_key", "").strip()
+        airtable_base_id = request.form.get("airtable_base_id", "").strip()
+
+        errors = []
         if not name:
             errors.append("Organization name is required.")
 
-        if not admin_email:
-            errors.append("Admin email is required.")
-
         if not org_code:
-            # Auto-generate if not provided
             org_code = generate_org_code(name) if name else ""
         elif len(org_code) < 3:
             errors.append("Org code must be at least 3 characters.")
@@ -1186,18 +1242,9 @@ def signup():
 
         if not airtable_api_key:
             errors.append("Airtable API key is required.")
-
         if not airtable_base_id:
             errors.append("Airtable Base ID is required.")
 
-        if not admin_password:
-            errors.append("Admin password is required.")
-        elif len(admin_password) < 6:
-            errors.append("Admin password must be at least 6 characters.")
-        elif admin_password != admin_password_confirm:
-            errors.append("Passwords do not match.")
-
-        # If basic validation passes, test Airtable connection (validates schema.bases:read)
         if not errors and airtable_api_key and airtable_base_id:
             is_valid, message = validate_airtable_credentials(airtable_api_key, airtable_base_id)
             if not is_valid:
@@ -1206,34 +1253,52 @@ def signup():
         if errors:
             for error in errors:
                 flash(error, "error")
-            return render_template("signup.html",
+            return render_template("signup_setup.html",
                                    name=name,
-                                   admin_email=admin_email,
                                    org_code=org_code,
-                                   airtable_base_id=airtable_base_id)
+                                   airtable_base_id=airtable_base_id,
+                                   promo_code=promo_code)
 
-        # Create the organization
+        # Determine plan
+        plan = "trial"
+        valid_promo = None
+        if promo_code:
+            valid_codes = {c.strip().upper() for c in (Config.PROMO_CODES or "").split(",") if c.strip()}
+            if promo_code in valid_codes:
+                plan = "active"
+                valid_promo = promo_code
+            else:
+                flash("Invalid promo code — your portal will start on a free trial.", "warning")
+
+        # Guard against duplicate email (race condition)
+        email = pending["email"]
+        if Organization.query.filter_by(admin_email=email).first():
+            flash("An account with this email already exists.", "error")
+            session.pop("pending_signup", None)
+            return redirect(url_for("signup"))
+
         org = Organization(
             org_code=org_code,
             name=name,
-            admin_email=admin_email,
+            admin_email=email,
             airtable_api_key=airtable_api_key,
             airtable_base_id=airtable_base_id,
             portal_title=f"{name} Portal",
-            plan="trial",
+            plan=plan,
+            promo_code=valid_promo,
         )
-        org.set_admin_password(admin_password)
+        org.admin_password_hash = pending["password_hash"]
 
         db.session.add(org)
         db.session.commit()
 
-        # Log them into admin
+        session.pop("pending_signup", None)
         session["admin_org_code"] = org.org_code
 
-        flash(f"Organization '{org_code}' created! Now let's connect your tables.", "success")
+        flash("Portal created! Now let's connect your tables.", "success")
         return redirect(url_for("admin_tables"))
 
-    return render_template("signup.html", name="", admin_email="", org_code="", airtable_base_id="")
+    return render_template("signup_setup.html", name="", org_code="", airtable_base_id="", promo_code="")
 
 
 @app.cli.command("init-db")

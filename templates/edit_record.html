@@ -137,6 +137,9 @@
     if (discardBtn) {
         discardBtn.addEventListener('click', discardChanges);
     }
+
+    // Run on load to handle browser autofill
+    checkForChanges();
 })();
 </script>
 {% endblock %}

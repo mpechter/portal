@@ -121,6 +121,7 @@
             <div class="form-group" id="confirm-password-group" style="display: none;">
                 <label for="new_password_confirm">Confirm New Password</label>
                 <input type="password" id="new_password_confirm" name="new_password_confirm" class="form-input" autocomplete="new-password">
+                <p id="password-match-msg" style="display:none; font-size: 13px; margin-top: 4px;"></p>
             </div>
 
             <div class="form-actions">
@@ -175,13 +176,41 @@ function togglePassword(fieldId) {
         input.addEventListener('input', checkForChanges);
     });
 
-    // Show confirm field when password is entered
+    // Run on load to handle browser autofill
+    checkForChanges();
+
+    // Show confirm field when password is entered, with match validation
     const newPasswordInput = document.getElementById('new_password');
     const confirmGroup = document.getElementById('confirm-password-group');
+    const confirmInput = document.getElementById('new_password_confirm');
+    const matchMsg = document.getElementById('password-match-msg');
+
+    function checkPasswordMatch() {
+        if (!confirmInput || !matchMsg || !newPasswordInput.value) return;
+        if (!confirmInput.value) {
+            matchMsg.style.display = 'none';
+            return;
+        }
+        if (newPasswordInput.value === confirmInput.value) {
+            matchMsg.textContent = 'Passwords match.';
+            matchMsg.style.color = '#2e7d32';
+            matchMsg.style.display = 'block';
+        } else {
+            matchMsg.textContent = 'Passwords do not match.';
+            matchMsg.style.color = '#c00';
+            matchMsg.style.display = 'block';
+        }
+    }
+
     if (newPasswordInput && confirmGroup) {
         newPasswordInput.addEventListener('input', function() {
             confirmGroup.style.display = this.value ? 'block' : 'none';
+            if (!this.value && matchMsg) matchMsg.style.display = 'none';
+            checkPasswordMatch();
         });
+        if (confirmInput) {
+            confirmInput.addEventListener('input', checkPasswordMatch);
+        }
     }
 
     if (discardBtn) {

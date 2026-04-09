@@ -1,9 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Login{% endblock %}
+{% block title %}Admin Login — Airbud{% endblock %}
 
 {% block content %}
-<a href="{{ url_for('index') }}" class="back-link">← Back to Portal</a>
+<div class="marketing-nav">
+    <a href="{{ url_for('index') }}" class="marketing-brand">Airbud</a>
+    <div class="marketing-nav-links">
+        <a href="{{ url_for('about') }}">About</a>
+        <a href="{{ url_for('faq') }}">FAQ</a>
+        <a href="{{ url_for('pricing') }}">Pricing</a>
+        <a href="{{ url_for('signup') }}" class="btn btn-primary btn-small">Get Started</a>
+    </div>
+</div>
 <div class="card centered">
     <h1>Admin Login</h1>
     <p>Enter your organization code and admin password.</p>
@@ -22,6 +30,9 @@
         <a href="{{ url_for('admin_forgot_password', org=org_code) if org_code else url_for('admin_forgot_password') }}">
             Forgot password?
         </a>
+    </p>
+    <p class="text-muted" style="margin-top: 10px;">
+        Don't have an account? <a href="{{ url_for('signup') }}">Get started</a>
     </p>
 </div>
 <script>
