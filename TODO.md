@@ -2,17 +2,31 @@
 
 ## Next Up
 
-1. Implement trial period logic
+- **Organization logos (upload)**
+  - Currently supports logo via URL
+  - Future: Allow admins to upload directly
+  - Would need cloud storage (S3, Cloudflare R2, etc.)
 
-3. **Organization logos (upload)**
-   - Currently supports logo via URL
-   - Future: Allow admins to upload directly
-   - Would need cloud storage (S3, Cloudflare R2, etc.)
+- **Database backups**
+  - Set up nightly pg_dump to object storage (S3 or Backblaze B2)
 
 ---
 
 ## Completed Features
 
+- 7-day trial countdown with expiry enforcement (client portal deactivated, admin access preserved)
+- Admin priority support form (emails info@airbud.app with org context)
+- Contact form at /contact (sends to info@airbud.app via Resend)
+- Signup notification email to info@airbud.app on new account creation
+- Pro pricing tier with purple styling and "All features of Starter"
+- CSS custom properties for all design tokens
+- SVG Heroicons replacing emoji feature icons
+- Marketing nav extracted to reusable Jinja2 macro
+- Database favicon (SVG cylinder)
+- Stripe billing integration with checkout and customer portal
+- Admin email change with verification flow
+- Admin password reset via email
+- Field annotations (custom labels visible to clients)
 - Field discovery uses schema API (all fields appear even if empty)
 - Login codes stored securely in Postgres (hashed), not Airtable
 - Rate limiting persisted in Postgres (works across server instances)
@@ -36,7 +50,7 @@
 - README with setup instructions
 - Multi-tenant org support with org codes
 - 6-digit login codes + magic links via Resend
-- Admin panel with 3 tabs: Settings, Tables, Fields
+- Admin panel with tabs: Settings, Tables, Fields, Billing, Support
 - Table selection from Airtable base schema
 - Optional linked records (parent → child relationship)
 - Field permissions: Editable / Read-only / Hidden
