@@ -5,12 +5,8 @@
         <a href="{{ url_for('about') }}"{% if active == 'about' %} class="active"{% endif %}>About</a>
         <a href="{{ url_for('faq') }}"{% if active == 'faq' %} class="active"{% endif %}>FAQ</a>
         <a href="{{ url_for('pricing') }}"{% if active == 'pricing' %} class="active"{% endif %}>Pricing</a>
-        {% if active != 'login' %}
-        <a href="{{ url_for('admin_login') }}">Sign In</a>
-        {% endif %}
-        {% if active != 'signup' %}
-        <a href="{{ url_for('signup') }}" class="btn btn-primary btn-small">Get Started</a>
-        {% endif %}
+        <a href="{{ url_for('admin_login') }}"{% if active == 'login' %} class="active"{% endif %}>Sign In</a>
+        <a href="{{ url_for('signup') }}" class="btn btn-primary btn-small{% if active == 'signup' %} active{% endif %}">Get Started</a>
     </div>
 </div>
 {% endmacro %}
