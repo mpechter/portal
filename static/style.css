@@ -1164,6 +1164,51 @@ input[type="url"] {
     flex-shrink: 0;
 }
 
+/* Pro tier — purple accent */
+.pricing-card.pro {
+    border: 2px solid #7c3aed;
+    background: linear-gradient(160deg, #faf5ff 0%, var(--color-white) 40%);
+}
+
+.pricing-card.pro .pricing-tier {
+    color: #7c3aed;
+}
+
+.pricing-card.pro .pricing-price {
+    color: #5b21b6;
+}
+
+.pricing-features-inherit {
+    font-weight: 600;
+    color: #7c3aed !important;
+}
+
+.pricing-features-inherit::before {
+    content: "★" !important;
+    color: #7c3aed !important;
+}
+
+.btn-pro {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border-radius: var(--radius);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    transition: background 0.15s, transform 0.1s;
+    background: #7c3aed;
+    color: #fff;
+}
+
+.btn-pro:hover {
+    background: #6d28d9;
+}
+
 .pricing-footnote {
     max-width: 680px;
     margin: 0 auto 48px;
