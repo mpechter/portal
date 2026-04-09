@@ -1,18 +1,10 @@
 {% extends "base.html" %}
+{% from "macros/marketing_nav.html" import marketing_nav %}
 
 {% block title %}Airbud — Simple Client Portal for Airtable{% endblock %}
 
 {% block content %}
-<div class="marketing-nav">
-    <a href="{{ url_for('index') }}" class="marketing-brand">Airbud</a>
-    <div class="marketing-nav-links">
-        <a href="{{ url_for('about') }}">About</a>
-        <a href="{{ url_for('faq') }}">FAQ</a>
-        <a href="{{ url_for('pricing') }}">Pricing</a>
-        <a href="{{ url_for('admin_login') }}">Sign In</a>
-        <a href="{{ url_for('signup') }}" class="btn btn-primary btn-small">Get Started</a>
-    </div>
-</div>
+{{ marketing_nav() }}
 
 <div class="marketing-hero">
     <h1>A simple client portal for Airtable</h1>

@@ -1,17 +1,10 @@
 {% extends "base.html" %}
+{% from "macros/marketing_nav.html" import marketing_nav %}
 
 {% block title %}Get Started — Airbud{% endblock %}
 
 {% block content %}
-<div class="marketing-nav">
-    <a href="{{ url_for('index') }}" class="marketing-brand">Airbud</a>
-    <div class="marketing-nav-links">
-        <a href="{{ url_for('about') }}">About</a>
-        <a href="{{ url_for('faq') }}">FAQ</a>
-        <a href="{{ url_for('pricing') }}">Pricing</a>
-        <a href="{{ url_for('admin_login') }}">Sign In</a>
-    </div>
-</div>
+{{ marketing_nav('signup') }}
 
 <div class="card centered" style="max-width: 460px;">
     <div style="margin-bottom: 20px;">
