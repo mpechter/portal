@@ -870,6 +870,58 @@ def admin_save_fields():
     return redirect(url_for("admin_fields"))
 
 
+# --- Support Route ---
+
+
+@app.route("/admin/support", methods=["GET", "POST"])
+@admin_required
+def admin_support():
+    """Priority support form for admin users."""
+    org = Organization.get_by_code(session["admin_org_code"])
+    if not org:
+        session.pop("admin_org_code", None)
+        return redirect(url_for("admin_login"))
+
+    if request.method == "POST":
+        message = request.form.get("message", "").strip()
+        if not message:
+            flash("Please enter a message.", "error")
+            return render_template("admin/support.html", org=org, message="")
+
+        import html as _html
+        import resend as _resend
+        from config import Config
+        if Config.RESEND_API_KEY:
+            try:
+                _resend.api_key = Config.RESEND_API_KEY
+                _resend.Emails.send({
+                    "from": Config.EMAIL_FROM,
+                    "to": "info@airbud.app",
+                    "reply_to": org.admin_email,
+                    "subject": f"PRIORITY SUPPORT: {_html.escape(org.name)}",
+                    "html": f"""
+                        <p><strong>⚡ Priority Support Request</strong></p>
+                        <ul>
+                            <li><strong>Org:</strong> {_html.escape(org.name)} ({_html.escape(org.org_code)})</li>
+                            <li><strong>Email:</strong> {_html.escape(org.admin_email)}</li>
+                            <li><strong>Plan:</strong> {_html.escape(org.plan or 'unknown')}</li>
+                        </ul>
+                        <p><strong>Message:</strong></p>
+                        <p>{_html.escape(message).replace(chr(10), '<br>')}</p>
+                    """,
+                })
+                flash("Message sent! We'll be in touch shortly.", "success")
+                return redirect(url_for("admin_support"))
+            except Exception as e:
+                import sys
+                print(f"Error sending support email: {e}", file=sys.stderr)
+                flash("Could not send your message. Please try again.", "error")
+        else:
+            flash("Support email is not configured.", "error")
+
+    return render_template("admin/support.html", org=org, message="")
+
+
 # --- Billing Routes ---
 
 
