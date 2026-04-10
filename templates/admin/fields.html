@@ -56,13 +56,14 @@
             </thead>
             <tbody>
                 {% for field_name in user_fields %}
+                {% set is_computed = field_name in computed_user_fields %}
                 {% set current = user_field_config.get(field_name, 'hidden') %}
                 {% set annotation = user_annotations.get(field_name, '') %}
-                {% set is_computed = field_name in computed_user_fields %}
                 <tr data-user-field-name="{{ field_name }}" {% if (org.email_field or 'Email') == field_name %}style="display: none;"{% endif %}>
                     <td>
                         <strong>{{ field_name }}</strong>
-                        {% if is_computed %}<span class="field-type-badge">formula</span>{% endif %}
+                        {% if field_name in link_user_fields %}<span class="field-type-badge">link</span>
+                        {% elif is_computed %}<span class="field-type-badge">formula</span>{% endif %}
                     </td>
                     <td>
                         <input type="text"
@@ -159,13 +160,14 @@
             </thead>
             <tbody>
                 {% for field_name in record_fields %}
-                {% set current = record_field_config.get(field_name, 'editable') %}
-                {% set annotation = record_annotations.get(field_name, '') %}
                 {% set is_computed = field_name in computed_record_fields %}
+                {% set current = record_field_config.get(field_name, 'hidden' if is_computed else 'editable') %}
+                {% set annotation = record_annotations.get(field_name, '') %}
                 <tr data-field-name="{{ field_name }}" {% if org.confirmation_field == field_name %}style="display: none;"{% endif %}>
                     <td>
                         <strong>{{ field_name }}</strong>
-                        {% if is_computed %}<span class="field-type-badge">formula</span>{% endif %}
+                        {% if field_name in link_record_fields %}<span class="field-type-badge">link</span>
+                        {% elif is_computed %}<span class="field-type-badge">formula</span>{% endif %}
                     </td>
                     <td>
                         <input type="text"

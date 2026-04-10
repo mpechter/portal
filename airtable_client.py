@@ -12,6 +12,7 @@ COMPUTED_FIELD_TYPES = frozenset({
     "rollup",
     "count",
     "multipleLookupValues",
+    "multipleRecordLinks",
     "autoNumber",
     "createdTime",
     "lastModifiedTime",
@@ -19,6 +20,9 @@ COMPUTED_FIELD_TYPES = frozenset({
     "lastModifiedBy",
     "button",
 })
+
+# Subset of computed types that are link fields (shown with "link" badge in admin UI)
+LINK_FIELD_TYPES = frozenset({"multipleRecordLinks"})
 
 
 class AirtableClient:
@@ -235,32 +239,14 @@ class AirtableClient:
         table_info = self.get_table_by_name(self.org.records_table)
         if not table_info:
             return []
-
-        field_names = set()
-        for field in table_info.get("fields", []):
-            field_names.add(field["name"])
-
-        # Remove link fields that shouldn't be configured by users
-        for field in table_info.get("linked_fields", []):
-            field_names.discard(field["name"])
-
-        return sorted(field_names)
+        return sorted(field["name"] for field in table_info.get("fields", []))
 
     def get_all_user_fields(self) -> list:
         """Get all field names from the Users table using schema API."""
         table_info = self.get_table_by_name(self.org.users_table)
         if not table_info:
             return []
-
-        field_names = set()
-        for field in table_info.get("fields", []):
-            field_names.add(field["name"])
-
-        # Remove linked record fields (editing these could break relationships)
-        for field in table_info.get("linked_fields", []):
-            field_names.discard(field["name"])
-
-        return sorted(field_names)
+        return sorted(field["name"] for field in table_info.get("fields", []))
 
     def update_user(self, user_id: str, fields: dict):
         """Update a user record with the provided fields."""

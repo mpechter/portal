@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from config import Config
 from models import db, Organization, LoginAttempt, LoginCode
-from airtable_client import get_client_for_org, COMPUTED_FIELD_TYPES
+from airtable_client import get_client_for_org, COMPUTED_FIELD_TYPES, LINK_FIELD_TYPES
 from auth import (send_login_code, verify_login_code, verify_magic_link,
                   is_locked_out, get_lockout_remaining,
                   send_admin_reset_email, verify_admin_reset_token,
@@ -351,16 +351,9 @@ def dashboard():
     user_data = client.get_user_by_id(current_user.user_id)
     user_fields = user_data.get("fields", {}) if user_data else {}
 
-    # Get linked field names to exclude from display
-    linked_field_names = set()
-    users_table_info = client.get_table_by_name(org.users_table)
-    if users_table_info:
-        for field in users_table_info.get("linked_fields", []):
-            linked_field_names.add(field["name"])
-
-    # Get field permissions for user profile, excluding link fields
-    user_editable_fields = [f for f in org.get_user_editable_fields() if f not in linked_field_names]
-    user_readonly_fields = [f for f in org.get_user_readonly_fields() if f not in linked_field_names]
+    # Get field permissions for user profile
+    user_editable_fields = org.get_user_editable_fields()
+    user_readonly_fields = org.get_user_readonly_fields()
     has_profile_fields = bool(user_editable_fields or user_readonly_fields)
 
     # Get linked records (only if configured)
@@ -493,16 +486,9 @@ def edit_profile():
     if not user_data:
         abort(404)
 
-    # Get linked field names to exclude from display
-    linked_field_names = set()
-    users_table_info = client.get_table_by_name(org.users_table)
-    if users_table_info:
-        for field in users_table_info.get("linked_fields", []):
-            linked_field_names.add(field["name"])
-
-    # Get field permissions for user profile, excluding link fields
-    editable_fields = [f for f in org.get_user_editable_fields() if f not in linked_field_names]
-    readonly_fields = [f for f in org.get_user_readonly_fields() if f not in linked_field_names]
+    # Get field permissions for user profile
+    editable_fields = org.get_user_editable_fields()
+    readonly_fields = org.get_user_readonly_fields()
 
     # Get field metadata for type-aware rendering
     all_fields = editable_fields + readonly_fields
@@ -794,13 +780,16 @@ def admin_fields():
     user_fields = client.get_all_user_fields()
     record_fields = client.get_all_record_fields() if org.has_linked_records else []
 
-    # Identify computed/formula fields that can't be made editable
+    # Identify computed/formula and link fields that can't be made editable
     computed_user_fields = client.get_computed_field_names(org.users_table)
     computed_record_fields = client.get_computed_field_names(org.records_table) if org.has_linked_records else set()
 
+    users_table_schema = client.get_table_by_name(org.users_table)
+    link_user_fields = {f["name"] for f in (users_table_schema or {}).get("linked_fields", [])}
+    link_record_fields = set()
+
     # Get fields suitable as an email field (email type or plain text)
     email_fields = []
-    users_table_schema = client.get_table_by_name(org.users_table)
     if users_table_schema:
         for field in users_table_schema.get("fields", []):
             if field.get("type") in ("email", "singleLineText"):
@@ -811,6 +800,7 @@ def admin_fields():
     if org.has_linked_records:
         table_schema = client.get_table_by_name(org.records_table)
         if table_schema:
+            link_record_fields = {f["name"] for f in table_schema.get("linked_fields", [])}
             for field in table_schema.get("fields", []):
                 if field.get("type") == "singleSelect":
                     select_fields[field["name"]] = field.get("options", [])
@@ -833,6 +823,8 @@ def admin_fields():
         record_annotations=record_annotations,
         computed_user_fields=computed_user_fields,
         computed_record_fields=computed_record_fields,
+        link_user_fields=link_user_fields,
+        link_record_fields=link_record_fields,
     )
 
 

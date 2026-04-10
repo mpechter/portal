@@ -180,32 +180,14 @@ class DemoAirtableClient:
         table_info = self.get_table_by_name("Students")
         if not table_info:
             return []
-
-        field_names = set()
-        for field in table_info.get("fields", []):
-            field_names.add(field["name"])
-
-        # Remove link fields
-        for field in table_info.get("linked_fields", []):
-            field_names.discard(field["name"])
-
-        return sorted(field_names)
+        return sorted(field["name"] for field in table_info.get("fields", []))
 
     def get_all_user_fields(self) -> list:
         """Get all field names from the demo Users table using schema."""
         table_info = self.get_table_by_name("Parents")
         if not table_info:
             return []
-
-        field_names = set()
-        for field in table_info.get("fields", []):
-            field_names.add(field["name"])
-
-        # Remove link fields
-        for field in table_info.get("linked_fields", []):
-            field_names.discard(field["name"])
-
-        return sorted(field_names)
+        return sorted(field["name"] for field in table_info.get("fields", []))
 
     def get_computed_field_names(self, table_name: str) -> set:
         """Return computed field names (none in demo data)."""
