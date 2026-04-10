@@ -1,12 +1,14 @@
+import hmac
 import time
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, flash, session, abort, jsonify
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from config import Config
 from models import db, Organization, LoginAttempt, LoginCode
-from airtable_client import get_client_for_org
+from airtable_client import get_client_for_org, COMPUTED_FIELD_TYPES
 from auth import (send_login_code, verify_login_code, verify_magic_link,
                   is_locked_out, get_lockout_remaining,
+                  record_failed_attempt, clear_failed_attempts,
                   send_admin_reset_email, verify_admin_reset_token,
                   send_admin_email_verification, verify_admin_email_token,
                   generate_signup_token, verify_signup_token,
@@ -93,6 +95,41 @@ def admin_required(f):
             return redirect(url_for("admin_login"))
         return f(*args, **kwargs)
     return decorated_function
+
+
+# --- Shared Helpers ---
+
+
+def _build_field_updates(editable_fields: list, field_metadata: dict, form) -> dict:
+    """Build an Airtable update dict from submitted form data.
+
+    Skips computed/formula fields that Airtable won't accept writes to.
+    """
+    updates = {}
+    for field_name in editable_fields:
+        field_type = field_metadata.get(field_name, {}).get("type", "singleLineText")
+        if field_type in COMPUTED_FIELD_TYPES:
+            continue
+        if field_type == "checkbox":
+            updates[field_name] = field_name in form
+        elif field_type == "multipleSelects":
+            updates[field_name] = form.getlist(field_name)
+        else:
+            form_value = form.get(field_name)
+            if form_value is not None:
+                if form_value == "" and field_type in ("number", "date"):
+                    updates[field_name] = None
+                else:
+                    updates[field_name] = form_value
+    return updates
+
+
+def _get_admin_org():
+    """Get the current admin's organization, clearing the session if not found."""
+    org = Organization.get_by_code(session.get("admin_org_code", ""))
+    if not org:
+        session.pop("admin_org_code", None)
+    return org
 
 
 # --- User Routes ---
@@ -380,24 +417,7 @@ def edit_record(record_id: str):
 
     if request.method == "POST":
         # Build update dict with only editable fields
-        updates = {}
-        for field_name in editable_fields:
-            field_type = field_metadata.get(field_name, {}).get("type", "singleLineText")
-
-            # Handle checkbox fields specially
-            if field_type == "checkbox":
-                updates[field_name] = field_name in request.form
-            # Handle multi-select fields (multiple values with same name)
-            elif field_type == "multipleSelects":
-                updates[field_name] = request.form.getlist(field_name)
-            else:
-                form_value = request.form.get(field_name)
-                if form_value is not None:
-                    # Convert empty strings to None for certain field types
-                    if form_value == "" and field_type in ("number", "date"):
-                        updates[field_name] = None
-                    else:
-                        updates[field_name] = form_value
+        updates = _build_field_updates(editable_fields, field_metadata, request.form)
 
         # Handle data confirmation
         data_confirmed = False
@@ -466,24 +486,7 @@ def edit_profile():
 
     if request.method == "POST":
         # Build update dict with only editable fields
-        updates = {}
-        for field_name in editable_fields:
-            field_type = field_metadata.get(field_name, {}).get("type", "singleLineText")
-
-            # Handle checkbox fields specially
-            if field_type == "checkbox":
-                updates[field_name] = field_name in request.form
-            # Handle multi-select fields (multiple values with same name)
-            elif field_type == "multipleSelects":
-                updates[field_name] = request.form.getlist(field_name)
-            else:
-                form_value = request.form.get(field_name)
-                if form_value is not None:
-                    # Convert empty strings to None for certain field types
-                    if form_value == "" and field_type in ("number", "date"):
-                        updates[field_name] = None
-                    else:
-                        updates[field_name] = form_value
+        updates = _build_field_updates(editable_fields, field_metadata, request.form)
 
         if updates:
             client.update_user(current_user.user_id, updates)
@@ -524,11 +527,20 @@ def admin_login():
             flash("Admin access not configured for this organization.", "error")
             return render_template("admin/login.html", org_code=org_code)
 
+        # Rate-limit admin login attempts by org_id + a fixed sentinel email
+        _admin_sentinel = "__admin__"
+        if is_locked_out(org.id, _admin_sentinel):
+            remaining = get_lockout_remaining(org.id, _admin_sentinel)
+            flash(f"Too many failed attempts. Try again in {remaining // 60 + 1} minute(s).", "error")
+            return render_template("admin/login.html", org_code=org_code)
+
         if not org.check_admin_password(password):
+            record_failed_attempt(org.id, _admin_sentinel)
             flash("Invalid password.", "error")
             return render_template("admin/login.html", org_code=org_code)
 
-        # Success - store admin session
+        # Success
+        clear_failed_attempts(org.id, _admin_sentinel)
         session["admin_org_code"] = org.org_code
         flash("Logged in as admin.", "success")
         return redirect(url_for("admin_dashboard"))
@@ -549,9 +561,8 @@ def admin_logout():
 @admin_required
 def admin_dashboard():
     """Admin dashboard - redirect to appropriate page."""
-    org = Organization.get_by_code(session["admin_org_code"])
+    org = _get_admin_org()
     if not org:
-        session.pop("admin_org_code", None)
         return redirect(url_for("admin_login"))
 
     # If tables not configured, redirect to table setup
@@ -565,9 +576,8 @@ def admin_dashboard():
 @admin_required
 def admin_settings():
     """Admin settings page - basic configuration."""
-    org = Organization.get_by_code(session["admin_org_code"])
+    org = _get_admin_org()
     if not org:
-        session.pop("admin_org_code", None)
         return redirect(url_for("admin_login"))
 
     return render_template("admin/settings.html", org=org)
@@ -577,7 +587,7 @@ def admin_settings():
 @admin_required
 def admin_save_settings():
     """Save admin settings."""
-    org = Organization.get_by_code(session["admin_org_code"])
+    org = _get_admin_org()
     if not org:
         return redirect(url_for("admin_login"))
 
@@ -592,20 +602,26 @@ def admin_save_settings():
         flash("Organization name is required.", "error")
         return redirect(url_for("admin_settings"))
 
-    if not airtable_api_key or not airtable_base_id:
+    if logo_url and not logo_url.startswith("https://"):
+        flash("Logo URL must start with https://", "error")
+        return redirect(url_for("admin_settings"))
+
+    if not airtable_base_id or (not airtable_api_key and not org.airtable_api_key):
         flash("Airtable API key and Base ID are required.", "error")
         return redirect(url_for("admin_settings"))
 
     # Check if Airtable credentials changed - if so, clear table config
     credentials_changed = (
-        airtable_api_key != org.airtable_api_key or
+        (airtable_api_key and airtable_api_key != org.airtable_api_key) or
         airtable_base_id != org.airtable_base_id
     )
 
     org.name = name
     org.portal_title = portal_title or "Portal"
     org.logo_url = logo_url
-    org.airtable_api_key = airtable_api_key
+    # Only update API key if a new one was provided (don't overwrite with empty)
+    if airtable_api_key:
+        org.airtable_api_key = airtable_api_key
     org.airtable_base_id = airtable_base_id
 
     if credentials_changed:
@@ -660,9 +676,8 @@ def admin_save_settings():
 @admin_required
 def admin_tables():
     """Admin table configuration page."""
-    org = Organization.get_by_code(session["admin_org_code"])
+    org = _get_admin_org()
     if not org:
-        session.pop("admin_org_code", None)
         return redirect(url_for("admin_login"))
 
     client = get_client_for_org(org)
@@ -679,7 +694,7 @@ def admin_tables():
 @admin_required
 def admin_save_tables():
     """Save table configuration."""
-    org = Organization.get_by_code(session["admin_org_code"])
+    org = _get_admin_org()
     if not org:
         return redirect(url_for("admin_login"))
 
@@ -732,9 +747,8 @@ def admin_save_tables():
 @admin_required
 def admin_fields():
     """Admin field configuration page."""
-    org = Organization.get_by_code(session["admin_org_code"])
+    org = _get_admin_org()
     if not org:
-        session.pop("admin_org_code", None)
         return redirect(url_for("admin_login"))
 
     # If tables not configured, redirect to table setup
@@ -786,7 +800,7 @@ def admin_fields():
 @admin_required
 def admin_save_fields():
     """Save field configuration."""
-    org = Organization.get_by_code(session["admin_org_code"])
+    org = _get_admin_org()
     if not org:
         return redirect(url_for("admin_login"))
 
@@ -853,7 +867,7 @@ def admin_save_fields():
 @admin_required
 def admin_billing():
     """Admin billing page."""
-    org = Organization.get_by_code(session["admin_org_code"])
+    org = _get_admin_org()
     if not org:
         return redirect(url_for("admin_login"))
     stripe_enabled = bool(Config.STRIPE_SECRET_KEY and Config.STRIPE_PRICE_ID)
@@ -865,7 +879,7 @@ def admin_billing():
 def admin_create_checkout():
     """Start a Stripe Checkout session for the base plan."""
     import stripe as stripe_lib
-    org = Organization.get_by_code(session["admin_org_code"])
+    org = _get_admin_org()
     if not org:
         return redirect(url_for("admin_login"))
 
@@ -889,8 +903,12 @@ def admin_create_checkout():
 @app.route("/admin/billing/success")
 @admin_required
 def admin_billing_success():
-    """Stripe redirects here after successful checkout."""
-    flash("Subscription activated! Your portal is now fully active.", "success")
+    """Stripe redirects here after successful checkout.
+
+    Plan activation is handled exclusively by the Stripe webhook (/stripe/webhook).
+    This route only acknowledges the redirect.
+    """
+    flash("Payment received — your subscription is being activated.", "info")
     return redirect(url_for("admin_billing"))
 
 
@@ -899,7 +917,7 @@ def admin_billing_success():
 def admin_billing_portal():
     """Open Stripe Customer Portal to manage/cancel subscription."""
     import stripe as stripe_lib
-    org = Organization.get_by_code(session["admin_org_code"])
+    org = _get_admin_org()
     if not org or not org.stripe_customer_id:
         flash("No billing account found.", "error")
         return redirect(url_for("admin_billing"))
@@ -926,7 +944,7 @@ def admin_billing_portal():
 @admin_required
 def admin_activate_promo():
     """Activate portal with a promo code."""
-    org = Organization.get_by_code(session["admin_org_code"])
+    org = _get_admin_org()
     if not org:
         return redirect(url_for("admin_login"))
 
@@ -947,7 +965,7 @@ def admin_activate_promo():
 @admin_required
 def admin_close_account():
     """Permanently delete the organization and cancel any Stripe subscription."""
-    org = Organization.get_by_code(session["admin_org_code"])
+    org = _get_admin_org()
     if not org:
         return redirect(url_for("admin_login"))
 
@@ -1070,7 +1088,7 @@ def admin_reset_password(token):
 @admin_required
 def admin_cancel_pending_email():
     """Cancel a pending admin email change."""
-    org = Organization.get_by_code(session["admin_org_code"])
+    org = _get_admin_org()
     if org and org.pending_admin_email:
         org.pending_admin_email = None
         db.session.commit()
@@ -1105,6 +1123,65 @@ def admin_verify_email(token):
     if session.get("admin_org_code") == org.org_code:
         return redirect(url_for("admin_settings"))
     return redirect(url_for("admin_login", org=org.org_code))
+
+
+# --- Superadmin Routes ---
+
+
+def superadmin_required(f):
+    """Decorator to require superadmin authentication."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get("superadmin"):
+            return redirect(url_for("superadmin_login"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+@app.route("/superadmin/login", methods=["GET", "POST"])
+def superadmin_login():
+    """Superadmin login — password-only, protected by SUPERADMIN_PASSWORD env var."""
+    if session.get("superadmin"):
+        return redirect(url_for("superadmin_users"))
+
+    if not Config.SUPERADMIN_PASSWORD:
+        abort(404)
+
+    if request.method == "POST":
+        password = request.form.get("password", "")
+        if password and Config.SUPERADMIN_PASSWORD and hmac.compare_digest(password, Config.SUPERADMIN_PASSWORD):
+            session["superadmin"] = True
+            return redirect(url_for("superadmin_users"))
+        flash("Incorrect password.", "error")
+
+    return render_template("superadmin/login.html")
+
+
+@app.route("/superadmin/logout")
+def superadmin_logout():
+    """Superadmin logout."""
+    session.pop("superadmin", None)
+    return redirect(url_for("superadmin_login"))
+
+
+@app.route("/superadmin/users")
+@superadmin_required
+def superadmin_users():
+    """Superadmin users list — all organizations."""
+    orgs = Organization.query.order_by(Organization.id.desc()).all()
+    return render_template("superadmin/users.html", orgs=orgs)
+
+
+@app.route("/superadmin/toggle-active/<int:org_id>", methods=["POST"])
+@superadmin_required
+def superadmin_toggle_active(org_id):
+    """Toggle is_active for an organization."""
+    org = Organization.query.get(org_id)
+    if not org:
+        abort(404)
+    org.is_active = not getattr(org, "is_active", True)
+    db.session.commit()
+    return redirect(url_for("superadmin_users"))
 
 
 # --- CLI Commands ---

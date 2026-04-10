@@ -1,4 +1,4 @@
-import random
+import secrets
 import sys
 from datetime import datetime, timedelta, timezone
 
@@ -13,15 +13,18 @@ from models import db, LoginAttempt, LoginCode
 _demo_codes = {}  # {(org_id, email): {"code": str, "user_id": str, "expires": datetime, "token": str}}
 _demo_attempts = {}  # {(org_id, email): {"count": int, "lockout_until": datetime}}
 
-# Token serializer for magic links
-_serializer = None
+# Configure Resend API key once at module load
+if Config.RESEND_API_KEY:
+    resend.api_key = Config.RESEND_API_KEY
 
-def get_serializer():
-    """Get or create the token serializer."""
-    global _serializer
-    if _serializer is None:
-        _serializer = URLSafeTimedSerializer(Config.SECRET_KEY, salt="login-token")
-    return _serializer
+# Token serializer cache keyed by salt
+_serializers = {}
+
+def get_serializer(salt: str = "login-token") -> URLSafeTimedSerializer:
+    """Get or create a token serializer for the given salt."""
+    if salt not in _serializers:
+        _serializers[salt] = URLSafeTimedSerializer(Config.SECRET_KEY, salt=salt)
+    return _serializers[salt]
 
 
 def generate_magic_token(org_id: int, email: str, user_id: str) -> str:
@@ -50,8 +53,8 @@ def verify_magic_token(token: str, max_age: int = 600) -> dict | None:
 
 
 def generate_login_code() -> str:
-    """Generate a 6-digit login code."""
-    return str(random.randint(100000, 999999))
+    """Generate a cryptographically random 6-digit login code."""
+    return str(secrets.randbelow(900000) + 100000)
 
 
 def send_login_code(org, user_email: str, user_id: str, base_url: str = None) -> dict | None:
@@ -95,8 +98,6 @@ def send_login_code(org, user_email: str, user_id: str, base_url: str = None) ->
     # Send email via Resend if configured
     if Config.RESEND_API_KEY and not Config.DEMO_MODE:
         try:
-            resend.api_key = Config.RESEND_API_KEY
-
             # Build email HTML with both code and magic link
             html_content = f"""
                 <h2>Log in to {org.portal_title}</h2>
@@ -297,8 +298,7 @@ def verify_login_code(org, email: str, code: str) -> dict | None:
 
 def generate_admin_reset_token(org_id: int) -> str:
     """Generate a signed password-reset token for an admin."""
-    serializer = URLSafeTimedSerializer(Config.SECRET_KEY, salt="admin-reset")
-    return serializer.dumps({"org_id": org_id})
+    return get_serializer("admin-reset").dumps({"org_id": org_id})
 
 
 def verify_admin_reset_token(token: str, max_age: int = 900) -> int | None:
@@ -308,9 +308,8 @@ def verify_admin_reset_token(token: str, max_age: int = 900) -> int | None:
     Returns:
         org_id if valid, None otherwise
     """
-    serializer = URLSafeTimedSerializer(Config.SECRET_KEY, salt="admin-reset")
     try:
-        data = serializer.loads(token, max_age=max_age)
+        data = get_serializer("admin-reset").loads(token, max_age=max_age)
         return data.get("org_id")
     except (BadSignature, SignatureExpired):
         return None
@@ -327,7 +326,6 @@ def send_admin_reset_email(org, base_url: str) -> bool:
 
     if Config.RESEND_API_KEY:
         try:
-            resend.api_key = Config.RESEND_API_KEY
             html_content = f"""
                 <h2>Reset your admin password</h2>
                 <p>Click the button below to reset the admin password for
@@ -364,8 +362,7 @@ def send_admin_reset_email(org, base_url: str) -> bool:
 
 def generate_admin_email_token(org_id: int, new_email: str) -> str:
     """Generate a signed token to verify an admin email change."""
-    serializer = URLSafeTimedSerializer(Config.SECRET_KEY, salt="admin-email-change")
-    return serializer.dumps({"org_id": org_id, "new_email": new_email})
+    return get_serializer("admin-email-change").dumps({"org_id": org_id, "new_email": new_email})
 
 
 def verify_admin_email_token(token: str, max_age: int = 86400) -> tuple[int, str] | None:
@@ -375,9 +372,8 @@ def verify_admin_email_token(token: str, max_age: int = 86400) -> tuple[int, str
     Returns:
         (org_id, new_email) if valid, None otherwise
     """
-    serializer = URLSafeTimedSerializer(Config.SECRET_KEY, salt="admin-email-change")
     try:
-        data = serializer.loads(token, max_age=max_age)
+        data = get_serializer("admin-email-change").loads(token, max_age=max_age)
         return data.get("org_id"), data.get("new_email")
     except (BadSignature, SignatureExpired):
         return None
@@ -394,7 +390,6 @@ def send_admin_email_verification(org, new_email: str, base_url: str) -> bool:
 
     if Config.RESEND_API_KEY:
         try:
-            resend.api_key = Config.RESEND_API_KEY
             html_content = f"""
                 <h2>Confirm your new admin email</h2>
                 <p>You requested to change the admin email for
@@ -432,15 +427,13 @@ def send_admin_email_verification(org, new_email: str, base_url: str) -> bool:
 
 def generate_signup_token(email: str, password_hash: str) -> str:
     """Generate a signed token for email verification during signup."""
-    serializer = URLSafeTimedSerializer(Config.SECRET_KEY, salt="signup-verify")
-    return serializer.dumps({"email": email, "password_hash": password_hash})
+    return get_serializer("signup-verify").dumps({"email": email, "password_hash": password_hash})
 
 
 def verify_signup_token(token: str, max_age: int = 86400) -> dict | None:
     """Verify a signup email verification token (24-hour expiry)."""
-    serializer = URLSafeTimedSerializer(Config.SECRET_KEY, salt="signup-verify")
     try:
-        return serializer.loads(token, max_age=max_age)
+        return get_serializer("signup-verify").loads(token, max_age=max_age)
     except (BadSignature, SignatureExpired):
         return None
 
@@ -451,7 +444,6 @@ def send_signup_verification_email(email: str, token: str, base_url: str) -> boo
 
     if Config.RESEND_API_KEY:
         try:
-            resend.api_key = Config.RESEND_API_KEY
             html_content = f"""
                 <h2>Verify your email for Airbud</h2>
                 <p>Click the button below to verify your email and continue setting up your portal:</p>

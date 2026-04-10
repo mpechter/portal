@@ -1,23 +1,8 @@
-{% extends "base.html" %}
+{% extends "admin/admin_base.html" %}
 
 {% block title %}Billing - {{ org.portal_title }}{% endblock %}
 
-{% block content %}
-<div class="admin-dashboard">
-    <div class="admin-header">
-        <h1>Admin: {{ org.name }}</h1>
-        <a href="{{ url_for('admin_logout') }}" class="admin-logout">Logout</a>
-    </div>
-
-    <nav class="admin-tabs">
-        <a href="{{ url_for('admin_settings') }}" class="tab">Settings</a>
-        <a href="{{ url_for('admin_tables') }}" class="tab">Tables</a>
-        <a href="{{ url_for('admin_fields') }}" class="tab {% if not org.tables_configured %}disabled{% endif %}">Fields</a>
-        <a href="{{ url_for('admin_billing') }}" class="tab active">Billing</a>
-    </nav>
-
-    <div class="admin-content">
-
+{% block admin_content %}
         <h3>Plan Status</h3>
 
         {% if org.plan == 'active' %}
@@ -74,7 +59,4 @@
                 <button type="submit" class="btn btn-danger btn-small">Close Account</button>
             </form>
         </div>
-
-    </div>
-</div>
 {% endblock %}

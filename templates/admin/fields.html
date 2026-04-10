@@ -1,22 +1,8 @@
-{% extends "base.html" %}
+{% extends "admin/admin_base.html" %}
 
 {% block title %}Admin - {{ org.portal_title }}{% endblock %}
 
-{% block content %}
-<div class="admin-dashboard">
-    <div class="admin-header">
-        <h1>Admin: {{ org.name }}</h1>
-        <a href="{{ url_for('admin_logout') }}" class="admin-logout">Logout</a>
-    </div>
-
-    <nav class="admin-tabs">
-        <a href="{{ url_for('admin_settings') }}" class="tab">Settings</a>
-        <a href="{{ url_for('admin_tables') }}" class="tab">Tables</a>
-        <a href="{{ url_for('admin_fields') }}" class="tab active">Fields</a>
-        <a href="{{ url_for('admin_billing') }}" class="tab">Billing</a>
-    </nav>
-
-    <div class="admin-content">
+{% block admin_content %}
         <form id="admin-form" action="{{ url_for('admin_save_fields') }}" method="post" class="form">
 
         <h3>Email Field</h3>
@@ -200,8 +186,6 @@
             <button type="button" id="discard-btn" class="btn btn-secondary" disabled>Discard Changes</button>
         </div>
         </form>
-    </div>
-</div>
 
 <script>
 function updateEmailFieldRows() {

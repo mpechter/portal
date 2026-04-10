@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Superadmin Login{% endblock %}
+
+{% block content %}
+<div class="card centered">
+    <h1>Internal Dashboard</h1>
+    <form action="{{ url_for('superadmin_login') }}" method="post" class="form">
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required autofocus>
+        </div>
+        <button type="submit" id="login-btn" class="btn btn-primary">Log In</button>
+    </form>
+</div>
+<script>
+(function() {
+    var form = document.querySelector('form');
+    var btn = document.getElementById('login-btn');
+    if (!form || !btn) return;
+    form.addEventListener('submit', function() {
+        btn.disabled = true;
+        btn.textContent = 'Logging in\u2026';
+    });
+})();
+</script>
+{% endblock %}

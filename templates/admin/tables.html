@@ -1,22 +1,8 @@
-{% extends "base.html" %}
+{% extends "admin/admin_base.html" %}
 
 {% block title %}Table Setup - {{ org.portal_title }}{% endblock %}
 
-{% block content %}
-<div class="admin-dashboard">
-    <div class="admin-header">
-        <h1>Admin: {{ org.name }}</h1>
-        <a href="{{ url_for('admin_logout') }}" class="admin-logout">Logout</a>
-    </div>
-
-    <nav class="admin-tabs">
-        <a href="{{ url_for('admin_settings') }}" class="tab">Settings</a>
-        <a href="{{ url_for('admin_tables') }}" class="tab active">Tables</a>
-        <a href="{{ url_for('admin_fields') }}" class="tab {% if not org.tables_configured %}disabled{% endif %}">Fields</a>
-        <a href="{{ url_for('admin_billing') }}" class="tab">Billing</a>
-    </nav>
-
-    <div class="admin-content">
+{% block admin_content %}
         <h2>Table Configuration</h2>
         <p class="text-muted">Select which tables contain your users and their linked records.</p>
 
@@ -54,11 +40,9 @@
             </div>
 
             <div class="form-actions">
-                <button type="submit" id="save-btn" class="btn btn-save" disabled>Save & Continue</button>
+                <button type="submit" id="save-btn" class="btn btn-save" disabled>Save &amp; Continue</button>
             </div>
         </form>
-    </div>
-</div>
 
 <script>
 (function() {
