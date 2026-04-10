@@ -34,3 +34,6 @@ class Config:
 
     # Comma-separated list of valid promo codes
     PROMO_CODES = os.environ.get("PROMO_CODES", "")
+
+    # Superadmin dashboard password (internal use only)
+    SUPERADMIN_PASSWORD = os.environ.get("SUPERADMIN_PASSWORD")

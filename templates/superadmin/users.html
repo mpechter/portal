@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Users — Internal Dashboard{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="admin-header">
+        <h1>Users</h1>
+        <a href="{{ url_for('superadmin_logout') }}" class="admin-logout">Logout</a>
+    </div>
+
+    {% set active_count = orgs | selectattr('is_active') | list | length %}
+    {% set trial_count = orgs | selectattr('plan', 'equalto', 'trial') | list | length %}
+    {% set paid_count = orgs | selectattr('plan', 'equalto', 'active') | list | length %}
+    {% set suspended_count = orgs | selectattr('plan', 'equalto', 'suspended') | list | length %}
+
+    <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;">
+        <div style="background: #f5f5f5; border-radius: 8px; padding: 12px 20px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 700;">{{ orgs | length }}</div>
+            <div style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.05em;">Total</div>
+        </div>
+        <div style="background: #e8f5e9; border-radius: 8px; padding: 12px 20px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 700; color: #2e7d32;">{{ paid_count }}</div>
+            <div style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.05em;">Active</div>
+        </div>
+        <div style="background: #e3f2fd; border-radius: 8px; padding: 12px 20px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 700; color: #1565c0;">{{ trial_count }}</div>
+            <div style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.05em;">Trial</div>
+        </div>
+        <div style="background: #fce4ec; border-radius: 8px; padding: 12px 20px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 700; color: #b71c1c;">{{ suspended_count }}</div>
+            <div style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.05em;">Suspended</div>
+        </div>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <thead>
+                <tr style="border-bottom: 2px solid #e0e0e0; text-align: left;">
+                    <th style="padding: 10px 12px; color: #555; font-weight: 600;">Name</th>
+                    <th style="padding: 10px 12px; color: #555; font-weight: 600;">Org Code</th>
+                    <th style="padding: 10px 12px; color: #555; font-weight: 600;">Email</th>
+                    <th style="padding: 10px 12px; color: #555; font-weight: 600;">Plan</th>
+                    <th style="padding: 10px 12px; color: #555; font-weight: 600;">Joined</th>
+                    <th style="padding: 10px 12px; color: #555; font-weight: 600;">Active</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for org in orgs %}
+                <tr style="border-bottom: 1px solid #f0f0f0; {% if not org.is_active %}opacity: 0.5;{% endif %}">
+                    <td style="padding: 10px 12px; font-weight: 500;">{{ org.name }}</td>
+                    <td style="padding: 10px 12px;">
+                        <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 4px; font-size: 12px;">{{ org.org_code }}</code>
+                    </td>
+                    <td style="padding: 10px 12px; color: #444;">{{ org.admin_email or '—' }}</td>
+                    <td style="padding: 10px 12px;">
+                        {% if org.plan == 'active' %}
+                            <span style="background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">Active</span>
+                        {% elif org.plan == 'trial' %}
+                            {% if org.trial_expired %}
+                                <span style="background: #fce4ec; color: #b71c1c; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">Trial expired</span>
+                            {% else %}
+                                <span style="background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">Trial ({{ org.trial_days_remaining }}d)</span>
+                            {% endif %}
+                        {% elif org.plan == 'suspended' %}
+                            <span style="background: #fce4ec; color: #b71c1c; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">Suspended</span>
+                        {% else %}
+                            <span style="color: #999; font-size: 12px;">—</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 10px 12px; color: #666; white-space: nowrap;">
+                        {% if org.created_at %}
+                            {{ org.created_at.strftime('%b %d, %Y') }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td style="padding: 10px 12px;">
+                        <form action="{{ url_for('superadmin_toggle_active', org_id=org.id) }}" method="post" style="display: inline;">
+                            <button type="submit" class="btn btn-small {% if org.is_active %}btn-secondary{% else %}btn-primary{% endif %}"
+                                    style="font-size: 12px; padding: 4px 10px;"
+                                    onclick="return confirm('{% if org.is_active %}Deactivate {{ org.name }}?{% else %}Activate {{ org.name }}?{% endif %}')">
+                                {% if org.is_active %}Deactivate{% else %}Activate{% endif %}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="padding: 24px; text-align: center; color: #999;">No organizations yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

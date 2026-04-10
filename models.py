@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -55,6 +56,11 @@ class Organization(db.Model):
     _field_annotations = db.Column("field_annotations", db.Text, default="{}")
 
     is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        server_default=db.func.now(),
+    )
 
     TRIAL_DAYS = 7
 
@@ -65,7 +71,6 @@ class Organization(db.Model):
             return False
         if self.trial_started_at is None:
             return False
-        from datetime import datetime, timezone
         return (datetime.now(timezone.utc) - self.trial_started_at).days >= self.TRIAL_DAYS
 
     @property
@@ -75,7 +80,6 @@ class Organization(db.Model):
             return 0
         if self.trial_started_at is None:
             return self.TRIAL_DAYS
-        from datetime import datetime, timezone
         elapsed = (datetime.now(timezone.utc) - self.trial_started_at).days
         return max(0, self.TRIAL_DAYS - elapsed)
 

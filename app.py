@@ -1199,6 +1199,65 @@ def admin_verify_email(token):
     return redirect(url_for("admin_login", org=org.org_code))
 
 
+# --- Superadmin Routes ---
+
+
+def superadmin_required(f):
+    """Decorator to require superadmin authentication."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get("superadmin"):
+            return redirect(url_for("superadmin_login"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+@app.route("/superadmin/login", methods=["GET", "POST"])
+def superadmin_login():
+    """Superadmin login — password-only, protected by SUPERADMIN_PASSWORD env var."""
+    if session.get("superadmin"):
+        return redirect(url_for("superadmin_users"))
+
+    if not Config.SUPERADMIN_PASSWORD:
+        abort(404)
+
+    if request.method == "POST":
+        password = request.form.get("password", "")
+        if password and password == Config.SUPERADMIN_PASSWORD:
+            session["superadmin"] = True
+            return redirect(url_for("superadmin_users"))
+        flash("Incorrect password.", "error")
+
+    return render_template("superadmin/login.html")
+
+
+@app.route("/superadmin/logout")
+def superadmin_logout():
+    """Superadmin logout."""
+    session.pop("superadmin", None)
+    return redirect(url_for("superadmin_login"))
+
+
+@app.route("/superadmin/users")
+@superadmin_required
+def superadmin_users():
+    """Superadmin users list — all organizations."""
+    orgs = Organization.query.order_by(Organization.created_at.desc().nullslast()).all()
+    return render_template("superadmin/users.html", orgs=orgs)
+
+
+@app.route("/superadmin/toggle-active/<int:org_id>", methods=["POST"])
+@superadmin_required
+def superadmin_toggle_active(org_id):
+    """Toggle is_active for an organization."""
+    org = Organization.query.get(org_id)
+    if not org:
+        abort(404)
+    org.is_active = not org.is_active
+    db.session.commit()
+    return redirect(url_for("superadmin_users"))
+
+
 # --- CLI Commands ---
 
 
@@ -1419,6 +1478,7 @@ def migrate_db():
             "promo_code": "VARCHAR(100)",
             "pending_admin_email": "VARCHAR(255)",
             "trial_started_at": "TIMESTAMP WITH TIME ZONE",
+            "created_at": "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
         }
         for col, col_def in new_cols.items():
             if col not in cols:
