@@ -58,8 +58,12 @@
                 {% for field_name in user_fields %}
                 {% set current = user_field_config.get(field_name, 'hidden') %}
                 {% set annotation = user_annotations.get(field_name, '') %}
+                {% set is_computed = field_name in computed_user_fields %}
                 <tr data-user-field-name="{{ field_name }}" {% if (org.email_field or 'Email') == field_name %}style="display: none;"{% endif %}>
-                    <td><strong>{{ field_name }}</strong></td>
+                    <td>
+                        <strong>{{ field_name }}</strong>
+                        {% if is_computed %}<span class="field-type-badge">formula</span>{% endif %}
+                    </td>
                     <td>
                         <input type="text"
                                name="user_annotation_{{ field_name }}"
@@ -74,8 +78,9 @@
                                value="editable"
                                id="user_{{ field_name }}_editable"
                                data-original="{{ 'true' if current == 'editable' else '' }}"
-                               {% if current == 'editable' %}checked{% endif %}>
-                        <label for="user_{{ field_name }}_editable" class="radio-label">Editable</label>
+                               {% if current == 'editable' %}checked{% endif %}
+                               {% if is_computed %}disabled{% endif %}>
+                        <label for="user_{{ field_name }}_editable" class="radio-label{% if is_computed %} radio-label-disabled{% endif %}">Editable</label>
                     </td>
                     <td>
                         <input type="radio"
@@ -156,8 +161,12 @@
                 {% for field_name in record_fields %}
                 {% set current = record_field_config.get(field_name, 'editable') %}
                 {% set annotation = record_annotations.get(field_name, '') %}
+                {% set is_computed = field_name in computed_record_fields %}
                 <tr data-field-name="{{ field_name }}" {% if org.confirmation_field == field_name %}style="display: none;"{% endif %}>
-                    <td><strong>{{ field_name }}</strong></td>
+                    <td>
+                        <strong>{{ field_name }}</strong>
+                        {% if is_computed %}<span class="field-type-badge">formula</span>{% endif %}
+                    </td>
                     <td>
                         <input type="text"
                                name="record_annotation_{{ field_name }}"
@@ -172,8 +181,9 @@
                                value="editable"
                                id="record_{{ field_name }}_editable"
                                data-original="{{ 'true' if current == 'editable' else '' }}"
-                               {% if current == 'editable' %}checked{% endif %}>
-                        <label for="record_{{ field_name }}_editable" class="radio-label">Editable</label>
+                               {% if current == 'editable' %}checked{% endif %}
+                               {% if is_computed %}disabled{% endif %}>
+                        <label for="record_{{ field_name }}_editable" class="radio-label{% if is_computed %} radio-label-disabled{% endif %}">Editable</label>
                     </td>
                     <td>
                         <input type="radio"

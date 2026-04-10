@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from config import Config
 from models import db, Organization, LoginAttempt, LoginCode
-from airtable_client import get_client_for_org
+from airtable_client import get_client_for_org, COMPUTED_FIELD_TYPES
 from auth import (send_login_code, verify_login_code, verify_magic_link,
                   is_locked_out, get_lockout_remaining,
                   send_admin_reset_email, verify_admin_reset_token,
@@ -424,6 +424,10 @@ def edit_record(record_id: str):
         for field_name in editable_fields:
             field_type = field_metadata.get(field_name, {}).get("type", "singleLineText")
 
+            # Skip computed/formula fields — Airtable won't accept writes to them
+            if field_type in COMPUTED_FIELD_TYPES:
+                continue
+
             # Handle checkbox fields specially
             if field_type == "checkbox":
                 updates[field_name] = field_name in request.form
@@ -509,6 +513,10 @@ def edit_profile():
         updates = {}
         for field_name in editable_fields:
             field_type = field_metadata.get(field_name, {}).get("type", "singleLineText")
+
+            # Skip computed/formula fields — Airtable won't accept writes to them
+            if field_type in COMPUTED_FIELD_TYPES:
+                continue
 
             # Handle checkbox fields specially
             if field_type == "checkbox":
@@ -786,6 +794,10 @@ def admin_fields():
     user_fields = client.get_all_user_fields()
     record_fields = client.get_all_record_fields() if org.has_linked_records else []
 
+    # Identify computed/formula fields that can't be made editable
+    computed_user_fields = client.get_computed_field_names(org.users_table)
+    computed_record_fields = client.get_computed_field_names(org.records_table) if org.has_linked_records else set()
+
     # Get fields suitable as an email field (email type or plain text)
     email_fields = []
     users_table_schema = client.get_table_by_name(org.users_table)
@@ -819,6 +831,8 @@ def admin_fields():
         record_field_config=org.record_field_config,
         user_annotations=user_annotations,
         record_annotations=record_annotations,
+        computed_user_fields=computed_user_fields,
+        computed_record_fields=computed_record_fields,
     )
 
 
@@ -834,19 +848,30 @@ def admin_save_fields():
     user_fields = client.get_all_user_fields()
     record_fields = client.get_all_record_fields()
 
+    computed_user_fields = client.get_computed_field_names(org.users_table)
+    computed_record_fields = client.get_computed_field_names(org.records_table)
+
     # Build user field config from form
     user_field_config = {}
     for field_name in user_fields:
         permission = request.form.get(f"user_field_{field_name}", "hidden")
-        if permission in ("editable", "readonly", "hidden"):
-            user_field_config[field_name] = permission
+        if permission not in ("editable", "readonly", "hidden"):
+            permission = "hidden"
+        # Computed/formula fields can never be editable
+        if field_name in computed_user_fields and permission == "editable":
+            permission = "readonly"
+        user_field_config[field_name] = permission
 
     # Build record field config from form
     record_field_config = {}
     for field_name in record_fields:
         permission = request.form.get(f"record_field_{field_name}", "editable")
-        if permission in ("editable", "readonly", "hidden"):
-            record_field_config[field_name] = permission
+        if permission not in ("editable", "readonly", "hidden"):
+            permission = "editable"
+        # Computed/formula fields can never be editable
+        if field_name in computed_record_fields and permission == "editable":
+            permission = "readonly"
+        record_field_config[field_name] = permission
 
     # Save as nested structure
     org.field_config = {

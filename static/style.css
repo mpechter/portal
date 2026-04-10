@@ -689,6 +689,26 @@ body {
     display: none;
 }
 
+.radio-label-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.field-type-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border-light);
+    border-radius: 4px;
+    vertical-align: middle;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
 /* Readonly field styling */
 .field-readonly {
     background: var(--color-bg-subtle);

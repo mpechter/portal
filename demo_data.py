@@ -207,6 +207,10 @@ class DemoAirtableClient:
 
         return sorted(field_names)
 
+    def get_computed_field_names(self, table_name: str) -> set:
+        """Return computed field names (none in demo data)."""
+        return set()
+
     def update_user(self, user_id: str, fields: dict):
         """Update a user record with the provided fields."""
         if user_id in DEMO_USERS:

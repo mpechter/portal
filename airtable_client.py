@@ -6,6 +6,20 @@ from pyairtable import Api
 _schema_cache = {}
 SCHEMA_CACHE_TTL = 300  # 5 minutes
 
+# Airtable field types that are computed/formula-based and cannot be written to
+COMPUTED_FIELD_TYPES = frozenset({
+    "formula",
+    "rollup",
+    "count",
+    "multipleLookupValues",
+    "autoNumber",
+    "createdTime",
+    "lastModifiedTime",
+    "createdBy",
+    "lastModifiedBy",
+    "button",
+})
+
 
 class AirtableClient:
     """Multi-tenant Airtable client that connects to an org's specific base."""
@@ -144,6 +158,17 @@ class AirtableClient:
                     "options": field.get("options", []),
                 }
         return metadata
+
+    def get_computed_field_names(self, table_name: str) -> set:
+        """Return names of fields that are computed/formula types and cannot be edited."""
+        table = self.get_table_by_name(table_name)
+        if not table:
+            return set()
+        return {
+            field["name"]
+            for field in table.get("fields", [])
+            if field.get("type") in COMPUTED_FIELD_TYPES
+        }
 
     def get_user_by_email(self, email: str) -> dict | None:
         """Find a user by email address."""
