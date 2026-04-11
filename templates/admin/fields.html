@@ -66,6 +66,9 @@
                                class="annotation-input">
                     </td>
                     <td>
+                        {% if is_computed %}
+                        <span class="disabled-tooltip" data-tooltip="This field type cannot be edited">
+                        {% endif %}
                         <input type="radio"
                                name="user_field_{{ field_name }}"
                                value="editable"
@@ -74,6 +77,7 @@
                                {% if current == 'editable' %}checked{% endif %}
                                {% if is_computed %}disabled{% endif %}>
                         <label for="user_{{ field_name }}_editable" class="radio-label{% if is_computed %} radio-label-disabled{% endif %}">Editable</label>
+                        {% if is_computed %}</span>{% endif %}
                     </td>
                     <td>
                         <input type="radio"
@@ -180,6 +184,9 @@
                                class="annotation-input">
                     </td>
                     <td>
+                        {% if is_computed %}
+                        <span class="disabled-tooltip" data-tooltip="This field type cannot be edited">
+                        {% endif %}
                         <input type="radio"
                                name="record_field_{{ field_name }}"
                                value="editable"
@@ -188,6 +195,7 @@
                                {% if current == 'editable' %}checked{% endif %}
                                {% if is_computed %}disabled{% endif %}>
                         <label for="record_{{ field_name }}_editable" class="radio-label{% if is_computed %} radio-label-disabled{% endif %}">Editable</label>
+                        {% if is_computed %}</span>{% endif %}
                     </td>
                     <td>
                         <input type="radio"

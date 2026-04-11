@@ -704,6 +704,50 @@ body {
     cursor: not-allowed;
 }
 
+.disabled-tooltip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: not-allowed;
+}
+
+.disabled-tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-text-heading);
+    color: var(--color-white);
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+    padding: 4px 8px;
+    border-radius: var(--radius-xs);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.disabled-tooltip::before {
+    content: "";
+    position: absolute;
+    bottom: calc(100% + 1px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--color-text-heading);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.disabled-tooltip:hover::after,
+.disabled-tooltip:hover::before {
+    opacity: 1;
+}
+
 .field-type-badge {
     display: inline-block;
     margin-left: 6px;
