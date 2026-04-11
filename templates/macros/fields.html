@@ -1,13 +1,13 @@
 {# Macro to render a form field based on its Airtable type #}
-{% macro render_field(field_name, field_value, field_meta, editable=True, annotation='', alias='') %}
+{% macro render_field(field_name, field_value, field_meta, editable=True, translation='', alias='', description='') %}
     {% set field_type = field_meta.type if field_meta else 'singleLineText' %}
     {% set field_options = field_meta.options if field_meta else [] %}
     {% set display_name = alias if alias else field_name %}
 
     <div class="form-group">
-        <label for="{{ field_name }}">{{ display_name }}</label>
-        {% if annotation %}
-        <p class="field-annotation">{{ annotation }}</p>
+        <label for="{{ field_name }}">{{ display_name }}{% if translation %}<span class="field-translation">{{ translation }}</span>{% endif %}</label>
+        {% if description %}
+        <p class="field-description">{{ description }}</p>
         {% endif %}
 
         {% if not editable %}
@@ -29,7 +29,7 @@
                        name="{{ field_name }}"
                        {% if field_value %}checked{% endif %}
                        data-original="{{ 'true' if field_value else 'false' }}">
-                <span class="checkbox-text">{{ display_name }}</span>
+                <span class="checkbox-text">{{ display_name }}{% if translation %}<span class="field-translation">{{ translation }}</span>{% endif %}</span>
             </label>
         {% elif field_type == 'singleSelect' %}
             {# Dropdown for single select #}

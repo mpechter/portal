@@ -620,6 +620,20 @@ body {
     font-style: italic;
 }
 
+.field-translation {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+}
+
+.field-description {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    margin: 4px 0 8px 0;
+}
+
 /* Form input (same as form-group input) */
 .form-input {
     width: 100%;
@@ -674,8 +688,36 @@ body {
     font-weight: 600;
 }
 
-.field-config-table td:not(:first-child):not(:nth-child(2)) {
+.field-config-table td:not(:first-child):not(:nth-child(2)):not(:nth-child(3)):not(:nth-child(4)):not(:nth-child(5)) {
     text-align: center;
+}
+
+.drag-col {
+    width: 28px;
+    padding: 0 4px !important;
+}
+
+.drag-handle {
+    cursor: grab;
+    color: var(--color-text-light);
+    font-size: 1.1rem;
+    user-select: none;
+    display: inline-block;
+    padding: 4px;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.sortable-ghost {
+    opacity: 0.4;
+    background: var(--color-primary-focus);
+}
+
+.description-input {
+    resize: vertical;
+    min-height: 40px;
 }
 
 .annotation-input {

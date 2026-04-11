@@ -26,24 +26,31 @@
         <h3>Profile Fields ({{ org.users_table }})</h3>
         <p class="text-muted">Fields shown on the user's own profile. Defaults to hidden if not configured.</p>
 
+        <input type="hidden" name="user_field_order" id="user_field_order"
+               value="{{ user_fields | join(',') }}">
+
         <table class="field-config-table">
             <thead>
                 <tr>
+                    <th class="drag-col"></th>
                     <th>Field Name</th>
                     <th>Alias</th>
-                    <th>Annotation</th>
+                    <th>Translation</th>
+                    <th>Description</th>
                     <th>Editable</th>
                     <th>Read-only</th>
                     <th>Hidden</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="user-fields-tbody">
                 {% for field_name in user_fields %}
                 {% set is_computed = field_name in computed_user_fields %}
                 {% set current = user_field_config.get(field_name, 'hidden') %}
-                {% set annotation = user_annotations.get(field_name, '') %}
+                {% set translation = user_translations.get(field_name, '') %}
                 {% set alias = user_aliases.get(field_name, '') %}
+                {% set description = user_descriptions.get(field_name, '') %}
                 <tr data-user-field-name="{{ field_name }}" {% if (org.email_field or 'Email') == field_name %}style="display: none;"{% endif %}>
+                    <td class="drag-col"><span class="drag-handle" title="Drag to reorder">⠿</span></td>
                     <td>
                         <strong>{{ field_name }}</strong>
                         {% if field_name in link_user_fields %}<span class="field-type-badge">link</span>
@@ -59,11 +66,19 @@
                     </td>
                     <td>
                         <input type="text"
-                               name="user_annotation_{{ field_name }}"
-                               value="{{ annotation }}"
-                               data-original="{{ annotation }}"
-                               placeholder="Helper text..."
+                               name="user_translation_{{ field_name }}"
+                               value="{{ translation }}"
+                               data-original="{{ translation }}"
+                               placeholder="e.g. Nombre"
                                class="annotation-input">
+                    </td>
+                    <td>
+                        <textarea
+                               name="user_description_{{ field_name }}"
+                               data-original="{{ description }}"
+                               placeholder="Longer help text..."
+                               class="annotation-input description-input"
+                               rows="2">{{ description }}</textarea>
                     </td>
                     <td>
                         {% if is_computed %}
@@ -144,24 +159,31 @@
             </div>
         </div>
 
+        <input type="hidden" name="record_field_order" id="record_field_order"
+               value="{{ record_fields | join(',') }}">
+
         <table class="field-config-table">
             <thead>
                 <tr>
+                    <th class="drag-col"></th>
                     <th>Field Name</th>
                     <th>Alias</th>
-                    <th>Annotation</th>
+                    <th>Translation</th>
+                    <th>Description</th>
                     <th>Editable</th>
                     <th>Read-only</th>
                     <th>Hidden</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="record-fields-tbody">
                 {% for field_name in record_fields %}
                 {% set is_computed = field_name in computed_record_fields %}
                 {% set current = record_field_config.get(field_name, 'hidden' if is_computed else 'editable') %}
-                {% set annotation = record_annotations.get(field_name, '') %}
+                {% set translation = record_translations.get(field_name, '') %}
                 {% set alias = record_aliases.get(field_name, '') %}
+                {% set description = record_descriptions.get(field_name, '') %}
                 <tr data-field-name="{{ field_name }}" {% if org.confirmation_field == field_name %}style="display: none;"{% endif %}>
+                    <td class="drag-col"><span class="drag-handle" title="Drag to reorder">⠿</span></td>
                     <td>
                         <strong>{{ field_name }}</strong>
                         {% if field_name in link_record_fields %}<span class="field-type-badge">link</span>
@@ -177,11 +199,19 @@
                     </td>
                     <td>
                         <input type="text"
-                               name="record_annotation_{{ field_name }}"
-                               value="{{ annotation }}"
-                               data-original="{{ annotation }}"
-                               placeholder="Helper text..."
+                               name="record_translation_{{ field_name }}"
+                               value="{{ translation }}"
+                               data-original="{{ translation }}"
+                               placeholder="e.g. Calificación"
                                class="annotation-input">
+                    </td>
+                    <td>
+                        <textarea
+                               name="record_description_{{ field_name }}"
+                               data-original="{{ description }}"
+                               placeholder="Longer help text..."
+                               class="annotation-input description-input"
+                               rows="2">{{ description }}</textarea>
                     </td>
                     <td>
                         {% if is_computed %}
@@ -227,6 +257,7 @@
         </div>
         </form>
 
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script>
 function updateEmailFieldRows() {
     const emailField = document.getElementById('email_field');
@@ -305,6 +336,44 @@ function updateConfirmationValues() {
     if (typeof checkForChanges === 'function') checkForChanges();
 }
 
+function updateOrderInput(tbodyId, inputId) {
+    const tbody = document.getElementById(tbodyId);
+    const input = document.getElementById(inputId);
+    if (!tbody || !input) return;
+    const names = Array.from(tbody.querySelectorAll('tr[data-user-field-name], tr[data-field-name]'))
+        .map(row => row.dataset.userFieldName || row.dataset.fieldName)
+        .filter(Boolean);
+    input.value = names.join(',');
+}
+
+(function() {
+    // Set up SortableJS on user fields table
+    const userTbody = document.getElementById('user-fields-tbody');
+    if (userTbody) {
+        Sortable.create(userTbody, {
+            handle: '.drag-handle',
+            animation: 150,
+            onEnd: function() {
+                updateOrderInput('user-fields-tbody', 'user_field_order');
+                if (typeof checkForChanges === 'function') checkForChanges();
+            }
+        });
+    }
+
+    // Set up SortableJS on record fields table
+    const recordTbody = document.getElementById('record-fields-tbody');
+    if (recordTbody) {
+        Sortable.create(recordTbody, {
+            handle: '.drag-handle',
+            animation: 150,
+            onEnd: function() {
+                updateOrderInput('record-fields-tbody', 'record_field_order');
+                if (typeof checkForChanges === 'function') checkForChanges();
+            }
+        });
+    }
+})();
+
 (function() {
     const form = document.getElementById('admin-form');
     const saveBtn = document.getElementById('save-btn');
@@ -312,11 +381,22 @@ function updateConfirmationValues() {
     if (!form || !saveBtn) return;
 
     const radios = form.querySelectorAll('input[type="radio"]');
-    const annotations = form.querySelectorAll('input.annotation-input');
+    const textInputs = form.querySelectorAll('input.annotation-input');
+    const textareas = form.querySelectorAll('textarea.description-input');
     const emailField = document.getElementById('email_field');
     const confirmCheckbox = document.getElementById('confirmation_enabled');
     const confirmField = document.getElementById('confirmation_field');
     const confirmValue = document.getElementById('confirmation_value');
+
+    // Store original row order for discard
+    const userTbody = document.getElementById('user-fields-tbody');
+    const recordTbody = document.getElementById('record-fields-tbody');
+    const originalUserOrder = userTbody
+        ? Array.from(userTbody.rows).map(r => r.dataset.userFieldName).filter(Boolean)
+        : [];
+    const originalRecordOrder = recordTbody
+        ? Array.from(recordTbody.rows).map(r => r.dataset.fieldName).filter(Boolean)
+        : [];
 
     window.checkForChanges = function checkForChanges() {
         let hasChanges = false;
@@ -324,46 +404,39 @@ function updateConfirmationValues() {
         // Check radio buttons
         radios.forEach(radio => {
             const wasOriginallyChecked = radio.dataset.original === 'true';
-            const isNowChecked = radio.checked;
-            if (wasOriginallyChecked !== isNowChecked) {
-                hasChanges = true;
-            }
+            if (wasOriginallyChecked !== radio.checked) hasChanges = true;
         });
 
-        // Check annotation inputs
-        annotations.forEach(input => {
-            if (input.value !== input.dataset.original) {
-                hasChanges = true;
-            }
+        // Check text annotation inputs
+        textInputs.forEach(input => {
+            if (input.value !== input.dataset.original) hasChanges = true;
+        });
+
+        // Check description textareas
+        textareas.forEach(ta => {
+            if (ta.value !== ta.dataset.original) hasChanges = true;
         });
 
         // Check email field select
-        if (emailField) {
-            if (emailField.value !== emailField.dataset.original) {
-                hasChanges = true;
-            }
-        }
+        if (emailField && emailField.value !== emailField.dataset.original) hasChanges = true;
 
         // Check confirmation checkbox
         if (confirmCheckbox) {
             const wasEnabled = confirmCheckbox.dataset.original === 'true';
-            if (confirmCheckbox.checked !== wasEnabled) {
-                hasChanges = true;
-            }
+            if (confirmCheckbox.checked !== wasEnabled) hasChanges = true;
         }
 
-        // Check confirmation field select
-        if (confirmField) {
-            if (confirmField.value !== confirmField.dataset.original) {
-                hasChanges = true;
-            }
-        }
+        if (confirmField && confirmField.value !== confirmField.dataset.original) hasChanges = true;
+        if (confirmValue && confirmValue.value !== confirmValue.dataset.original) hasChanges = true;
 
-        // Check confirmation value select
-        if (confirmValue) {
-            if (confirmValue.value !== confirmValue.dataset.original) {
-                hasChanges = true;
-            }
+        // Check row order
+        if (userTbody) {
+            const currentOrder = Array.from(userTbody.rows).map(r => r.dataset.userFieldName).filter(Boolean);
+            if (currentOrder.join(',') !== originalUserOrder.join(',')) hasChanges = true;
+        }
+        if (recordTbody) {
+            const currentOrder = Array.from(recordTbody.rows).map(r => r.dataset.fieldName).filter(Boolean);
+            if (currentOrder.join(',') !== originalRecordOrder.join(',')) hasChanges = true;
         }
 
         if (hasChanges) {
@@ -378,12 +451,10 @@ function updateConfirmationValues() {
     }
 
     function discardChanges() {
-        radios.forEach(radio => {
-            radio.checked = radio.dataset.original === 'true';
-        });
-        annotations.forEach(input => {
-            input.value = input.dataset.original;
-        });
+        radios.forEach(radio => { radio.checked = radio.dataset.original === 'true'; });
+        textInputs.forEach(input => { input.value = input.dataset.original; });
+        textareas.forEach(ta => { ta.value = ta.dataset.original; });
+
         if (emailField) {
             emailField.value = emailField.dataset.original;
             updateEmailFieldRows();
@@ -399,33 +470,36 @@ function updateConfirmationValues() {
         if (confirmValue) {
             confirmValue.value = confirmValue.dataset.original;
         }
+
+        // Restore original row order
+        if (userTbody) {
+            originalUserOrder.forEach(name => {
+                const row = userTbody.querySelector(`tr[data-user-field-name="${CSS.escape(name)}"]`);
+                if (row) userTbody.appendChild(row);
+            });
+            updateOrderInput('user-fields-tbody', 'user_field_order');
+        }
+        if (recordTbody) {
+            originalRecordOrder.forEach(name => {
+                const row = recordTbody.querySelector(`tr[data-field-name="${CSS.escape(name)}"]`);
+                if (row) recordTbody.appendChild(row);
+            });
+            updateOrderInput('record-fields-tbody', 'record_field_order');
+        }
+
         checkForChanges();
     }
 
-    radios.forEach(radio => {
-        radio.addEventListener('change', checkForChanges);
-    });
+    radios.forEach(radio => radio.addEventListener('change', checkForChanges));
+    textInputs.forEach(input => input.addEventListener('input', checkForChanges));
+    textareas.forEach(ta => ta.addEventListener('input', checkForChanges));
 
-    annotations.forEach(input => {
-        input.addEventListener('input', checkForChanges);
-    });
+    if (emailField) emailField.addEventListener('change', checkForChanges);
+    if (confirmCheckbox) confirmCheckbox.addEventListener('change', checkForChanges);
+    if (confirmField) confirmField.addEventListener('change', checkForChanges);
+    if (confirmValue) confirmValue.addEventListener('change', checkForChanges);
 
-    if (emailField) {
-        emailField.addEventListener('change', checkForChanges);
-    }
-    if (confirmCheckbox) {
-        confirmCheckbox.addEventListener('change', checkForChanges);
-    }
-    if (confirmField) {
-        confirmField.addEventListener('change', checkForChanges);
-    }
-    if (confirmValue) {
-        confirmValue.addEventListener('change', checkForChanges);
-    }
-
-    if (discardBtn) {
-        discardBtn.addEventListener('click', discardChanges);
-    }
+    if (discardBtn) discardBtn.addEventListener('click', discardChanges);
 
     // Initialize row visibility based on current email and confirmation fields
     updateEmailFieldRows();

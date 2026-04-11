@@ -496,9 +496,10 @@ def edit_record(record_id: str):
     if org.confirmation_enabled and org.confirmation_field and org.confirmation_value:
         last_confirmed = record.get("fields", {}).get(org.confirmation_field)
 
-    # Get annotations and aliases for record fields
-    record_annotations = org.field_annotations.get("record_fields", {})
+    # Get translations, aliases, and descriptions for record fields
+    record_translations = org.field_annotations.get("record_fields", {})
     record_aliases = org.field_aliases.get("record_fields", {})
+    record_descriptions = org.field_descriptions.get("record_fields", {})
 
     return render_template(
         "edit_record.html",
@@ -508,8 +509,9 @@ def edit_record(record_id: str):
         field_metadata=field_metadata,
         org=org,
         last_confirmed=last_confirmed,
-        field_annotations=record_annotations,
+        field_translations=record_translations,
         field_aliases=record_aliases,
+        field_descriptions=record_descriptions,
         preview_mode=is_preview_mode(),
     )
 
@@ -550,9 +552,10 @@ def edit_profile():
 
         return redirect(url_for("edit_profile"))
 
-    # Get annotations and aliases for user fields
-    user_annotations = org.field_annotations.get("user_fields", {})
+    # Get translations, aliases, and descriptions for user fields
+    user_translations = org.field_annotations.get("user_fields", {})
     user_aliases = org.field_aliases.get("user_fields", {})
+    user_descriptions = org.field_descriptions.get("user_fields", {})
 
     return render_template(
         "edit_profile.html",
@@ -561,8 +564,9 @@ def edit_profile():
         readonly_fields=readonly_fields,
         field_metadata=field_metadata,
         org=org,
-        field_annotations=user_annotations,
+        field_translations=user_translations,
         field_aliases=user_aliases,
+        field_descriptions=user_descriptions,
         preview_mode=is_preview_mode(),
     )
 
@@ -844,14 +848,27 @@ def admin_fields():
                 if field.get("type") == "singleSelect":
                     select_fields[field["name"]] = field.get("options", [])
 
-    # Get annotations and aliases
+    # Sort fields by saved config order (preserves admin-configured drag order)
+    saved_user_order = list(org.user_field_config.keys())
+    if saved_user_order:
+        user_fields = sorted(user_fields, key=lambda f: saved_user_order.index(f) if f in saved_user_order else len(saved_user_order))
+
+    saved_record_order = list(org.record_field_config.keys())
+    if saved_record_order:
+        record_fields = sorted(record_fields, key=lambda f: saved_record_order.index(f) if f in saved_record_order else len(saved_record_order))
+
+    # Get translations (formerly annotations), aliases, and descriptions
     annotations = org.field_annotations
-    user_annotations = annotations.get("user_fields", {})
-    record_annotations = annotations.get("record_fields", {})
+    user_translations = annotations.get("user_fields", {})
+    record_translations = annotations.get("record_fields", {})
 
     aliases = org.field_aliases
     user_aliases = aliases.get("user_fields", {})
     record_aliases = aliases.get("record_fields", {})
+
+    descriptions = org.field_descriptions
+    user_descriptions = descriptions.get("user_fields", {})
+    record_descriptions = descriptions.get("record_fields", {})
 
     return render_template(
         "admin/fields.html",
@@ -862,10 +879,12 @@ def admin_fields():
         select_fields=select_fields,
         user_field_config=org.user_field_config,
         record_field_config=org.record_field_config,
-        user_annotations=user_annotations,
-        record_annotations=record_annotations,
+        user_translations=user_translations,
+        record_translations=record_translations,
         user_aliases=user_aliases,
         record_aliases=record_aliases,
+        user_descriptions=user_descriptions,
+        record_descriptions=record_descriptions,
         computed_user_fields=computed_user_fields,
         computed_record_fields=computed_record_fields,
         link_user_fields=link_user_fields,
@@ -882,56 +901,64 @@ def admin_save_fields():
         return redirect(url_for("admin_login"))
 
     client = get_client_for_org(org)
-    user_fields = client.get_all_user_fields()
-    record_fields = client.get_all_record_fields()
+    all_user_fields = set(client.get_all_user_fields())
+    all_record_fields = set(client.get_all_record_fields())
 
     computed_user_fields = client.get_computed_field_names(org.users_table)
     computed_record_fields = client.get_computed_field_names(org.records_table)
 
-    # Build user field config from form
+    # Use the drag-ordered field list from the hidden input (if present), else fall back to Airtable order
+    raw_user_order = request.form.get("user_field_order", "")
+    user_fields = [f for f in raw_user_order.split(",") if f.strip() in all_user_fields] if raw_user_order else sorted(all_user_fields)
+    # Append any fields not yet in the order (newly added in Airtable)
+    user_fields += [f for f in sorted(all_user_fields) if f not in user_fields]
+
+    raw_record_order = request.form.get("record_field_order", "")
+    record_fields = [f for f in raw_record_order.split(",") if f.strip() in all_record_fields] if raw_record_order else sorted(all_record_fields)
+    record_fields += [f for f in sorted(all_record_fields) if f not in record_fields]
+
+    # Build user field config in the submitted order
     user_field_config = {}
     for field_name in user_fields:
         permission = request.form.get(f"user_field_{field_name}", "hidden")
         if permission not in ("editable", "readonly", "hidden"):
             permission = "hidden"
-        # Computed/formula fields can never be editable
         if field_name in computed_user_fields and permission == "editable":
             permission = "readonly"
         user_field_config[field_name] = permission
 
-    # Build record field config from form
+    # Build record field config in the submitted order
     record_field_config = {}
     for field_name in record_fields:
         permission = request.form.get(f"record_field_{field_name}", "editable")
         if permission not in ("editable", "readonly", "hidden"):
             permission = "editable"
-        # Computed/formula fields can never be editable
         if field_name in computed_record_fields and permission == "editable":
             permission = "readonly"
         record_field_config[field_name] = permission
 
-    # Save as nested structure
+    # Save as nested structure (dict insertion order = field display order)
     org.field_config = {
         "user_fields": user_field_config,
         "record_fields": record_field_config,
     }
 
-    # Build annotations from form (only save non-empty ones)
-    user_annotations = {}
+    # Build translations from form (formerly "annotations" — UI label changed, DB column unchanged)
+    user_translations = {}
     for field_name in user_fields:
-        annotation = request.form.get(f"user_annotation_{field_name}", "").strip()
-        if annotation:
-            user_annotations[field_name] = annotation
+        translation = request.form.get(f"user_translation_{field_name}", "").strip()
+        if translation:
+            user_translations[field_name] = translation
 
-    record_annotations = {}
+    record_translations = {}
     for field_name in record_fields:
-        annotation = request.form.get(f"record_annotation_{field_name}", "").strip()
-        if annotation:
-            record_annotations[field_name] = annotation
+        translation = request.form.get(f"record_translation_{field_name}", "").strip()
+        if translation:
+            record_translations[field_name] = translation
 
     org.field_annotations = {
-        "user_fields": user_annotations,
-        "record_fields": record_annotations,
+        "user_fields": user_translations,
+        "record_fields": record_translations,
     }
 
     # Build aliases from form (only save non-empty ones)
@@ -950,6 +977,24 @@ def admin_save_fields():
     org.field_aliases = {
         "user_fields": user_aliases,
         "record_fields": record_aliases,
+    }
+
+    # Build descriptions from form
+    user_descriptions = {}
+    for field_name in user_fields:
+        description = request.form.get(f"user_description_{field_name}", "").strip()
+        if description:
+            user_descriptions[field_name] = description
+
+    record_descriptions = {}
+    for field_name in record_fields:
+        description = request.form.get(f"record_description_{field_name}", "").strip()
+        if description:
+            record_descriptions[field_name] = description
+
+    org.field_descriptions = {
+        "user_fields": user_descriptions,
+        "record_fields": record_descriptions,
     }
 
     # Save email field selection
@@ -1617,6 +1662,7 @@ def migrate_db():
             "trial_started_at": "TIMESTAMP WITH TIME ZONE",
             "created_at": "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
             "field_aliases": "TEXT DEFAULT '{}'",
+            "field_descriptions": "TEXT DEFAULT '{}'",
         }
         for col, col_def in new_cols.items():
             if col not in cols:

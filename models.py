@@ -60,6 +60,11 @@ class Organization(db.Model):
     # When set, the alias is shown to clients instead of the raw Airtable field name.
     _field_aliases = db.Column("field_aliases", db.Text, default="{}")
 
+    # Field descriptions stored as JSON with structure:
+    # {"user_fields": {"Name": "Your full legal name", ...}, "record_fields": {"Grade": "...", ...}}
+    # Longer contextual help text shown below the label on client-facing forms.
+    _field_descriptions = db.Column("field_descriptions", db.Text, default="{}")
+
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(
         db.DateTime(timezone=True),
@@ -222,6 +227,28 @@ class Organization(db.Model):
     def get_record_field_alias(self, field_name: str) -> str:
         """Get alias for a record field. Returns the field name itself if no alias set."""
         return self.field_aliases.get("record_fields", {}).get(field_name, field_name)
+
+    # Field descriptions
+    @property
+    def field_descriptions(self) -> dict:
+        """Get full field descriptions as a dict."""
+        try:
+            return json.loads(self._field_descriptions or "{}")
+        except json.JSONDecodeError:
+            return {"user_fields": {}, "record_fields": {}}
+
+    @field_descriptions.setter
+    def field_descriptions(self, value: dict):
+        """Set field descriptions from a dict."""
+        self._field_descriptions = json.dumps(value)
+
+    def get_user_field_description(self, field_name: str) -> str:
+        """Get description for a user field. Returns empty string if not set."""
+        return self.field_descriptions.get("user_fields", {}).get(field_name, "")
+
+    def get_record_field_description(self, field_name: str) -> str:
+        """Get description for a record field. Returns empty string if not set."""
+        return self.field_descriptions.get("record_fields", {}).get(field_name, "")
 
 
 class LoginAttempt(db.Model):
