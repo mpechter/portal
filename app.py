@@ -930,9 +930,9 @@ def admin_save_fields():
     # Build record field config in the submitted order
     record_field_config = {}
     for field_name in record_fields:
-        permission = request.form.get(f"record_field_{field_name}", "editable")
+        permission = request.form.get(f"record_field_{field_name}", "hidden")
         if permission not in ("editable", "readonly", "hidden"):
-            permission = "editable"
+            permission = "hidden"
         if field_name in computed_record_fields and permission == "editable":
             permission = "readonly"
         record_field_config[field_name] = permission
