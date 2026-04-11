@@ -23,7 +23,7 @@
                 {% if org and org.logo_url %}
                 <img src="{{ org.logo_url }}" alt="{{ org.portal_title }}" class="nav-logo">
                 {% endif %}
-                <span class="nav-title">{{ org.portal_title if org else 'Airbud' }}</span>
+                <span class="nav-title">{{ org.portal_title if org else 'Portal' }}</span>
             </div>
             <div class="nav-links">
                 <a href="{{ url_for('logout') }}">Logout</a>

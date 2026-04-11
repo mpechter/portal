@@ -42,7 +42,7 @@
                 <input type="url" id="logo_url" name="logo_url" value="{{ org.logo_url or '' }}" class="form-input" placeholder="https://example.com/logo.png" data-original="{{ org.logo_url or '' }}">
                 {% if org.logo_url %}
                 <div class="logo-preview">
-                    <img src="{{ org.logo_url }}" alt="Logo preview" style="max-height: 40px; margin-top: 10px;">
+                    <img src="{{ org.logo_url }}" alt="Logo preview">
                 </div>
                 {% endif %}
             </div>
@@ -79,7 +79,7 @@
 
 
             <div class="form-group">
-                <label for="admin_email">Admin Email <span style="color:#c00; font-weight:600;">*</span></label>
+                <label for="admin_email">Admin Email <span class="field-required">*</span></label>
                 <p class="field-help">
                     <strong>Critical — required for password reset and billing notifications.</strong>
                     Changing this address will send a verification link to the new address before taking effect.

@@ -5,7 +5,7 @@
 
 {% block content %}
 <div class="edit-record">
-    <a href="{{ url_for('dashboard') }}" class="back-link">← Back to Students</a>
+    <a href="{{ url_for('dashboard') }}" class="back-link">← Back to {{ org.records_table }}</a>
 
     <h1>{{ record.fields.get('Name', 'Edit Record') }}</h1>
 

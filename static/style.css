@@ -1615,6 +1615,22 @@ input[type="url"] {
 }
 
 /* Password match feedback */
+.field-required {
+    color: var(--color-danger);
+    font-weight: 600;
+}
+
+.logo-preview {
+    margin-top: 10px;
+    line-height: 0;
+}
+
+.logo-preview img {
+    max-height: 40px;
+    width: auto;
+    border-radius: var(--radius-xs);
+}
+
 .password-match-success {
     font-size: 13px;
     margin-top: 4px;
