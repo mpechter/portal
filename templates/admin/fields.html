@@ -82,8 +82,8 @@
         <form id="admin-form" action="{{ url_for('admin_save_fields') }}" method="post" class="form">
 
         <h3>Email Field</h3>
-        <div class="confirmation-config" style="margin-bottom: 24px;">
-            <p class="field-help" style="margin-bottom: 8px;">Select which field in <strong>{{ org.users_table }}</strong> contains the client's email address.</p>
+        <div class="fields-section">
+            <p class="field-help" style="margin-bottom: 10px;">Select which field in <strong>{{ org.users_table }}</strong> contains the client's email address.</p>
             <select name="email_field" id="email_field" class="form-select" style="max-width: 320px;"
                     data-original="{{ org.email_field or 'Email' }}"
                     onchange="updateEmailFieldSidebar(); checkForChanges()">
@@ -101,7 +101,7 @@
 
         {# Profile Fields #}
         <h3>Profile Fields ({{ org.users_table }})</h3>
-        <p class="text-muted">Toggle fields on to show them to clients. Configure each active field below.</p>
+        <p class="text-muted" style="margin-bottom: 14px;">Toggle fields on in the panel to show them here. Configure each active field below.</p>
 
         <input type="hidden" name="user_field_order" id="user_field_order" value="">
 
@@ -172,9 +172,10 @@
 
         {# Record Fields #}
         {% if record_fields %}
-        <h3 style="margin-top: 28px;">{{ org.records_table }} Fields</h3>
+        <h3>{{ org.records_table }} Fields</h3>
 
-        <div class="confirmation-config">
+        <div class="fields-section">
+            <p class="fields-section-title">Client Review</p>
             <label class="checkbox-label">
                 <input type="checkbox" name="confirmation_enabled" id="confirmation_enabled"
                        {% if org.confirmation_enabled %}checked{% endif %}
@@ -182,7 +183,7 @@
                        onchange="toggleConfirmationField()">
                 <span class="checkbox-text"><strong>Enable Client Review</strong></span>
             </label>
-            <p class="field-help">When enabled, users can mark each record as reviewed. A green checkmark shows on the dashboard for reviewed records.</p>
+            <p class="field-help" style="margin-top: 4px;">When enabled, users can mark each record as reviewed. A green checkmark shows on the dashboard for reviewed records.</p>
 
             <div id="confirmation-field-select" class="form-group" style="margin-top: 10px; margin-left: 30px; {% if not org.confirmation_enabled %}display: none;{% endif %}">
                 <label for="confirmation_field">Single select field:</label>
