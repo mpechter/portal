@@ -922,8 +922,14 @@ body {
     display: none;
 }
 
-.visibility-option:has(input:checked) {
-    background: var(--color-primary);
+.visibility-option:has(input[value="editable"]:checked) {
+    background: var(--color-success);
+    color: var(--color-white);
+    font-weight: 500;
+}
+
+.visibility-option:has(input[value="readonly"]:checked) {
+    background: #6c757d;
     color: var(--color-white);
     font-weight: 500;
 }
