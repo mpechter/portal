@@ -670,31 +670,118 @@ body {
     text-decoration: underline;
 }
 
+/* Field config tables (legacy — kept for backward compat) */
 .field-config-table {
     width: 100%;
     border-collapse: collapse;
     margin: 20px 0;
 }
 
-.field-config-table th,
-.field-config-table td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid var(--color-border-light);
+/* Field cards — admin fields config layout */
+.field-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 16px 0 28px;
 }
 
-.field-config-table th {
-    background: var(--color-bg-subtle);
+.field-card {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-white);
+    transition: box-shadow 0.15s;
+}
+
+.field-card:hover {
+    box-shadow: var(--shadow-sm);
+}
+
+.field-card-handle {
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    border-right: 1px solid var(--color-border-light);
+    color: var(--color-text-light);
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.field-card-body {
+    flex: 1;
+    padding: 14px 18px;
+    min-width: 0;
+}
+
+.field-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.field-card-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.field-input-full {
+    grid-column: 1 / -1;
+}
+
+.field-input-group > label {
+    display: block;
+    font-size: 0.72rem;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    margin-bottom: 4px;
 }
 
-.field-config-table td:not(:first-child):not(:nth-child(2)):not(:nth-child(3)):not(:nth-child(4)):not(:nth-child(5)) {
-    text-align: center;
+/* Segmented visibility control */
+.field-visibility {
+    display: inline-flex;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xs);
+    overflow: hidden;
+    font-size: 0.82rem;
 }
 
-.drag-col {
-    width: 28px;
-    padding: 0 4px !important;
+.visibility-option {
+    display: flex;
+    align-items: center;
+    padding: 5px 14px;
+    cursor: pointer;
+    border-right: 1px solid var(--color-border);
+    transition: background 0.1s, color 0.1s;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.visibility-option:last-child {
+    border-right: none;
+}
+
+.visibility-option input[type="radio"] {
+    display: none;
+}
+
+.visibility-option:has(input:checked) {
+    background: var(--color-primary);
+    color: var(--color-white);
+    font-weight: 500;
+}
+
+.visibility-option:not(:has(input:checked)):hover {
+    background: var(--color-bg-subtle);
+}
+
+.visibility-option.is-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 .drag-handle {
@@ -711,13 +798,14 @@ body {
 }
 
 .sortable-ghost {
-    opacity: 0.4;
-    background: var(--color-primary-focus);
+    opacity: 0.35;
+    background: var(--color-primary-subtle) !important;
+    box-shadow: none;
 }
 
 .description-input {
     resize: vertical;
-    min-height: 40px;
+    min-height: 44px;
 }
 
 .annotation-input {
@@ -1709,17 +1797,16 @@ body:has(.preview-banner) .container {
     }
 
     /* Field config table: horizontal scroll */
-    .field-config-table {
-        display: block;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        font-size: 0.85rem;
+    .field-card-inputs {
+        grid-template-columns: 1fr;
     }
 
-    .field-config-table th,
-    .field-config-table td {
-        padding: 8px 10px;
-        white-space: nowrap;
+    .field-input-full {
+        grid-column: 1;
+    }
+
+    .field-visibility {
+        flex-wrap: wrap;
     }
 
     /* Data table: horizontal scroll */
