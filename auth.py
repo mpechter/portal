@@ -544,7 +544,6 @@ def send_contact_email(name: str, email: str, message: str) -> bool:
 
     if Config.RESEND_API_KEY:
         try:
-            resend.api_key = Config.RESEND_API_KEY
             resend.Emails.send({
                 "from": Config.EMAIL_FROM,
                 "to": "info@airbud.app",
@@ -571,7 +570,6 @@ def send_signup_notification(org_name: str, admin_email: str, plan: str) -> None
     if not Config.RESEND_API_KEY:
         return
     try:
-        resend.api_key = Config.RESEND_API_KEY
         resend.Emails.send({
             "from": Config.EMAIL_FROM,
             "to": "info@airbud.app",
