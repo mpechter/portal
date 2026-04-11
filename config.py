@@ -18,6 +18,10 @@ class Config:
         _database_url = _database_url.replace("postgres://", "postgresql://", 1)
     SQLALCHEMY_DATABASE_URI = _database_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,   # test connections before use; discards stale ones silently
+        "pool_recycle": 280,     # recycle connections after ~4.5 min (before Postgres 5-min idle timeout)
+    }
 
     # Resend email API
     RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
