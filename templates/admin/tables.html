@@ -4,7 +4,7 @@
 
 {% block admin_content %}
         {% if not org.tables_configured %}
-        <div style="background:#fff8e1; border:1px solid #f5c518; border-radius:6px; padding:14px 16px; margin-bottom:20px; font-size:13px;">
+        <div class="admin-alert admin-alert-warning">
             <strong>Your portal isn't live yet.</strong> Complete the Tables and Fields setup below before sharing it with clients.
         </div>
         {% endif %}
@@ -12,9 +12,9 @@
         <h2>Table Configuration</h2>
         <p class="text-muted">Select which tables contain your users and their linked records.</p>
 
-        <div class="setup-instructions" style="background: #f0f7ff; border: 1px solid #c0d8f0; border-radius: 6px; padding: 16px; margin-bottom: 24px;">
-            <h3 style="margin-top: 0; font-size: 14px; color: #1a5dad;">Airtable Setup Requirements</h3>
-            <p style="margin-bottom: 0; font-size: 13px;">Your <strong>Users Table</strong> must have a field containing each user's email address. You'll select which field that is on the <strong>Fields</strong> tab.</p>
+        <div class="admin-alert admin-alert-info">
+            <strong>Airtable Setup Requirements</strong><br>
+            Your <strong>Users Table</strong> must have a field containing each user's email address. You'll select which field that is on the <strong>Fields</strong> tab.
         </div>
 
         <form id="tables-form" action="{{ url_for('admin_save_tables') }}" method="post" class="form">

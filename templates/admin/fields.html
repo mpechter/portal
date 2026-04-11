@@ -215,7 +215,7 @@
 
         <div class="form-actions">
             <button type="submit" id="save-btn" class="btn btn-save" disabled>Save Configuration</button>
-            <button type="button" id="discard-btn" class="btn btn-secondary" disabled>Discard Changes</button>
+            <button type="button" id="discard-btn" class="btn btn-secondary" disabled title="Revert all changes to original values">Discard Changes</button>
         </div>
         </form>
 
@@ -234,7 +234,12 @@ function toggleConfirmationField() {
     fieldSelect.style.display = checkbox.checked ? 'block' : 'none';
 
     if (!checkbox.checked) {
-        // Show all field rows immediately when client review is disabled
+        // Reset selects and show all field rows when client review is disabled
+        const confirmField = document.getElementById('confirmation_field');
+        const confirmValue = document.getElementById('confirmation_value');
+        if (confirmField) confirmField.value = '';
+        if (confirmValue) confirmValue.value = '';
+        document.getElementById('confirmation-value-select').style.display = 'none';
         document.querySelectorAll('tr[data-field-name]').forEach(row => {
             row.style.display = '';
         });

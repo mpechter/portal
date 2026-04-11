@@ -4,11 +4,11 @@
 
 {% block admin_content %}
         {% if org.pending_admin_email %}
-        <div style="background: #fff8e1; border: 1px solid #f5c518; border-radius: 6px; padding: 14px 16px; margin-bottom: 20px; font-size: 13px;">
+        <div class="admin-alert admin-alert-warning">
             <strong>Verification pending:</strong> A confirmation link was sent to
             <strong>{{ org.pending_admin_email }}</strong>. Your admin email will not change until you click that link.
             <form action="{{ url_for('admin_cancel_pending_email') }}" method="post" style="display:inline; margin-left: 12px;">
-                <button type="submit" class="btn-text" style="color: #c00;">Cancel</button>
+                <button type="submit" class="btn-text" style="color: var(--color-danger-text);">Cancel</button>
             </form>
         </div>
         {% endif %}
@@ -49,24 +49,24 @@
 
             <h3>Airtable Connection</h3>
 
-            <div class="setup-instructions" style="background: #f0f7ff; border: 1px solid #c0d8f0; border-radius: 6px; padding: 16px; margin-bottom: 20px;">
-                <h4 style="margin-top: 0; font-size: 14px; color: #1a5dad;">Token Requirements</h4>
-                <p style="margin-bottom: 8px; font-size: 13px;">Create a <a href="https://airtable.com/create/tokens" target="_blank">Personal Access Token</a> with these scopes:</p>
-                <ul style="margin: 0; padding-left: 20px; font-size: 13px;">
+            <div class="admin-alert admin-alert-info">
+                <strong>Token Requirements</strong><br>
+                Create a <a href="https://airtable.com/create/tokens" target="_blank">Personal Access Token</a> with these scopes:
+                <ul style="margin: 6px 0 6px 20px; font-size: 13px;">
                     <li><code>data.records:read</code> — read user and record data</li>
                     <li><code>data.records:write</code> — save login codes and updates</li>
                     <li><code>schema.bases:read</code> — detect tables and fields</li>
                 </ul>
-                <p style="margin-top: 10px; margin-bottom: 0; font-size: 13px; color: #666;">
-                    Grant access to the specific base you want to connect.
-                </p>
+                Grant access to the specific base you want to connect.
             </div>
 
             <div class="form-group">
                 <label for="airtable_api_key">Airtable API Key</label>
                 <p class="field-help">Your personal access token from Airtable.</p>
-                <input type="password" id="airtable_api_key" name="airtable_api_key" value="" class="form-input" placeholder="Leave blank to keep current key" data-original="">
-                <button type="button" class="btn-text" onclick="togglePassword('airtable_api_key')">Show</button>
+                <div class="input-with-action">
+                    <input type="password" id="airtable_api_key" name="airtable_api_key" value="" class="form-input" placeholder="Leave blank to keep current key" data-original="">
+                    <button type="button" class="btn-text" onclick="togglePassword('airtable_api_key')">Show</button>
+                </div>
             </div>
 
             <div class="form-group">
@@ -85,13 +85,13 @@
                     Changing this address will send a verification link to the new address before taking effect.
                 </p>
                 {% if org.admin_email %}
-                <p style="font-size: 13px; margin-bottom: 6px; color: #444;">
+                <p style="font-size: 13px; margin-bottom: 6px; color: var(--color-text-secondary);">
                     Current: <strong>{{ org.admin_email }}</strong>
                 </p>
                 {% else %}
-                <p style="font-size: 13px; margin-bottom: 6px; color: #c00;">
+                <div class="admin-alert admin-alert-warning" style="margin-bottom: 8px;">
                     No admin email is set — you won't be able to recover your password without one.
-                </p>
+                </div>
                 {% endif %}
                 <input type="email" id="admin_email" name="admin_email" value="" class="form-input"
                        placeholder="{{ org.admin_email or 'Enter admin email' }}"
@@ -101,26 +101,28 @@
             <div class="form-group">
                 <label for="new_password">New Password</label>
                 <p class="field-help">Leave blank to keep your current password.</p>
-                <input type="password" id="new_password" name="new_password" class="form-input" data-original="" autocomplete="new-password">
-                <button type="button" class="btn-text" onclick="togglePassword('new_password')">Show</button>
+                <div class="input-with-action">
+                    <input type="password" id="new_password" name="new_password" class="form-input" data-original="" autocomplete="new-password">
+                    <button type="button" class="btn-text" onclick="togglePassword('new_password')">Show</button>
+                </div>
             </div>
 
             <div class="form-group" id="confirm-password-group" style="display: none;">
                 <label for="new_password_confirm">Confirm New Password</label>
                 <input type="password" id="new_password_confirm" name="new_password_confirm" class="form-input" autocomplete="new-password">
-                <p id="password-match-msg" style="display:none; font-size: 13px; margin-top: 4px;"></p>
+                <p id="password-match-msg" style="display:none;"></p>
             </div>
 
             <div class="form-actions">
                 <button type="submit" id="save-btn" class="btn btn-save" disabled>Save Settings</button>
-                <button type="button" id="discard-btn" class="btn btn-secondary" disabled>Discard Changes</button>
+                <button type="button" id="discard-btn" class="btn btn-secondary" disabled title="Revert all changes to original values">Discard Changes</button>
             </div>
         </form>
 
 <script>
 function togglePassword(fieldId) {
     const field = document.getElementById(fieldId);
-    const btn = field.nextElementSibling;
+    const btn = field.parentElement.querySelector('button');
     if (field.type === 'password') {
         field.type = 'text';
         btn.textContent = 'Hide';
@@ -178,11 +180,11 @@ function togglePassword(fieldId) {
         }
         if (newPasswordInput.value === confirmInput.value) {
             matchMsg.textContent = 'Passwords match.';
-            matchMsg.style.color = '#2e7d32';
+            matchMsg.className = 'password-match-success';
             matchMsg.style.display = 'block';
         } else {
             matchMsg.textContent = 'Passwords do not match.';
-            matchMsg.style.color = '#c00';
+            matchMsg.className = 'password-match-error';
             matchMsg.style.display = 'block';
         }
     }

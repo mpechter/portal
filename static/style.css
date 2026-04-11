@@ -28,6 +28,8 @@
     --color-info-bg:        #d1ecf1;
 
     --color-reviewed:       #22c55e;   /* confirmation / reviewed badge */
+    --color-preview-bg:     #1a1a2e;   /* admin preview banner background */
+    --color-preview-text:   #e0e0ff;   /* admin preview banner text */
 
     /* Text hierarchy */
     --color-text:           #333;
@@ -184,6 +186,11 @@ body {
     text-align: center;
 }
 
+.btn:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
 .btn-primary {
     background: var(--color-primary);
     color: var(--color-white);
@@ -203,21 +210,24 @@ body {
 }
 
 .btn-save {
-    background: #ccc;
+    background: var(--color-bg-elevated);
     color: var(--color-text-muted);
     cursor: not-allowed;
+    opacity: 0.55;
     transition: all 0.2s ease;
 }
 
 .btn-save:disabled {
     background: var(--color-bg-elevated);
     color: var(--color-text-muted);
+    opacity: 0.55;
 }
 
 .btn-save.has-changes {
     background: var(--color-success);
     color: var(--color-white);
     cursor: pointer;
+    opacity: 1;
     animation: pulse 0.3s ease;
 }
 
@@ -712,7 +722,8 @@ body {
 /* Readonly field styling */
 .field-readonly {
     background: var(--color-bg-subtle);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-light);
+    border-left: 3px solid var(--color-border);
     padding: 12px;
     border-radius: var(--radius-sm);
     color: var(--color-text-secondary);
@@ -1277,6 +1288,61 @@ input[type="url"] {
     color: var(--color-danger-text);
 }
 
+/* Admin info/warning callout — replaces hardcoded inline styles */
+.admin-alert {
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+}
+
+.admin-alert-warning {
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+    border: 1px solid #f5c518;
+}
+
+.admin-alert-info {
+    background: #f0f7ff;
+    color: #1a5dad;
+    border: 1px solid #c0d8f0;
+}
+
+/* Password match feedback */
+.password-match-success {
+    font-size: 13px;
+    margin-top: 4px;
+    color: var(--color-success-text);
+}
+
+.password-match-error {
+    font-size: 13px;
+    margin-top: 4px;
+    color: var(--color-danger-text);
+}
+
+/* Password input with show/hide button */
+.input-with-action {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.input-with-action input {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Empty state for dashboard/lists */
+.empty-state {
+    background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius);
+    padding: 32px 24px;
+    text-align: center;
+    color: var(--color-text-secondary);
+}
+
 /* Admin preview banner — fixed top strip */
 .preview-banner {
     position: fixed;
@@ -1284,8 +1350,8 @@ input[type="url"] {
     left: 0;
     right: 0;
     z-index: 9999;
-    background: #1a1a2e;
-    color: #e0e0ff;
+    background: var(--color-preview-bg);
+    color: var(--color-preview-text);
     font-size: 0.85rem;
     font-weight: 500;
     padding: 10px 20px;
@@ -1298,7 +1364,7 @@ input[type="url"] {
 
 .preview-exit-btn {
     background: #fff;
-    color: #1a1a2e;
+    color: var(--color-preview-bg);
     border: none;
     border-radius: 4px;
     padding: 4px 12px;
@@ -1308,12 +1374,23 @@ input[type="url"] {
 }
 
 .preview-exit-btn:hover {
-    background: #e0e0ff;
+    background: var(--color-preview-text);
 }
 
 /* Push page content down when preview banner is visible */
 body:has(.preview-banner) .container {
     margin-top: 42px;
+}
+
+@media (max-width: 400px) {
+    .preview-banner {
+        padding: 10px 12px;
+        gap: 10px;
+    }
+    .preview-exit-btn {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+    }
 }
 
 /* Billing admin */
@@ -1348,7 +1425,7 @@ body:has(.preview-banner) .container {
     align-items: center;
     gap: 12px;
     margin: 20px 0;
-    color: var(--color-text-light);
+    color: var(--color-text-muted);
     font-size: 0.85rem;
 }
 
