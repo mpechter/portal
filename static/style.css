@@ -677,66 +677,88 @@ body {
     margin: 20px 0;
 }
 
-/* Fields sidebar + main layout */
-.fields-layout {
+/* ---- Fields page: outside sidebar panel ---- */
+
+/* Widen the container and create a 2-col layout when the sidebar panel is present */
+.container:has(.admin-sidebar-panel) {
+    max-width: 1080px;
+}
+
+.container:has(.admin-sidebar-panel) main {
     display: grid;
-    grid-template-columns: 200px 1fr;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-    margin: 16px 0 28px;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
 }
 
-.fields-sidebar {
-    background: var(--color-bg-subtle);
-    border-right: 1px solid var(--color-border);
-    display: flex;
-    flex-direction: column;
+.admin-sidebar-panel {
+    background: var(--color-white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 20px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
 }
 
-.sidebar-header {
+.sidebar-section {
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.sidebar-section:last-child {
+    border-bottom: none;
+}
+
+.sidebar-section-header {
     padding: 10px 14px;
     border-bottom: 1px solid var(--color-border-light);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    gap: 6px;
 }
 
-.sidebar-label {
-    font-size: 0.72rem;
+.sidebar-section-title {
+    font-size: 0.7rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--color-text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .sidebar-active-count {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     color: var(--color-text-light);
+    flex-shrink: 0;
 }
 
 .sidebar-field-list {
-    padding: 6px 0;
-    overflow-y: auto;
-    flex: 1;
+    padding: 4px 0;
 }
 
 .sidebar-field {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 7px 14px;
-    cursor: pointer;
+    gap: 7px;
+    padding: 6px 10px 6px 8px;
     transition: background 0.1s;
 }
 
 .sidebar-field:hover {
-    background: var(--color-bg-elevated);
+    background: var(--color-bg-subtle);
+}
+
+.sidebar-field .drag-handle {
+    font-size: 0.95rem;
+    padding: 2px;
+    flex-shrink: 0;
 }
 
 .sidebar-field-name {
-    font-size: 0.83rem;
+    font-size: 0.82rem;
     flex: 1;
     min-width: 0;
     overflow: hidden;
@@ -786,13 +808,6 @@ body {
     transform: translateX(13px);
 }
 
-/* Main area */
-.fields-main {
-    background: var(--color-bg);
-    padding: 12px 14px;
-    min-height: 160px;
-}
-
 .fields-empty-hint {
     display: flex;
     align-items: center;
@@ -822,14 +837,6 @@ body {
 
 .field-card:hover {
     box-shadow: var(--shadow-sm);
-}
-
-.field-card-handle {
-    display: flex;
-    align-items: center;
-    padding: 0 8px;
-    border-right: 1px solid var(--color-border-light);
-    color: var(--color-text-light);
 }
 
 .field-card-body {
@@ -1921,14 +1928,13 @@ body:has(.preview-banner) .container {
         font-size: 0.85rem;
     }
 
-    /* Field config table: horizontal scroll */
-    .fields-layout {
+    .container:has(.admin-sidebar-panel) main {
         grid-template-columns: 1fr;
     }
 
-    .fields-sidebar {
-        border-right: none;
-        border-bottom: 1px solid var(--color-border);
+    .admin-sidebar-panel {
+        position: static;
+        max-height: none;
     }
 
     .field-card-inputs {

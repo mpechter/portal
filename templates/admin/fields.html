@@ -2,15 +2,91 @@
 
 {% block title %}Admin - {{ org.portal_title }}{% endblock %}
 
+{# ---- Outside sidebar panel ---- #}
+{% block admin_sidebar %}
+<div class="admin-sidebar-panel">
+
+    <div class="sidebar-section">
+        <div class="sidebar-section-header">
+            <span class="sidebar-section-title">{{ org.users_table }}</span>
+            <span class="sidebar-active-count" id="user-active-count"></span>
+        </div>
+        <div class="sidebar-field-list" id="user-sidebar-list">
+            {% for field_name in user_fields %}
+            {% set is_computed = field_name in computed_user_fields %}
+            {% set current = user_field_config.get(field_name, 'hidden') %}
+            {% set active = current != 'hidden' %}
+            <div class="sidebar-field" data-field-name="{{ field_name }}"
+                 {% if (org.email_field or 'Email') == field_name %}style="display:none"{% endif %}>
+                <span class="drag-handle" title="Drag to reorder">⠿</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" class="sidebar-toggle"
+                           data-sortable="user-fields-sortable"
+                           data-sidebar-list="user-sidebar-list"
+                           data-order-input="user_field_order"
+                           data-active-count="user-active-count"
+                           data-empty-hint="user-empty-hint"
+                           data-is-computed="{{ 'true' if is_computed else 'false' }}"
+                           data-original="{{ 'true' if active else '' }}"
+                           {% if active %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="sidebar-field-name">{{ field_name }}</span>
+                {% if field_name in link_user_fields %}<span class="field-type-badge">link</span>
+                {% elif is_computed %}<span class="field-type-badge">formula</span>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if record_fields %}
+    <div class="sidebar-section">
+        <div class="sidebar-section-header">
+            <span class="sidebar-section-title">{{ org.records_table }}</span>
+            <span class="sidebar-active-count" id="record-active-count"></span>
+        </div>
+        <div class="sidebar-field-list" id="record-sidebar-list">
+            {% for field_name in record_fields %}
+            {% set is_computed = field_name in computed_record_fields %}
+            {% set current = record_field_config.get(field_name, 'hidden' if is_computed else 'editable') %}
+            {% set active = current != 'hidden' %}
+            <div class="sidebar-field" data-field-name="{{ field_name }}"
+                 {% if org.confirmation_field == field_name %}style="display:none"{% endif %}>
+                <span class="drag-handle" title="Drag to reorder">⠿</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" class="sidebar-toggle"
+                           data-sortable="record-fields-sortable"
+                           data-sidebar-list="record-sidebar-list"
+                           data-order-input="record_field_order"
+                           data-active-count="record-active-count"
+                           data-empty-hint="record-empty-hint"
+                           data-is-computed="{{ 'true' if is_computed else 'false' }}"
+                           data-original="{{ 'true' if active else '' }}"
+                           {% if active %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="sidebar-field-name">{{ field_name }}</span>
+                {% if field_name in link_record_fields %}<span class="field-type-badge">link</span>
+                {% elif is_computed %}<span class="field-type-badge">formula</span>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{# ---- Main admin content ---- #}
 {% block admin_content %}
         <form id="admin-form" action="{{ url_for('admin_save_fields') }}" method="post" class="form">
 
         <h3>Email Field</h3>
         <div class="confirmation-config" style="margin-bottom: 24px;">
-            <p class="field-help" style="margin-bottom: 8px;">Select which field in <strong>{{ org.users_table }}</strong> contains the client's email address. This field is used to look up the client at login.</p>
+            <p class="field-help" style="margin-bottom: 8px;">Select which field in <strong>{{ org.users_table }}</strong> contains the client's email address.</p>
             <select name="email_field" id="email_field" class="form-select" style="max-width: 320px;"
                     data-original="{{ org.email_field or 'Email' }}"
-                    onchange="updateEmailFieldSidebar(); if(typeof checkForChanges==='function') checkForChanges()">
+                    onchange="updateEmailFieldSidebar(); checkForChanges()">
                 {% for field in email_fields %}
                 <option value="{{ field }}" {% if (org.email_field or 'Email') == field %}selected{% endif %}>{{ field }}</option>
                 {% endfor %}
@@ -23,141 +99,90 @@
             {% endif %}
         </div>
 
-        {# ---- Profile Fields ---- #}
+        {# Profile Fields #}
         <h3>Profile Fields ({{ org.users_table }})</h3>
-        <p class="text-muted">Toggle fields to show them to clients. Drag to reorder. Active fields can be editable or read-only.</p>
+        <p class="text-muted">Toggle fields on to show them to clients. Configure each active field below.</p>
 
         <input type="hidden" name="user_field_order" id="user_field_order" value="">
 
-        <div class="fields-layout">
-            <div class="fields-sidebar">
-                <div class="sidebar-header">
-                    <span class="sidebar-label">Fields</span>
-                    <span class="sidebar-active-count" id="user-active-count"></span>
-                </div>
-                <div class="sidebar-field-list">
-                    {% for field_name in user_fields %}
-                    {% set is_computed = field_name in computed_user_fields %}
-                    {% set current = user_field_config.get(field_name, 'hidden') %}
-                    {% set active = current != 'hidden' %}
-                    <label class="sidebar-field" data-field-name="{{ field_name }}"
-                           {% if (org.email_field or 'Email') == field_name %}style="display:none"{% endif %}>
-                        <span class="toggle-switch">
-                            <input type="checkbox" class="sidebar-toggle"
-                                   data-sortable="user-fields-sortable"
-                                   data-order-input="user_field_order"
-                                   data-active-count="user-active-count"
-                                   data-empty-hint="user-empty-hint"
-                                   data-is-computed="{{ 'true' if is_computed else 'false' }}"
-                                   data-original="{{ 'true' if active else '' }}"
-                                   {% if active %}checked{% endif %}>
-                            <span class="toggle-slider"></span>
-                        </span>
-                        <span class="sidebar-field-name">{{ field_name }}</span>
+        <div class="field-cards" id="user-fields-sortable">
+            {% for field_name in user_fields %}
+            {% set is_computed = field_name in computed_user_fields %}
+            {% set current = user_field_config.get(field_name, 'hidden') %}
+            {% set active = current != 'hidden' %}
+            {% set translation = user_translations.get(field_name, '') %}
+            {% set alias = user_aliases.get(field_name, '') %}
+            {% set description = user_descriptions.get(field_name, '') %}
+            <div class="field-card"
+                 data-user-field-name="{{ field_name }}"
+                 data-active="{{ 'true' if active else 'false' }}"
+                 {% if not active %}style="display:none"{% endif %}>
+                <div class="field-card-body">
+                    <div class="field-card-header">
+                        <strong>{{ field_name }}</strong>
                         {% if field_name in link_user_fields %}<span class="field-type-badge">link</span>
                         {% elif is_computed %}<span class="field-type-badge">formula</span>{% endif %}
-                    </label>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <div class="fields-main">
-                <div class="field-cards" id="user-fields-sortable">
-                    {% for field_name in user_fields %}
-                    {% set is_computed = field_name in computed_user_fields %}
-                    {% set current = user_field_config.get(field_name, 'hidden') %}
-                    {% set active = current != 'hidden' %}
-                    {% set translation = user_translations.get(field_name, '') %}
-                    {% set alias = user_aliases.get(field_name, '') %}
-                    {% set description = user_descriptions.get(field_name, '') %}
-                    <div class="field-card"
-                         data-user-field-name="{{ field_name }}"
-                         data-active="{{ 'true' if active else 'false' }}"
-                         {% if not active %}style="display:none"{% endif %}>
-                        <div class="field-card-handle">
-                            <span class="drag-handle" title="Drag to reorder">⠿</span>
+                    </div>
+                    <div class="field-card-inputs">
+                        <div class="field-input-group">
+                            <label>Alias</label>
+                            <input type="text" name="user_alias_{{ field_name }}"
+                                   value="{{ alias }}" data-original="{{ alias }}"
+                                   placeholder="{{ field_name }}" class="annotation-input">
                         </div>
-                        <div class="field-card-body">
-                            <div class="field-card-header">
-                                <strong>{{ field_name }}</strong>
-                                {% if field_name in link_user_fields %}<span class="field-type-badge">link</span>
-                                {% elif is_computed %}<span class="field-type-badge">formula</span>{% endif %}
-                            </div>
-                            <div class="field-card-inputs">
-                                <div class="field-input-group">
-                                    <label>Alias</label>
-                                    <input type="text"
-                                           name="user_alias_{{ field_name }}"
-                                           value="{{ alias }}"
-                                           data-original="{{ alias }}"
-                                           placeholder="{{ field_name }}"
-                                           class="annotation-input">
-                                </div>
-                                <div class="field-input-group">
-                                    <label>Translation</label>
-                                    <input type="text"
-                                           name="user_translation_{{ field_name }}"
-                                           value="{{ translation }}"
-                                           data-original="{{ translation }}"
-                                           placeholder="e.g. Nombre"
-                                           class="annotation-input">
-                                </div>
-                                <div class="field-input-group field-input-full">
-                                    <label>Description</label>
-                                    <textarea name="user_description_{{ field_name }}"
-                                              data-original="{{ description }}"
-                                              placeholder="Longer help text shown to the client..."
-                                              class="annotation-input description-input"
-                                              rows="2">{{ description }}</textarea>
-                                </div>
-                            </div>
-                            <div class="field-visibility">
-                                <label class="visibility-option{% if is_computed %} is-disabled{% endif %}"
-                                       {% if is_computed %}title="This field type cannot be edited"{% endif %}>
-                                    <input type="radio"
-                                           name="user_field_{{ field_name }}"
-                                           value="editable"
-                                           data-original="{{ 'true' if current == 'editable' else '' }}"
-                                           {% if current == 'editable' %}checked{% endif %}
-                                           {% if is_computed or not active %}disabled{% endif %}>
-                                    Editable
-                                </label>
-                                <label class="visibility-option">
-                                    <input type="radio"
-                                           name="user_field_{{ field_name }}"
-                                           value="readonly"
-                                           data-original="{{ 'true' if current == 'readonly' else '' }}"
-                                           {% if current == 'readonly' %}checked{% endif %}
-                                           {% if not active %}disabled{% endif %}>
-                                    Read-only
-                                </label>
-                            </div>
+                        <div class="field-input-group">
+                            <label>Translation</label>
+                            <input type="text" name="user_translation_{{ field_name }}"
+                                   value="{{ translation }}" data-original="{{ translation }}"
+                                   placeholder="e.g. Nombre" class="annotation-input">
+                        </div>
+                        <div class="field-input-group field-input-full">
+                            <label>Description</label>
+                            <textarea name="user_description_{{ field_name }}"
+                                      data-original="{{ description }}"
+                                      placeholder="Longer help text shown to the client..."
+                                      class="annotation-input description-input"
+                                      rows="2">{{ description }}</textarea>
                         </div>
                     </div>
-                    {% endfor %}
-                </div>
-                <div class="fields-empty-hint" id="user-empty-hint" style="display:none">
-                    Toggle fields on the left to add them here.
+                    <div class="field-visibility">
+                        <label class="visibility-option{% if is_computed %} is-disabled{% endif %}"
+                               {% if is_computed %}title="This field type cannot be edited"{% endif %}>
+                            <input type="radio" name="user_field_{{ field_name }}" value="editable"
+                                   data-original="{{ 'true' if current == 'editable' else '' }}"
+                                   {% if current == 'editable' %}checked{% endif %}
+                                   {% if is_computed or not active %}disabled{% endif %}>
+                            Editable
+                        </label>
+                        <label class="visibility-option">
+                            <input type="radio" name="user_field_{{ field_name }}" value="readonly"
+                                   data-original="{{ 'true' if current == 'readonly' else '' }}"
+                                   {% if current == 'readonly' %}checked{% endif %}
+                                   {% if not active %}disabled{% endif %}>
+                            Read-only
+                        </label>
+                    </div>
                 </div>
             </div>
+            {% endfor %}
+        </div>
+        <div class="fields-empty-hint" id="user-empty-hint" style="display:none">
+            Toggle fields in the panel to add them here.
         </div>
 
-        {# ---- Record Fields ---- #}
+        {# Record Fields #}
         {% if record_fields %}
-        <h3>{{ org.records_table }} Fields</h3>
-        <p class="text-muted">Fields shown on linked records. Defaults to editable if not configured.</p>
+        <h3 style="margin-top: 28px;">{{ org.records_table }} Fields</h3>
 
         <div class="confirmation-config">
             <label class="checkbox-label">
-                <input type="checkbox"
-                       name="confirmation_enabled"
-                       id="confirmation_enabled"
+                <input type="checkbox" name="confirmation_enabled" id="confirmation_enabled"
                        {% if org.confirmation_enabled %}checked{% endif %}
                        data-original="{{ 'true' if org.confirmation_enabled else 'false' }}"
                        onchange="toggleConfirmationField()">
                 <span class="checkbox-text"><strong>Enable Client Review</strong></span>
             </label>
-            <p class="field-help">When enabled, users can mark each record as reviewed. A green checkmark shows on the dashboard for reviewed records, helping clients track their progress.</p>
+            <p class="field-help">When enabled, users can mark each record as reviewed. A green checkmark shows on the dashboard for reviewed records.</p>
 
             <div id="confirmation-field-select" class="form-group" style="margin-top: 10px; margin-left: 30px; {% if not org.confirmation_enabled %}display: none;{% endif %}">
                 <label for="confirmation_field">Single select field:</label>
@@ -170,9 +195,8 @@
                     {% endfor %}
                 </select>
                 {% if not select_fields %}
-                <p class="field-help" style="color: #d63939;">No single select fields found. Add a single select field to your {{ org.records_table }} table in Airtable first.</p>
+                <p class="field-help" style="color: #d63939;">No single select fields found in {{ org.records_table }}.</p>
                 {% endif %}
-
                 <div id="confirmation-value-select" class="form-group" style="margin-top: 10px; {% if not org.confirmation_field %}display: none;{% endif %}">
                     <label for="confirmation_value">Value to set when reviewed:</label>
                     <select name="confirmation_value" id="confirmation_value" class="form-select" data-original="{{ org.confirmation_value or '' }}">
@@ -189,121 +213,73 @@
 
         <input type="hidden" name="record_field_order" id="record_field_order" value="">
 
-        <div class="fields-layout">
-            <div class="fields-sidebar">
-                <div class="sidebar-header">
-                    <span class="sidebar-label">Fields</span>
-                    <span class="sidebar-active-count" id="record-active-count"></span>
-                </div>
-                <div class="sidebar-field-list">
-                    {% for field_name in record_fields %}
-                    {% set is_computed = field_name in computed_record_fields %}
-                    {% set current = record_field_config.get(field_name, 'hidden' if is_computed else 'editable') %}
-                    {% set active = current != 'hidden' %}
-                    <label class="sidebar-field" data-field-name="{{ field_name }}"
-                           {% if org.confirmation_field == field_name %}style="display:none"{% endif %}>
-                        <span class="toggle-switch">
-                            <input type="checkbox" class="sidebar-toggle"
-                                   data-sortable="record-fields-sortable"
-                                   data-order-input="record_field_order"
-                                   data-active-count="record-active-count"
-                                   data-empty-hint="record-empty-hint"
-                                   data-is-computed="{{ 'true' if is_computed else 'false' }}"
-                                   data-original="{{ 'true' if active else '' }}"
-                                   {% if active %}checked{% endif %}>
-                            <span class="toggle-slider"></span>
-                        </span>
-                        <span class="sidebar-field-name">{{ field_name }}</span>
+        <div class="field-cards" id="record-fields-sortable">
+            {% for field_name in record_fields %}
+            {% set is_computed = field_name in computed_record_fields %}
+            {% set current = record_field_config.get(field_name, 'hidden' if is_computed else 'editable') %}
+            {% set active = current != 'hidden' %}
+            {% set translation = record_translations.get(field_name, '') %}
+            {% set alias = record_aliases.get(field_name, '') %}
+            {% set description = record_descriptions.get(field_name, '') %}
+            <div class="field-card"
+                 data-field-name="{{ field_name }}"
+                 data-active="{{ 'true' if active else 'false' }}"
+                 {% if not active %}style="display:none"{% endif %}>
+                <div class="field-card-body">
+                    <div class="field-card-header">
+                        <strong>{{ field_name }}</strong>
                         {% if field_name in link_record_fields %}<span class="field-type-badge">link</span>
                         {% elif is_computed %}<span class="field-type-badge">formula</span>{% endif %}
-                    </label>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <div class="fields-main">
-                <div class="field-cards" id="record-fields-sortable">
-                    {% for field_name in record_fields %}
-                    {% set is_computed = field_name in computed_record_fields %}
-                    {% set current = record_field_config.get(field_name, 'hidden' if is_computed else 'editable') %}
-                    {% set active = current != 'hidden' %}
-                    {% set translation = record_translations.get(field_name, '') %}
-                    {% set alias = record_aliases.get(field_name, '') %}
-                    {% set description = record_descriptions.get(field_name, '') %}
-                    <div class="field-card"
-                         data-field-name="{{ field_name }}"
-                         data-active="{{ 'true' if active else 'false' }}"
-                         {% if not active %}style="display:none"{% endif %}>
-                        <div class="field-card-handle">
-                            <span class="drag-handle" title="Drag to reorder">⠿</span>
+                    </div>
+                    <div class="field-card-inputs">
+                        <div class="field-input-group">
+                            <label>Alias</label>
+                            <input type="text" name="record_alias_{{ field_name }}"
+                                   value="{{ alias }}" data-original="{{ alias }}"
+                                   placeholder="{{ field_name }}" class="annotation-input">
                         </div>
-                        <div class="field-card-body">
-                            <div class="field-card-header">
-                                <strong>{{ field_name }}</strong>
-                                {% if field_name in link_record_fields %}<span class="field-type-badge">link</span>
-                                {% elif is_computed %}<span class="field-type-badge">formula</span>{% endif %}
-                            </div>
-                            <div class="field-card-inputs">
-                                <div class="field-input-group">
-                                    <label>Alias</label>
-                                    <input type="text"
-                                           name="record_alias_{{ field_name }}"
-                                           value="{{ alias }}"
-                                           data-original="{{ alias }}"
-                                           placeholder="{{ field_name }}"
-                                           class="annotation-input">
-                                </div>
-                                <div class="field-input-group">
-                                    <label>Translation</label>
-                                    <input type="text"
-                                           name="record_translation_{{ field_name }}"
-                                           value="{{ translation }}"
-                                           data-original="{{ translation }}"
-                                           placeholder="e.g. Calificación"
-                                           class="annotation-input">
-                                </div>
-                                <div class="field-input-group field-input-full">
-                                    <label>Description</label>
-                                    <textarea name="record_description_{{ field_name }}"
-                                              data-original="{{ description }}"
-                                              placeholder="Longer help text shown to the client..."
-                                              class="annotation-input description-input"
-                                              rows="2">{{ description }}</textarea>
-                                </div>
-                            </div>
-                            <div class="field-visibility">
-                                <label class="visibility-option{% if is_computed %} is-disabled{% endif %}"
-                                       {% if is_computed %}title="This field type cannot be edited"{% endif %}>
-                                    <input type="radio"
-                                           name="record_field_{{ field_name }}"
-                                           value="editable"
-                                           data-original="{{ 'true' if current == 'editable' else '' }}"
-                                           {% if current == 'editable' %}checked{% endif %}
-                                           {% if is_computed or not active %}disabled{% endif %}>
-                                    Editable
-                                </label>
-                                <label class="visibility-option">
-                                    <input type="radio"
-                                           name="record_field_{{ field_name }}"
-                                           value="readonly"
-                                           data-original="{{ 'true' if current == 'readonly' else '' }}"
-                                           {% if current == 'readonly' %}checked{% endif %}
-                                           {% if not active %}disabled{% endif %}>
-                                    Read-only
-                                </label>
-                            </div>
+                        <div class="field-input-group">
+                            <label>Translation</label>
+                            <input type="text" name="record_translation_{{ field_name }}"
+                                   value="{{ translation }}" data-original="{{ translation }}"
+                                   placeholder="e.g. Calificación" class="annotation-input">
+                        </div>
+                        <div class="field-input-group field-input-full">
+                            <label>Description</label>
+                            <textarea name="record_description_{{ field_name }}"
+                                      data-original="{{ description }}"
+                                      placeholder="Longer help text shown to the client..."
+                                      class="annotation-input description-input"
+                                      rows="2">{{ description }}</textarea>
                         </div>
                     </div>
-                    {% endfor %}
-                </div>
-                <div class="fields-empty-hint" id="record-empty-hint" style="display:none">
-                    Toggle fields on the left to add them here.
+                    <div class="field-visibility">
+                        <label class="visibility-option{% if is_computed %} is-disabled{% endif %}"
+                               {% if is_computed %}title="This field type cannot be edited"{% endif %}>
+                            <input type="radio" name="record_field_{{ field_name }}" value="editable"
+                                   data-original="{{ 'true' if current == 'editable' else '' }}"
+                                   {% if current == 'editable' %}checked{% endif %}
+                                   {% if is_computed or not active %}disabled{% endif %}>
+                            Editable
+                        </label>
+                        <label class="visibility-option">
+                            <input type="radio" name="record_field_{{ field_name }}" value="readonly"
+                                   data-original="{{ 'true' if current == 'readonly' else '' }}"
+                                   {% if current == 'readonly' %}checked{% endif %}
+                                   {% if not active %}disabled{% endif %}>
+                            Read-only
+                        </label>
+                    </div>
                 </div>
             </div>
+            {% endfor %}
+        </div>
+        <div class="fields-empty-hint" id="record-empty-hint" style="display:none">
+            Toggle fields in the panel to add them here.
         </div>
         {% endif %}
 
-        <div class="form-actions">
+        <div class="form-actions" style="margin-top: 28px;">
             <button type="submit" id="save-btn" class="btn btn-save" disabled>Save Configuration</button>
             <button type="button" id="discard-btn" class="btn btn-secondary" disabled title="Revert all changes to original values">Discard Changes</button>
         </div>
@@ -311,7 +287,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script>
-// ---- Utility ----
+// ---- Utilities ----
 
 function updateOrderInput(sortableId, orderInputId) {
     const container = document.getElementById(sortableId);
@@ -325,7 +301,7 @@ function updateActiveCount(countId, sortableId) {
     const el = document.getElementById(countId);
     if (!el) return;
     const n = document.querySelectorAll(`#${sortableId} .field-card[data-active="true"]`).length;
-    el.textContent = n > 0 ? n + ' active' : '';
+    el.textContent = n > 0 ? n + ' on' : '';
 }
 
 function updateEmptyHint(hintId, sortableId) {
@@ -352,6 +328,21 @@ function deactivateCard(card) {
     card.querySelectorAll('input[type="radio"]').forEach(r => r.disabled = true);
 }
 
+// Sync the main card area to match the sidebar list's current order
+function syncCardsToSidebar(sidebarListId, sortableId) {
+    const sidebarList = document.getElementById(sidebarListId);
+    const sortable = document.getElementById(sortableId);
+    if (!sidebarList || !sortable) return;
+    const isUser = sidebarListId.includes('user');
+    const fieldAttr = isUser ? 'data-user-field-name' : 'data-field-name';
+    Array.from(sidebarList.querySelectorAll('.sidebar-field'))
+        .map(item => item.dataset.fieldName).filter(Boolean)
+        .forEach(name => {
+            const card = sortable.querySelector(`.field-card[${fieldAttr}="${CSS.escape(name)}"]`);
+            if (card) sortable.appendChild(card);
+        });
+}
+
 // ---- Sidebar toggle handler ----
 
 document.querySelectorAll('.sidebar-toggle').forEach(toggle => {
@@ -359,7 +350,9 @@ document.querySelectorAll('.sidebar-toggle').forEach(toggle => {
         const fieldName = this.closest('.sidebar-field').dataset.fieldName;
         const sid = this.dataset.sortable;
         const isUser = sid.includes('user');
-        const card = document.querySelector(`#${sid} .field-card[${isUser ? 'data-user-field-name' : 'data-field-name'}="${CSS.escape(fieldName)}"]`);
+        const card = document.querySelector(
+            `#${sid} .field-card[${isUser ? 'data-user-field-name' : 'data-field-name'}="${CSS.escape(fieldName)}"]`
+        );
         if (!card) return;
         this.checked ? activateCard(card, this.dataset.isComputed === 'true') : deactivateCard(card);
         updateOrderInput(sid, this.dataset.orderInput);
@@ -373,16 +366,16 @@ document.querySelectorAll('.sidebar-toggle').forEach(toggle => {
 
 function updateEmailFieldSidebar() {
     const selected = document.getElementById('email_field')?.value || '';
-    document.querySelectorAll('#user-fields-sortable .field-card').forEach(card => {
-        const name = card.dataset.userFieldName;
-        const sidebarItem = document.querySelector(`.sidebar-field[data-field-name="${CSS.escape(name)}"]`);
-        if (!sidebarItem) return;
+    document.querySelectorAll('#user-sidebar-list .sidebar-field').forEach(item => {
+        const name = item.dataset.fieldName;
+        const card = document.querySelector(`#user-fields-sortable .field-card[data-user-field-name="${CSS.escape(name)}"]`);
         if (name === selected) {
-            sidebarItem.style.display = 'none';
-            sidebarItem.querySelector('.sidebar-toggle').checked = false;
-            deactivateCard(card);
-        } else if (sidebarItem.style.display === 'none' && name !== selected) {
-            sidebarItem.style.display = '';
+            item.style.display = 'none';
+            const t = item.querySelector('.sidebar-toggle');
+            if (t) t.checked = false;
+            if (card) deactivateCard(card);
+        } else if (item.style.display === 'none') {
+            item.style.display = '';
         }
     });
     updateOrderInput('user-fields-sortable', 'user_field_order');
@@ -399,10 +392,8 @@ function toggleConfirmationField() {
         document.getElementById('confirmation_field').value = '';
         document.getElementById('confirmation_value').value = '';
         document.getElementById('confirmation-value-select').style.display = 'none';
-        updateConfirmationValues();
-    } else {
-        updateConfirmationValues();
     }
+    updateConfirmationValues();
     checkForChanges();
 }
 
@@ -414,63 +405,67 @@ function updateConfirmationValues() {
     const selected = fieldSelect.options[fieldSelect.selectedIndex];
     const selectedName = selected ? selected.value : '';
 
-    valueSelect.innerHTML = '<option value="">— Select a value —</option>';
-    if (selected && selected.value) {
-        try {
-            JSON.parse(selected.getAttribute('data-options') || '[]').forEach(opt => {
-                const o = document.createElement('option');
-                o.value = o.textContent = opt;
-                valueSelect.appendChild(o);
-            });
-        } catch (e) {}
-        if (valueSelect.dataset.original) valueSelect.value = valueSelect.dataset.original;
-        valueContainer.style.display = 'block';
-    } else {
-        valueContainer.style.display = 'none';
+    if (valueSelect) {
+        valueSelect.innerHTML = '<option value="">— Select a value —</option>';
+        if (selected && selected.value) {
+            try {
+                JSON.parse(selected.getAttribute('data-options') || '[]').forEach(opt => {
+                    const o = document.createElement('option');
+                    o.value = o.textContent = opt;
+                    valueSelect.appendChild(o);
+                });
+            } catch (e) {}
+            if (valueSelect.dataset.original) valueSelect.value = valueSelect.dataset.original;
+            if (valueContainer) valueContainer.style.display = 'block';
+        } else {
+            if (valueContainer) valueContainer.style.display = 'none';
+        }
     }
 
-    document.querySelectorAll('#record-fields-sortable .field-card').forEach(card => {
-        const name = card.dataset.fieldName;
-        const item = document.querySelector(`.sidebar-field[data-field-name="${CSS.escape(name)}"]`);
-        if (!item) return;
+    // Hide/show the confirmation field in the record sidebar and main area
+    document.querySelectorAll('#record-sidebar-list .sidebar-field').forEach(item => {
+        const name = item.dataset.fieldName;
+        const card = document.querySelector(`#record-fields-sortable .field-card[data-field-name="${CSS.escape(name)}"]`);
         if (name === selectedName) {
             item.style.display = 'none';
-            item.querySelector('.sidebar-toggle').checked = false;
-            deactivateCard(card);
-        } else if (item.style.display === 'none') {
+            const t = item.querySelector('.sidebar-toggle');
+            if (t) t.checked = false;
+            if (card) deactivateCard(card);
+        } else if (item.style.display === 'none' && name !== selectedName) {
             item.style.display = '';
         }
     });
+
     updateOrderInput('record-fields-sortable', 'record_field_order');
     updateActiveCount('record-active-count', 'record-fields-sortable');
     updateEmptyHint('record-empty-hint', 'record-fields-sortable');
     if (typeof checkForChanges === 'function') checkForChanges();
 }
 
-// ---- SortableJS ----
+// ---- SortableJS: sidebar drag-to-reorder ----
 
-['user-fields-sortable', 'record-fields-sortable'].forEach(id => {
-    const el = document.getElementById(id);
+['user-sidebar-list', 'record-sidebar-list'].forEach(listId => {
+    const el = document.getElementById(listId);
     if (!el || typeof Sortable === 'undefined') return;
-    const isUser = id.includes('user');
+    const isUser = listId.includes('user');
+    const sortableId = isUser ? 'user-fields-sortable' : 'record-fields-sortable';
+    const orderInputId = isUser ? 'user_field_order' : 'record_field_order';
     Sortable.create(el, {
         handle: '.drag-handle',
-        draggable: '.field-card[data-active="true"]',
         animation: 150,
         ghostClass: 'sortable-ghost',
         onEnd() {
-            updateOrderInput(id, isUser ? 'user_field_order' : 'record_field_order');
+            syncCardsToSidebar(listId, sortableId);
+            updateOrderInput(sortableId, orderInputId);
             checkForChanges();
         }
     });
 });
 
-// ---- Initialise state (runs before capturing originals) ----
+// ---- Initialise ----
 
 updateEmailFieldSidebar();
 updateConfirmationValues();
-// updateConfirmationValues already calls updateOrderInput for records;
-// run user separately to ensure it's set before we capture originals
 updateOrderInput('user-fields-sortable', 'user_field_order');
 updateActiveCount('user-active-count', 'user-fields-sortable');
 updateActiveCount('record-active-count', 'record-fields-sortable');
@@ -478,7 +473,7 @@ updateEmptyHint('user-empty-hint', 'user-fields-sortable');
 updateEmptyHint('record-empty-hint', 'record-fields-sortable');
 
 // ---- Change detection & discard ----
-// Capture originals AFTER init so order values are correct.
+// Capture originals AFTER init so order inputs reflect saved active state.
 
 (function () {
     const form = document.getElementById('admin-form');
@@ -515,60 +510,63 @@ updateEmptyHint('record-empty-hint', 'record-fields-sortable');
         if ((document.getElementById('user_field_order')?.value   || '') !== origUserOrder)   changed = true;
         if ((document.getElementById('record_field_order')?.value || '') !== origRecordOrder) changed = true;
 
-        if (saveBtn)   { saveBtn.disabled = !changed; saveBtn.classList.toggle('has-changes', changed); }
-        if (discardBtn)  discardBtn.disabled = !changed;
+        if (saveBtn)    { saveBtn.disabled = !changed; saveBtn.classList.toggle('has-changes', changed); }
+        if (discardBtn)   discardBtn.disabled = !changed;
     };
 
     function discardChanges() {
-        // Restore sidebar toggles and card states
         document.querySelectorAll('.sidebar-toggle').forEach(toggle => {
             const wasActive = toggle.dataset.original === 'true';
             toggle.checked = wasActive;
             const sid = toggle.dataset.sortable;
             const isUser = sid.includes('user');
             const name = toggle.closest('.sidebar-field').dataset.fieldName;
-            const card = document.querySelector(`#${sid} .field-card[${isUser ? 'data-user-field-name' : 'data-field-name'}="${CSS.escape(name)}"]`);
+            const card = document.querySelector(
+                `#${sid} .field-card[${isUser ? 'data-user-field-name' : 'data-field-name'}="${CSS.escape(name)}"]`
+            );
             if (!card) return;
             wasActive ? activateCard(card, toggle.dataset.isComputed === 'true') : deactivateCard(card);
         });
-        // Restore radio selections
+
         form.querySelectorAll('input[type="radio"]').forEach(r => { r.checked = r.dataset.original === 'true'; });
-        // Restore text inputs
         form.querySelectorAll('input.annotation-input').forEach(i => { i.value = i.dataset.original; });
         form.querySelectorAll('textarea.description-input').forEach(t => { t.value = t.dataset.original; });
-        // Restore email field
+
         const ef = document.getElementById('email_field');
         if (ef) { ef.value = ef.dataset.original; updateEmailFieldSidebar(); }
-        // Restore confirmation settings
+
         const cc = document.getElementById('confirmation_enabled');
         const cf = document.getElementById('confirmation_field');
         const cv = document.getElementById('confirmation_value');
-        if (cc) { cc.checked = cc.dataset.original === 'true'; }
-        if (cf) { cf.value = cf.dataset.original; }
-        if (cv) { cv.value = cv.dataset.original; }
+        if (cc) cc.checked = cc.dataset.original === 'true';
+        if (cf) cf.value = cf.dataset.original;
+        if (cv) cv.value = cv.dataset.original;
         toggleConfirmationField();
-        // Restore card order
-        ['user-fields-sortable', 'record-fields-sortable'].forEach(id => {
-            const container = document.getElementById(id);
-            const origOrder = id.includes('user') ? origUserOrder : origRecordOrder;
-            if (!container) return;
+
+        // Restore sidebar order, then sync cards
+        [
+            ['user-sidebar-list',   origUserOrder,   'user-fields-sortable',   'user_field_order',   'user-active-count',   'user-empty-hint'],
+            ['record-sidebar-list', origRecordOrder, 'record-fields-sortable', 'record_field_order', 'record-active-count', 'record-empty-hint'],
+        ].forEach(([listId, origOrder, sortableId, orderInputId, countId, hintId]) => {
+            const list = document.getElementById(listId);
+            if (!list) return;
             origOrder.split(',').filter(Boolean).forEach(name => {
-                const isUser = id.includes('user');
-                const card = container.querySelector(`.field-card[${isUser ? 'data-user-field-name' : 'data-field-name'}="${CSS.escape(name)}"]`);
-                if (card) container.appendChild(card);
+                const item = list.querySelector(`.sidebar-field[data-field-name="${CSS.escape(name)}"]`);
+                if (item) list.appendChild(item);
             });
-            updateOrderInput(id, id.includes('user') ? 'user_field_order' : 'record_field_order');
-            updateActiveCount(id.includes('user') ? 'user-active-count' : 'record-active-count', id);
-            updateEmptyHint(id.includes('user') ? 'user-empty-hint' : 'record-empty-hint', id);
+            syncCardsToSidebar(listId, sortableId);
+            updateOrderInput(sortableId, orderInputId);
+            updateActiveCount(countId, sortableId);
+            updateEmptyHint(hintId, sortableId);
         });
+
         checkForChanges();
     }
 
     form.querySelectorAll('input[type="radio"]').forEach(r => r.addEventListener('change', checkForChanges));
     form.querySelectorAll('input.annotation-input').forEach(i => i.addEventListener('input', checkForChanges));
     form.querySelectorAll('textarea.description-input').forEach(t => t.addEventListener('input', checkForChanges));
-    const emailField = document.getElementById('email_field');
-    if (emailField) emailField.addEventListener('change', checkForChanges);
+    document.getElementById('email_field')?.addEventListener('change', checkForChanges);
     ['confirmation_enabled', 'confirmation_field', 'confirmation_value'].forEach(id => {
         document.getElementById(id)?.addEventListener('change', checkForChanges);
     });
