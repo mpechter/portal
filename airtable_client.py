@@ -177,7 +177,8 @@ class AirtableClient:
     def get_user_by_email(self, email: str) -> dict | None:
         """Find a user by email address."""
         email_field = self.org.email_field or "Email"
-        records = self.users_table.all(formula=f"{{{email_field}}} = '{email}'")
+        safe_email = email.replace("'", "\\'")
+        records = self.users_table.all(formula=f"{{{email_field}}} = '{safe_email}'")
         if records:
             return records[0]
         return None
@@ -190,7 +191,13 @@ class AirtableClient:
             return None
 
     def get_records_for_user(self, user_id: str) -> list:
-        """Get all records linked to a user."""
+        """Get all records linked to a user.
+
+        Records are fetched server-side by matching on the user's display name
+        (primary field value) because Airtable's ARRAYJOIN formula returns display
+        names, not record IDs. A post-filter then verifies ownership by checking
+        the actual linked record ID array in each record's fields.
+        """
         # Use configured link_field, or auto-detect from schema
         link_field = self.org.link_field or self.detect_link_field()
         if not link_field:
@@ -210,6 +217,8 @@ class AirtableClient:
         records = self.records_table.all(
             formula=f"FIND('{user_name_escaped}', ARRAYJOIN({{{link_field}}}))"
         )
+        # Post-filter by record ID to eliminate false positives from name matches
+        records = [r for r in records if user_id in r.get("fields", {}).get(link_field, [])]
         return records
 
     def get_record_by_id(self, record_id: str) -> dict | None:
@@ -230,7 +239,10 @@ class AirtableClient:
             return False
 
         # Get the linked user IDs
-        link_field = self.org.link_field or self.detect_link_field() or "User"
+        link_field = self.org.link_field or self.detect_link_field()
+        if not link_field:
+            print(f"Warning: cannot determine link field for org {self.org.org_code}, denying access", flush=True)
+            return False
         user_ids = record.get("fields", {}).get(link_field, [])
         return user_id in user_ids
 

@@ -19,9 +19,6 @@ class Config:
     SQLALCHEMY_DATABASE_URI = _database_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Magic link expiry in minutes
-    TOKEN_EXPIRY_MINUTES = 15
-
     # Resend email API
     RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
     EMAIL_FROM = os.environ.get("EMAIL_FROM", "onboarding@resend.dev")

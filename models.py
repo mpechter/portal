@@ -230,7 +230,7 @@ class LoginCode(db.Model):
     airtable_user_id = db.Column(db.String(50), nullable=False)  # Reference to Airtable record
     code_hash = db.Column(db.String(256), nullable=False)
     expires_at = db.Column(db.DateTime(timezone=True), nullable=False)
-    created_at = db.Column(db.DateTime(timezone=True), default=lambda: __import__('datetime').datetime.now(__import__('datetime').timezone.utc))
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     @classmethod
     def create_code(cls, org_id: int, user_email: str, airtable_user_id: str, code: str, expires_at):

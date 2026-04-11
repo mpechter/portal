@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% set tab_map = {
+    'admin_settings': 'settings',
+    'admin_save_settings': 'settings',
+    'admin_tables': 'tables',
+    'admin_save_tables': 'tables',
+    'admin_fields': 'fields',
+    'admin_save_fields': 'fields',
+    'admin_billing': 'billing',
+    'admin_billing_success': 'billing',
+    'admin_support': 'support',
+} %}
+{% set active_tab = tab_map.get(request.endpoint, '') %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="admin-header">
+        <h1>Admin: {{ org.name }}</h1>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <a href="{{ url_for('login', org=org.org_code) }}" target="_blank" rel="noopener" class="btn btn-primary btn-small">View Portal</a>
+            <a href="{{ url_for('admin_logout') }}" class="admin-logout">Logout</a>
+        </div>
+    </div>
+
+    <nav class="admin-tabs">
+        <a href="{{ url_for('admin_settings') }}" class="tab {% if active_tab == 'settings' %}active{% endif %}">Settings</a>
+        <a href="{{ url_for('admin_tables') }}" class="tab {% if active_tab == 'tables' %}active{% endif %}">Tables</a>
+        <a href="{{ url_for('admin_fields') }}" class="tab {% if active_tab == 'fields' %}{% if not org.tables_configured %}disabled{% endif %} active{% elif not org.tables_configured %}disabled{% endif %}">Fields</a>
+        <a href="{{ url_for('admin_billing') }}" class="tab {% if active_tab == 'billing' %}active{% endif %}">Billing</a>
+    </nav>
+
+    <div class="admin-content">
+        {% block admin_content %}{% endblock %}
+    </div>
+</div>
+{% endblock %}

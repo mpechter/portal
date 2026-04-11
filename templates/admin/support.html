@@ -1,26 +1,8 @@
-{% extends "base.html" %}
+{% extends "admin/admin_base.html" %}
 
 {% block title %}Support - {{ org.portal_title }}{% endblock %}
 
-{% block content %}
-<div class="admin-dashboard">
-    <div class="admin-header">
-        <h1>Admin: {{ org.name }}</h1>
-        <div style="display:flex; gap:10px; align-items:center;">
-            <a href="{{ url_for('login', org=org.org_code) }}" target="_blank" rel="noopener" class="btn btn-primary btn-small">View Portal</a>
-            <a href="{{ url_for('admin_logout') }}" class="admin-logout">Logout</a>
-        </div>
-    </div>
-
-    <nav class="admin-tabs">
-        <a href="{{ url_for('admin_settings') }}" class="tab">Settings</a>
-        <a href="{{ url_for('admin_tables') }}" class="tab">Tables</a>
-        <a href="{{ url_for('admin_fields') }}" class="tab {% if not org.tables_configured %}disabled{% endif %}">Fields</a>
-        <a href="{{ url_for('admin_billing') }}" class="tab">Billing</a>
-        <a href="{{ url_for('admin_support') }}" class="tab active">Support</a>
-    </nav>
-
-    <div class="admin-content">
+{% block admin_content %}
         <form action="{{ url_for('admin_support') }}" method="post" class="form" style="max-width: 560px;">
             <div class="form-group">
                 <label for="message">How can we help?</label>
@@ -28,6 +10,4 @@
             </div>
             <button type="submit" class="btn btn-primary" style="margin-top: 4px;">Send Priority Message</button>
         </form>
-    </div>
-</div>
 {% endblock %}

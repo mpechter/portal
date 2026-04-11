@@ -1,27 +1,8 @@
-{% extends "base.html" %}
+{% extends "admin/admin_base.html" %}
 
 {% block title %}Settings - {{ org.portal_title }}{% endblock %}
 
-{% block content %}
-<div class="admin-dashboard">
-    <div class="admin-header">
-        <h1>Admin: {{ org.name }}</h1>
-        <div style="display:flex; gap:10px; align-items:center;">
-            <a href="{{ url_for('login', org=org.org_code) }}" target="_blank" rel="noopener" class="btn btn-primary btn-small">View Portal</a>
-            <a href="{{ url_for('admin_logout') }}" class="admin-logout">Logout</a>
-        </div>
-    </div>
-
-    <nav class="admin-tabs">
-        <a href="{{ url_for('admin_settings') }}" class="tab active">Settings</a>
-        <a href="{{ url_for('admin_tables') }}" class="tab">Tables</a>
-        <a href="{{ url_for('admin_fields') }}" class="tab {% if not org.tables_configured %}disabled{% endif %}">Fields</a>
-        <a href="{{ url_for('admin_billing') }}" class="tab">Billing</a>
-        <a href="{{ url_for('admin_support') }}" class="tab">Support</a>
-    </nav>
-
-    <div class="admin-content">
-
+{% block admin_content %}
         {% if org.pending_admin_email %}
         <div style="background: #fff8e1; border: 1px solid #f5c518; border-radius: 6px; padding: 14px 16px; margin-bottom: 20px; font-size: 13px;">
             <strong>Verification pending:</strong> A confirmation link was sent to
@@ -84,7 +65,7 @@
             <div class="form-group">
                 <label for="airtable_api_key">Airtable API Key</label>
                 <p class="field-help">Your personal access token from Airtable.</p>
-                <input type="password" id="airtable_api_key" name="airtable_api_key" value="{{ org.airtable_api_key }}" class="form-input" required data-original="{{ org.airtable_api_key }}">
+                <input type="password" id="airtable_api_key" name="airtable_api_key" value="" class="form-input" placeholder="Leave blank to keep current key" data-original="">
                 <button type="button" class="btn-text" onclick="togglePassword('airtable_api_key')">Show</button>
             </div>
 
@@ -135,8 +116,6 @@
                 <button type="button" id="discard-btn" class="btn btn-secondary" disabled>Discard Changes</button>
             </div>
         </form>
-    </div>
-</div>
 
 <script>
 function togglePassword(fieldId) {

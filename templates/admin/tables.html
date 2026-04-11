@@ -1,26 +1,8 @@
-{% extends "base.html" %}
+{% extends "admin/admin_base.html" %}
 
 {% block title %}Table Setup - {{ org.portal_title }}{% endblock %}
 
-{% block content %}
-<div class="admin-dashboard">
-    <div class="admin-header">
-        <h1>Admin: {{ org.name }}</h1>
-        <div style="display:flex; gap:10px; align-items:center;">
-            <a href="{{ url_for('login', org=org.org_code) }}" target="_blank" rel="noopener" class="btn btn-primary btn-small">View Portal</a>
-            <a href="{{ url_for('admin_logout') }}" class="admin-logout">Logout</a>
-        </div>
-    </div>
-
-    <nav class="admin-tabs">
-        <a href="{{ url_for('admin_settings') }}" class="tab">Settings</a>
-        <a href="{{ url_for('admin_tables') }}" class="tab active">Tables</a>
-        <a href="{{ url_for('admin_fields') }}" class="tab {% if not org.tables_configured %}disabled{% endif %}">Fields</a>
-        <a href="{{ url_for('admin_billing') }}" class="tab">Billing</a>
-        <a href="{{ url_for('admin_support') }}" class="tab">Support</a>
-    </nav>
-
-    <div class="admin-content">
+{% block admin_content %}
         {% if not org.tables_configured %}
         <div style="background:#fff8e1; border:1px solid #f5c518; border-radius:6px; padding:14px 16px; margin-bottom:20px; font-size:13px;">
             <strong>Your portal isn't live yet.</strong> Complete the Tables and Fields setup below before sharing it with clients.
@@ -64,11 +46,9 @@
             </div>
 
             <div class="form-actions">
-                <button type="submit" id="save-btn" class="btn btn-save" disabled>Save & Continue</button>
+                <button type="submit" id="save-btn" class="btn btn-save" disabled>Save &amp; Continue</button>
             </div>
         </form>
-    </div>
-</div>
 
 <script>
 (function() {
