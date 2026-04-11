@@ -20,7 +20,7 @@
                 {% set value = user_fields.get(field_name, '') %}
                 {% if value %}
                 <div class="profile-field">
-                    <span class="field-label">{{ field_name }}:</span>
+                    <span class="field-label">{{ user_aliases.get(field_name, field_name) }}:</span>
                     <span class="field-value">{{ value }}</span>
                 </div>
                 {% endif %}
@@ -29,7 +29,7 @@
                 {% set value = user_fields.get(field_name, '') %}
                 {% if value %}
                 <div class="profile-field">
-                    <span class="field-label">{{ field_name }}:</span>
+                    <span class="field-label">{{ user_aliases.get(field_name, field_name) }}:</span>
                     <span class="field-value">{{ value }}</span>
                 </div>
                 {% endif %}

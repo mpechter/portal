@@ -55,6 +55,11 @@ class Organization(db.Model):
     # {"user_fields": {"Name": "Your full name", ...}, "record_fields": {"Grade": "Nivel escolar", ...}}
     _field_annotations = db.Column("field_annotations", db.Text, default="{}")
 
+    # Field aliases stored as JSON with structure:
+    # {"user_fields": {"Name": "Student Name", ...}, "record_fields": {"Grade": "School Year", ...}}
+    # When set, the alias is shown to clients instead of the raw Airtable field name.
+    _field_aliases = db.Column("field_aliases", db.Text, default="{}")
+
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(
         db.DateTime(timezone=True),
@@ -195,6 +200,28 @@ class Organization(db.Model):
     def get_record_field_annotation(self, field_name: str) -> str:
         """Get annotation for a record field. Returns empty string if not set."""
         return self.field_annotations.get("record_fields", {}).get(field_name, "")
+
+    # Field aliases
+    @property
+    def field_aliases(self) -> dict:
+        """Get full field aliases as a dict."""
+        try:
+            return json.loads(self._field_aliases or "{}")
+        except json.JSONDecodeError:
+            return {"user_fields": {}, "record_fields": {}}
+
+    @field_aliases.setter
+    def field_aliases(self, value: dict):
+        """Set field aliases from a dict."""
+        self._field_aliases = json.dumps(value)
+
+    def get_user_field_alias(self, field_name: str) -> str:
+        """Get alias for a user field. Returns the field name itself if no alias set."""
+        return self.field_aliases.get("user_fields", {}).get(field_name, field_name)
+
+    def get_record_field_alias(self, field_name: str) -> str:
+        """Get alias for a record field. Returns the field name itself if no alias set."""
+        return self.field_aliases.get("record_fields", {}).get(field_name, field_name)
 
 
 class LoginAttempt(db.Model):

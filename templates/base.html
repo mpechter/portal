@@ -8,6 +8,14 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    {% if session.get('admin_preview') %}
+    <div class="preview-banner">
+        <span>Admin Preview — viewing as {{ session['admin_preview'].get('name') or session['admin_preview'].get('email') or 'a user' }}. Changes are not saved.</span>
+        <form action="{{ url_for('admin_preview_exit') }}" method="post" style="display:inline;">
+            <button type="submit" class="preview-exit-btn">Exit Preview</button>
+        </form>
+    </div>
+    {% endif %}
     <div class="container">
         {% if current_user.is_authenticated %}
         <nav class="navbar">

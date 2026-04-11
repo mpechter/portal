@@ -30,6 +30,7 @@
             <thead>
                 <tr>
                     <th>Field Name</th>
+                    <th>Alias</th>
                     <th>Annotation</th>
                     <th>Editable</th>
                     <th>Read-only</th>
@@ -41,11 +42,20 @@
                 {% set is_computed = field_name in computed_user_fields %}
                 {% set current = user_field_config.get(field_name, 'hidden') %}
                 {% set annotation = user_annotations.get(field_name, '') %}
+                {% set alias = user_aliases.get(field_name, '') %}
                 <tr data-user-field-name="{{ field_name }}" {% if (org.email_field or 'Email') == field_name %}style="display: none;"{% endif %}>
                     <td>
                         <strong>{{ field_name }}</strong>
                         {% if field_name in link_user_fields %}<span class="field-type-badge">link</span>
                         {% elif is_computed %}<span class="field-type-badge">formula</span>{% endif %}
+                    </td>
+                    <td>
+                        <input type="text"
+                               name="user_alias_{{ field_name }}"
+                               value="{{ alias }}"
+                               data-original="{{ alias }}"
+                               placeholder="{{ field_name }}"
+                               class="annotation-input">
                     </td>
                     <td>
                         <input type="text"
@@ -134,6 +144,7 @@
             <thead>
                 <tr>
                     <th>Field Name</th>
+                    <th>Alias</th>
                     <th>Annotation</th>
                     <th>Editable</th>
                     <th>Read-only</th>
@@ -145,11 +156,20 @@
                 {% set is_computed = field_name in computed_record_fields %}
                 {% set current = record_field_config.get(field_name, 'hidden' if is_computed else 'editable') %}
                 {% set annotation = record_annotations.get(field_name, '') %}
+                {% set alias = record_aliases.get(field_name, '') %}
                 <tr data-field-name="{{ field_name }}" {% if org.confirmation_field == field_name %}style="display: none;"{% endif %}>
                     <td>
                         <strong>{{ field_name }}</strong>
                         {% if field_name in link_record_fields %}<span class="field-type-badge">link</span>
                         {% elif is_computed %}<span class="field-type-badge">formula</span>{% endif %}
+                    </td>
+                    <td>
+                        <input type="text"
+                               name="record_alias_{{ field_name }}"
+                               value="{{ alias }}"
+                               data-original="{{ alias }}"
+                               placeholder="{{ field_name }}"
+                               class="annotation-input">
                     </td>
                     <td>
                         <input type="text"

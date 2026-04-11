@@ -48,6 +48,16 @@ class User(UserMixin):
 @login_manager.user_loader
 def load_user(user_id: str):
     """Load user from session cache, falling back to Airtable only when needed."""
+    # Admin preview: serve the preview user directly from session
+    preview = session.get("admin_preview")
+    if preview:
+        return User(
+            org_code=preview["org_code"],
+            user_id=preview["user_id"],
+            email=preview.get("email", ""),
+            name=preview.get("name", "Preview User"),
+        )
+
     if ":" not in user_id:
         return None
 
@@ -131,6 +141,11 @@ def _get_admin_org():
     if not org:
         session.pop("admin_org_code", None)
     return org
+
+
+def is_preview_mode() -> bool:
+    """Return True if the current request is an admin portal preview."""
+    return bool(session.get("admin_preview"))
 
 
 # --- User Routes ---
@@ -398,6 +413,8 @@ def dashboard():
     if org.has_linked_records:
         records = client.get_records_for_user(current_user.user_id)
 
+    user_aliases = org.field_aliases.get("user_fields", {})
+
     return render_template(
         "dashboard.html",
         records=records,
@@ -407,6 +424,8 @@ def dashboard():
         user_editable_fields=user_editable_fields,
         user_readonly_fields=user_readonly_fields,
         has_profile_fields=has_profile_fields,
+        user_aliases=user_aliases,
+        preview_mode=is_preview_mode(),
     )
 
 
@@ -449,6 +468,10 @@ def edit_record(record_id: str):
     field_metadata = client.get_field_metadata(org.records_table, all_fields)
 
     if request.method == "POST":
+        if is_preview_mode():
+            flash("Preview mode — changes are not saved.", "info")
+            return redirect(url_for("edit_record", record_id=record_id))
+
         # Build update dict with only editable fields
         updates = _build_field_updates(editable_fields, field_metadata, request.form)
 
@@ -473,8 +496,9 @@ def edit_record(record_id: str):
     if org.confirmation_enabled and org.confirmation_field and org.confirmation_value:
         last_confirmed = record.get("fields", {}).get(org.confirmation_field)
 
-    # Get annotations for record fields
+    # Get annotations and aliases for record fields
     record_annotations = org.field_annotations.get("record_fields", {})
+    record_aliases = org.field_aliases.get("record_fields", {})
 
     return render_template(
         "edit_record.html",
@@ -485,6 +509,8 @@ def edit_record(record_id: str):
         org=org,
         last_confirmed=last_confirmed,
         field_annotations=record_annotations,
+        field_aliases=record_aliases,
+        preview_mode=is_preview_mode(),
     )
 
 
@@ -511,6 +537,10 @@ def edit_profile():
     field_metadata = client.get_field_metadata(org.users_table, all_fields)
 
     if request.method == "POST":
+        if is_preview_mode():
+            flash("Preview mode — changes are not saved.", "info")
+            return redirect(url_for("edit_profile"))
+
         # Build update dict with only editable fields
         updates = _build_field_updates(editable_fields, field_metadata, request.form)
 
@@ -520,8 +550,9 @@ def edit_profile():
 
         return redirect(url_for("edit_profile"))
 
-    # Get annotations for user fields
+    # Get annotations and aliases for user fields
     user_annotations = org.field_annotations.get("user_fields", {})
+    user_aliases = org.field_aliases.get("user_fields", {})
 
     return render_template(
         "edit_profile.html",
@@ -531,6 +562,8 @@ def edit_profile():
         field_metadata=field_metadata,
         org=org,
         field_annotations=user_annotations,
+        field_aliases=user_aliases,
+        preview_mode=is_preview_mode(),
     )
 
 
@@ -811,10 +844,14 @@ def admin_fields():
                 if field.get("type") == "singleSelect":
                     select_fields[field["name"]] = field.get("options", [])
 
-    # Get annotations
+    # Get annotations and aliases
     annotations = org.field_annotations
     user_annotations = annotations.get("user_fields", {})
     record_annotations = annotations.get("record_fields", {})
+
+    aliases = org.field_aliases
+    user_aliases = aliases.get("user_fields", {})
+    record_aliases = aliases.get("record_fields", {})
 
     return render_template(
         "admin/fields.html",
@@ -827,6 +864,8 @@ def admin_fields():
         record_field_config=org.record_field_config,
         user_annotations=user_annotations,
         record_annotations=record_annotations,
+        user_aliases=user_aliases,
+        record_aliases=record_aliases,
         computed_user_fields=computed_user_fields,
         computed_record_fields=computed_record_fields,
         link_user_fields=link_user_fields,
@@ -895,6 +934,24 @@ def admin_save_fields():
         "record_fields": record_annotations,
     }
 
+    # Build aliases from form (only save non-empty ones)
+    user_aliases = {}
+    for field_name in user_fields:
+        alias = request.form.get(f"user_alias_{field_name}", "").strip()
+        if alias and alias != field_name:
+            user_aliases[field_name] = alias
+
+    record_aliases = {}
+    for field_name in record_fields:
+        alias = request.form.get(f"record_alias_{field_name}", "").strip()
+        if alias and alias != field_name:
+            record_aliases[field_name] = alias
+
+    org.field_aliases = {
+        "user_fields": user_aliases,
+        "record_fields": record_aliases,
+    }
+
     # Save email field selection
     org.email_field = request.form.get("email_field", "").strip() or "Email"
 
@@ -907,6 +964,59 @@ def admin_save_fields():
 
     flash("Field configuration saved.", "success")
     return redirect(url_for("admin_fields"))
+
+
+# --- Admin Preview Routes ---
+
+
+@app.route("/admin/preview")
+@admin_required
+def admin_preview():
+    """Enter preview mode: log in as a random user in the org's users table."""
+    import random
+    org = _get_admin_org()
+    if not org:
+        return redirect(url_for("admin_login"))
+
+    if not org.tables_configured:
+        flash("Configure tables before using preview.", "info")
+        return redirect(url_for("admin_tables"))
+
+    client = get_client_for_org(org)
+    try:
+        all_users = client.users_table.all(max_records=50)
+    except Exception:
+        flash("Could not load users for preview.", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    if not all_users:
+        flash("No users found in the users table.", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    preview_user = random.choice(all_users)
+    fields = preview_user.get("fields", {})
+    email_field = org.email_field or "Email"
+
+    session["admin_preview"] = {
+        "user_id": preview_user["id"],
+        "org_code": org.org_code,
+        "email": fields.get(email_field, ""),
+        "name": fields.get("Name", "Preview User"),
+    }
+    # Use a synthetic Flask-Login user ID so load_user is called
+    session["_user_id"] = f"{org.org_code}:__preview__"
+
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/admin/preview/exit", methods=["POST"])
+def admin_preview_exit():
+    """Exit preview mode and return to admin dashboard."""
+    session.pop("admin_preview", None)
+    session.pop("_user_id", None)
+    session.pop("user_cache", None)
+    logout_user()
+    return redirect(url_for("admin_dashboard"))
 
 
 # --- Support Route ---
@@ -1506,6 +1616,7 @@ def migrate_db():
             "pending_admin_email": "VARCHAR(255)",
             "trial_started_at": "TIMESTAMP WITH TIME ZONE",
             "created_at": "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
+            "field_aliases": "TEXT DEFAULT '{}'",
         }
         for col, col_def in new_cols.items():
             if col not in cols:

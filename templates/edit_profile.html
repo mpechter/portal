@@ -16,7 +16,8 @@
                 {% set field_value = user_data.fields.get(field_name, '') %}
                 {% set field_meta = field_metadata.get(field_name, {}) %}
                 {% set annotation = field_annotations.get(field_name, '') %}
-                {{ render_field(field_name, field_value, field_meta, editable=True, annotation=annotation) }}
+                {% set alias = field_aliases.get(field_name, '') %}
+                {{ render_field(field_name, field_value, field_meta, editable=True, annotation=annotation, alias=alias) }}
             {% endfor %}
 
             {# Read-only fields #}
@@ -24,7 +25,8 @@
                 {% set field_value = user_data.fields.get(field_name, '') %}
                 {% set field_meta = field_metadata.get(field_name, {}) %}
                 {% set annotation = field_annotations.get(field_name, '') %}
-                {{ render_field(field_name, field_value, field_meta, editable=False, annotation=annotation) }}
+                {% set alias = field_aliases.get(field_name, '') %}
+                {{ render_field(field_name, field_value, field_meta, editable=False, annotation=annotation, alias=alias) }}
             {% endfor %}
 
             {% if editable_fields %}
