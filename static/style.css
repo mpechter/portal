@@ -840,7 +840,6 @@ body {
 
 .field-card:hover {
     box-shadow: var(--shadow-sm);
-    background: var(--color-white);
 }
 
 /* Section groupings on the fields page */
