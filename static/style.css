@@ -677,12 +677,138 @@ body {
     margin: 20px 0;
 }
 
-/* Field cards — admin fields config layout */
+/* Fields sidebar + main layout */
+.fields-layout {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin: 16px 0 28px;
+}
+
+.fields-sidebar {
+    background: var(--color-bg-subtle);
+    border-right: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--color-border-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.sidebar-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+}
+
+.sidebar-active-count {
+    font-size: 0.72rem;
+    color: var(--color-text-light);
+}
+
+.sidebar-field-list {
+    padding: 6px 0;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.sidebar-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.sidebar-field:hover {
+    background: var(--color-bg-elevated);
+}
+
+.sidebar-field-name {
+    font-size: 0.83rem;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* CSS toggle switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 30px;
+    height: 17px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    display: none;
+}
+
+.toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: #ccc;
+    border-radius: 17px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    bottom: 3px;
+    left: 3px;
+    background: var(--color-white);
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background: var(--color-primary);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(13px);
+}
+
+/* Main area */
+.fields-main {
+    background: var(--color-bg);
+    padding: 12px 14px;
+    min-height: 160px;
+}
+
+.fields-empty-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+    color: var(--color-text-light);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Field cards inside the main area */
 .field-cards {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin: 16px 0 28px;
+    gap: 8px;
 }
 
 .field-card {
@@ -701,15 +827,14 @@ body {
 .field-card-handle {
     display: flex;
     align-items: center;
-    padding: 0 10px;
+    padding: 0 8px;
     border-right: 1px solid var(--color-border-light);
     color: var(--color-text-light);
-    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
 }
 
 .field-card-body {
     flex: 1;
-    padding: 14px 18px;
+    padding: 12px 16px;
     min-width: 0;
 }
 
@@ -717,14 +842,14 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .field-card-inputs {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .field-input-full {
@@ -733,10 +858,10 @@ body {
 
 .field-input-group > label {
     display: block;
-    font-size: 0.72rem;
-    font-weight: 600;
+    font-size: 0.7rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     color: var(--color-text-muted);
     margin-bottom: 4px;
 }
@@ -753,7 +878,7 @@ body {
 .visibility-option {
     display: flex;
     align-items: center;
-    padding: 5px 14px;
+    padding: 4px 14px;
     cursor: pointer;
     border-right: 1px solid var(--color-border);
     transition: background 0.1s, color 0.1s;
@@ -1797,16 +1922,21 @@ body:has(.preview-banner) .container {
     }
 
     /* Field config table: horizontal scroll */
+    .fields-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .fields-sidebar {
+        border-right: none;
+        border-bottom: 1px solid var(--color-border);
+    }
+
     .field-card-inputs {
         grid-template-columns: 1fr;
     }
 
     .field-input-full {
         grid-column: 1;
-    }
-
-    .field-visibility {
-        flex-wrap: wrap;
     }
 
     /* Data table: horizontal scroll */
