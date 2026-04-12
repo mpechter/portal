@@ -2,6 +2,19 @@
 
 ## Next Up
 
+- **Conditional field visibility**
+  - Only show certain fields to clients based on values in the record
+  - e.g. only ask about bussing if grade > 4; only show a section if enrollment status = "Active"
+  - Admin configures rules: field X is visible when field Y equals/contains value Z
+  - Requires UI for building rules + client-side evaluation at render time
+
+- **Multiple portals per base (Pro)**
+  - Currently: one portal per org, one Airtable base
+  - Future: multiple named portals per base, each with its own table + field configuration
+  - e.g. "Parent Portal" and "Staff Portal" both pointing at the same base, different views
+  - Requires significant UI rework: table/field config must be scoped to a portal, not the org
+  - Portal switcher in admin nav; portal selector on client login
+
 - **Organization logos (upload)**
   - Currently supports logo via URL
   - Future: Allow admins to upload directly
