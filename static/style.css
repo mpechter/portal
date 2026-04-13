@@ -1182,9 +1182,13 @@ input[type="url"] {
 .marketing-brand {
     font-size: 1.2rem;
     font-weight: 700;
-    color: var(--color-text);
+    color: var(--color-primary);
     letter-spacing: -0.3px;
     text-decoration: none;
+}
+
+.marketing-brand:hover {
+    color: var(--color-primary-hover);
 }
 
 .marketing-nav-links {
