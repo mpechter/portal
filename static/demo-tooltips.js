@@ -1,97 +1,118 @@
 (function () {
     if (!document.querySelector('.demo-banner')) return;
 
-    var annotations = [
+    var FEATURES = [
         {
             selector: '.form-group:has(.field-readonly)',
             title: 'Read-only Field',
-            tip: 'Locked by the administrator — parents can see this value but cannot edit it. Useful for fields like grade level or homeroom that only staff should change.',
-            cursor: true,
+            body: 'Parents can see this but can\'t edit it. Admins control which fields are locked.',
+            color: '#868e96',
         },
         {
             selector: '.form-group:has(input:not([type="hidden"]):not([type="checkbox"])), .form-group:has(textarea), .form-group:has(select)',
             title: 'Editable Field',
-            tip: 'Parents can update this directly from their portal. Administrators choose which fields are editable on a field-by-field basis.',
-            cursor: false,
+            body: 'Parents can update this directly from their portal.',
+            color: '#1971c2',
         },
         {
             selector: '.field-translation',
             title: 'Bilingual Label',
-            tip: 'Field names can be shown in any language alongside the original. Administrators configure a translation per field — helpful for multilingual families.',
-            cursor: true,
+            body: 'Field names can be shown in any language. Configured per field by the admin.',
+            color: '#0f766e',
         },
         {
             selector: '.field-description',
             title: 'Help Text',
-            tip: 'Administrators can add a short note under any field to guide parents on what to enter or why the information is needed.',
-            cursor: true,
+            body: 'Admins can add a short note under any field to guide parents on what to enter.',
+            color: '#b45309',
         },
         {
             selector: '.confirmation-box',
             title: 'Data Confirmation',
-            tip: 'Parents check this box to confirm they\'ve reviewed the record. Administrators can see who has and hasn\'t confirmed — great for annual enrollment or info updates.',
-            cursor: true,
+            body: 'Parents check this to confirm they\'ve reviewed the record. Admins can track who has and hasn\'t confirmed.',
+            color: '#2b8a3e',
         },
         {
             selector: '.review-badge',
-            title: 'Confirmation Badge',
-            tip: 'Appears on a record card once a parent has confirmed it. Unreviewed records appear without the badge so parents know what still needs attention.',
-            cursor: true,
+            title: 'Confirmed Badge',
+            body: 'Appears on a record card once the parent has confirmed it.',
+            color: '#2b8a3e',
         },
         {
             selector: '.all-reviewed-banner',
             title: 'All Confirmed',
-            tip: 'Once a parent has confirmed every linked record, this banner appears as a clear signal that nothing is left to review.',
-            cursor: true,
+            body: 'Shown when every linked record has been confirmed by the parent.',
+            color: '#2b8a3e',
         },
     ];
 
-    annotations.forEach(function (a) {
-        document.querySelectorAll(a.selector).forEach(function (el) {
-            if (el.closest('[data-demo-tip]')) return;
-            el.dataset.demoTitle = a.title;
-            el.dataset.demoTip = a.tip;
-            if (a.cursor) el.style.cursor = 'help';
+    FEATURES.forEach(function (f) {
+        document.querySelectorAll(f.selector).forEach(function (el) {
+            if (el.closest('[data-demo-color]')) return;
+            el.dataset.demoTitle = f.title;
+            el.dataset.demoBody  = f.body;
+            el.dataset.demoColor = f.color;
         });
     });
 
-    var tooltip = document.createElement('div');
-    tooltip.className = 'demo-tooltip';
-    tooltip.innerHTML = '<div class="demo-tooltip-title"></div><div class="demo-tooltip-body"></div>';
-    document.body.appendChild(tooltip);
+    // Label element anchored near the highlighted element
+    var label = document.createElement('div');
+    label.className = 'demo-hl-label';
+    label.innerHTML = '<div class="demo-hl-title"></div><div class="demo-hl-body"></div>';
+    document.body.appendChild(label);
 
     var active = null;
-    var hideTimer = null;
+    var raf   = null;
 
-    function position(x, y) {
-        var w = 268, h = tooltip.offsetHeight || 80;
-        var left = x + 18, top = y + 14;
-        if (left + w > window.innerWidth - 8) left = x - w - 10;
-        if (top + h > window.innerHeight - 8) top = y - h - 10;
-        tooltip.style.left = left + 'px';
-        tooltip.style.top = top + 'px';
+    function positionLabel() {
+        if (!active) return;
+        var r = active.getBoundingClientRect();
+        var lh = label.offsetHeight || 52;
+        var top = r.top - lh - 6;
+        if (top < 8) top = r.bottom + 6;
+        var left = r.left;
+        if (left + 250 > window.innerWidth - 8) left = window.innerWidth - 258;
+        label.style.top  = top  + 'px';
+        label.style.left = left + 'px';
+        raf = requestAnimationFrame(positionLabel);
     }
 
-    document.addEventListener('mouseover', function (e) {
-        var el = e.target.closest('[data-demo-tip]');
-        if (!el) {
-            clearTimeout(hideTimer);
-            hideTimer = setTimeout(function () {
-                tooltip.classList.remove('visible');
-                active = null;
-            }, 80);
-            return;
-        }
-        clearTimeout(hideTimer);
+    function activate(el) {
         if (el === active) return;
+        deactivate();
         active = el;
-        tooltip.querySelector('.demo-tooltip-title').textContent = el.dataset.demoTitle || '';
-        tooltip.querySelector('.demo-tooltip-body').textContent = el.dataset.demoTip || '';
-        position(e.clientX, e.clientY);
-        tooltip.classList.add('visible');
+        var color = el.dataset.demoColor;
+        el.style.outline       = '3px solid ' + color;
+        el.style.outlineOffset = '3px';
+        el.style.borderRadius  = '4px';
+        label.querySelector('.demo-hl-title').textContent = el.dataset.demoTitle;
+        label.querySelector('.demo-hl-body').textContent  = el.dataset.demoBody;
+        label.style.background = color;
+        label.classList.add('visible');
+        positionLabel();
+    }
+
+    function deactivate() {
+        cancelAnimationFrame(raf);
+        if (active) {
+            active.style.outline       = '';
+            active.style.outlineOffset = '';
+            active.style.borderRadius  = '';
+            active = null;
+        }
+        label.classList.remove('visible');
+    }
+
+    var leaveTimer = null;
+
+    document.addEventListener('mouseover', function (e) {
+        var el = e.target.closest('[data-demo-color]');
+        clearTimeout(leaveTimer);
+        if (el) activate(el);
     });
 
-    document.addEventListener('mousemove', function (e) {
-        if (active) position(e.clientX, e.clientY);
+    document.addEventListener('mouseout', function (e) {
+        if (!e.target.closest('[data-demo-color]')) return;
+        leaveTimer = setTimeout(deactivate, 80);
     });
 })();

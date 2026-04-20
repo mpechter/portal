@@ -9,18 +9,9 @@
 
     <h1>Your Profile</h1>
 
-    <div class="demo-feature-guide">
-        <span class="demo-feature-guide-label">Features on this page:</span>
-        <span class="demo-chip demo-chip-editable">Editable Fields</span>
-        <span class="demo-chip demo-chip-readonly">Read-only Fields</span>
-        <span class="demo-chip demo-chip-bilingual">Bilingual Labels</span>
-        <span class="demo-chip demo-chip-helptext">Help Text</span>
-    </div>
-
     <form id="edit-form" action="{{ url_for('demo_profile') }}" method="post" class="form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-        <div class="demo-section-divider">Editable Fields</div>
         {% for field_name in editable_fields %}
             {% set field_value = user_data.fields.get(field_name, '') %}
             {% set field_meta = field_metadata.get(field_name, {}) %}
@@ -29,7 +20,6 @@
             {{ render_field(field_name, field_value, field_meta, editable=True, translation=translation, description=description) }}
         {% endfor %}
 
-        <div class="demo-section-divider">Read-only Fields</div>
         {% for field_name in readonly_fields %}
             {% set field_value = user_data.fields.get(field_name, '') %}
             {% set field_meta = field_metadata.get(field_name, {}) %}
