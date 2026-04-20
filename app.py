@@ -1,12 +1,13 @@
 import hmac
 import os
 import time
+from datetime import datetime, timezone
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, flash, session, abort, jsonify
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_wtf.csrf import CSRFProtect
 from config import Config
-from models import db, Organization, LoginAttempt, LoginCode
+from models import db, Organization, LoginAttempt, LoginCode, PromoCode
 from airtable_client import get_client_for_org, COMPUTED_FIELD_TYPES
 from auth import (send_login_code, verify_login_code, verify_magic_link,
                   is_locked_out, get_lockout_remaining,
@@ -150,6 +151,22 @@ def _get_admin_org():
 def is_preview_mode() -> bool:
     """Return True if the current request is an admin portal preview."""
     return bool(session.get("admin_preview"))
+
+
+def validate_password(password: str) -> str | None:
+    """Returns an error message if password doesn't meet requirements, else None."""
+    import re
+    if len(password) < 8:
+        return "Password must be at least 8 characters."
+    if not re.search(r"[A-Z]", password):
+        return "Password must contain at least one uppercase letter."
+    if not re.search(r"[a-z]", password):
+        return "Password must contain at least one lowercase letter."
+    if not re.search(r"\d", password):
+        return "Password must contain at least one number."
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>_\-+=\[\]\\;'/`~]", password):
+        return "Password must contain at least one special character."
+    return None
 
 
 # --- User Routes ---
@@ -726,8 +743,9 @@ def admin_save_settings():
     new_password = request.form.get("new_password", "").strip()
     if new_password:
         new_password_confirm = request.form.get("new_password_confirm", "").strip()
-        if len(new_password) < 10:
-            flash("New password must be at least 10 characters.", "error")
+        pw_error = validate_password(new_password)
+        if pw_error:
+            flash(pw_error, "error")
             return redirect(url_for("admin_settings"))
         if new_password != new_password_confirm:
             flash("Passwords do not match.", "error")
@@ -1210,7 +1228,7 @@ def admin_activate_promo():
         return redirect(url_for("admin_login"))
 
     code = request.form.get("promo_code", "").strip().upper()
-    valid_codes = {c.strip().upper() for c in (Config.PROMO_CODES or "").split(",") if c.strip()}
+    valid_codes = PromoCode.get_active_codes()
 
     if code and code in valid_codes:
         org.plan = "active"
@@ -1330,8 +1348,9 @@ def admin_reset_password(token):
         password = request.form.get("password", "").strip()
         confirm = request.form.get("password_confirm", "").strip()
 
-        if not password or len(password) < 10:
-            flash("Password must be at least 10 characters.", "error")
+        pw_error = validate_password(password) if password else "Password is required."
+        if pw_error:
+            flash(pw_error, "error")
             return render_template("admin/reset_password.html", token=token, org=org)
 
         if password != confirm:
@@ -1442,7 +1461,8 @@ def superadmin_logout():
 def superadmin_users():
     """Superadmin users list — all organizations."""
     orgs = Organization.query.order_by(Organization.created_at.desc().nullslast()).all()
-    return render_template("superadmin/users.html", orgs=orgs)
+    promo_codes = PromoCode.query.order_by(PromoCode.created_at.desc()).all()
+    return render_template("superadmin/users.html", orgs=orgs, promo_codes=promo_codes)
 
 
 @app.route("/superadmin/toggle-active/<int:org_id>", methods=["POST"])
@@ -1453,6 +1473,42 @@ def superadmin_toggle_active(org_id):
     if not org:
         abort(404)
     org.is_active = not org.is_active
+    db.session.commit()
+    return redirect(url_for("superadmin_users"))
+
+
+@app.route("/superadmin/promo-codes/create", methods=["POST"])
+@superadmin_required
+def superadmin_create_promo():
+    """Create a new promo code."""
+    code = request.form.get("code", "").strip().upper()
+    if not code:
+        flash("Code cannot be empty.", "error")
+        return redirect(url_for("superadmin_users"))
+    if PromoCode.query.filter_by(code=code).first():
+        flash(f"Code {code} already exists.", "error")
+        return redirect(url_for("superadmin_users"))
+    db.session.add(PromoCode(code=code, active=True))
+    db.session.commit()
+    flash(f"Promo code {code} created.", "success")
+    return redirect(url_for("superadmin_users"))
+
+
+@app.route("/superadmin/promo-codes/toggle/<int:code_id>", methods=["POST"])
+@superadmin_required
+def superadmin_toggle_promo(code_id):
+    """Toggle a promo code active/inactive. Sunsetting converts orgs on that code to a 7-day trial."""
+    promo = PromoCode.query.get(code_id)
+    if not promo:
+        abort(404)
+    promo.active = not promo.active
+    if not promo.active:
+        affected = Organization.query.filter_by(promo_code=promo.code, plan="active").all()
+        for org in affected:
+            org.plan = "trial"
+            org.trial_started_at = datetime.now(timezone.utc)
+        if affected:
+            flash(f"{len(affected)} org(s) converted to 7-day trial.", "warning")
     db.session.commit()
     return redirect(url_for("superadmin_users"))
 
@@ -1520,8 +1576,8 @@ def signup():
             errors.append("Email is required.")
         if not admin_password:
             errors.append("Password is required.")
-        elif len(admin_password) < 10:
-            errors.append("Password must be at least 10 characters.")
+        elif (pw_error := validate_password(admin_password)):
+            errors.append(pw_error)
         elif admin_password != admin_password_confirm:
             errors.append("Passwords do not match.")
 
@@ -1613,7 +1669,7 @@ def signup_setup():
         plan = "trial"
         valid_promo = None
         if promo_code:
-            valid_codes = {c.strip().upper() for c in (Config.PROMO_CODES or "").split(",") if c.strip()}
+            valid_codes = PromoCode.get_active_codes()
             if promo_code in valid_codes:
                 plan = "active"
                 valid_promo = promo_code
@@ -1688,6 +1744,32 @@ def migrate_db():
                 print(f"Added {col} column.")
             else:
                 print(f"{col} already exists.")
+
+        # Create promo_codes table if missing
+        tables = inspect(db.engine).get_table_names()
+        if "promo_codes" not in tables:
+            conn.execute(text("""
+                CREATE TABLE promo_codes (
+                    id SERIAL PRIMARY KEY,
+                    code VARCHAR(100) UNIQUE NOT NULL,
+                    active BOOLEAN NOT NULL DEFAULT TRUE,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                )
+            """))
+            conn.commit()
+            print("Created promo_codes table.")
+
+            # Seed from PROMO_CODES env var
+            from config import Config as _Config
+            env_codes = [c.strip().upper() for c in (_Config.PROMO_CODES or "").split(",") if c.strip()]
+            for code in env_codes:
+                conn.execute(text("INSERT INTO promo_codes (code, active) VALUES (:code, TRUE) ON CONFLICT DO NOTHING"), {"code": code})
+            conn.commit()
+            if env_codes:
+                print(f"Seeded {len(env_codes)} promo code(s) from PROMO_CODES env var.")
+        else:
+            print("promo_codes table already exists.")
+
     print("Migration complete.")
 
 

@@ -34,6 +34,63 @@
     </div>
 
 
+    <h2 style="margin: 0 0 16px; font-size: 18px;">Promo Codes</h2>
+
+    <div style="margin-bottom: 32px;">
+        <form action="{{ url_for('superadmin_create_promo') }}" method="post" style="display: flex; gap: 8px; margin-bottom: 16px; max-width: 400px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="text" name="code" placeholder="e.g. LAUNCH2024" required
+                   style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; text-transform: uppercase;">
+            <button type="submit" class="btn btn-primary" style="font-size: 14px; padding: 8px 16px;">Create</button>
+        </form>
+
+        {% if promo_codes %}
+        <table style="width: 100%; max-width: 600px; border-collapse: collapse; font-size: 14px;">
+            <thead>
+                <tr style="border-bottom: 2px solid #e0e0e0; text-align: left;">
+                    <th style="padding: 8px 12px; color: #555; font-weight: 600;">Code</th>
+                    <th style="padding: 8px 12px; color: #555; font-weight: 600;">Status</th>
+                    <th style="padding: 8px 12px; color: #555; font-weight: 600;">Created</th>
+                    <th style="padding: 8px 12px; color: #555; font-weight: 600;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pc in promo_codes %}
+                <tr style="border-bottom: 1px solid #f0f0f0; {% if not pc.active %}opacity: 0.5;{% endif %}">
+                    <td style="padding: 8px 12px;">
+                        <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 4px; font-size: 12px;">{{ pc.code }}</code>
+                    </td>
+                    <td style="padding: 8px 12px;">
+                        {% if pc.active %}
+                            <span style="background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">Active</span>
+                        {% else %}
+                            <span style="background: #f5f5f5; color: #999; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">Sunsetted</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 8px 12px; color: #666; white-space: nowrap;">
+                        {{ pc.created_at.strftime('%b %d, %Y') if pc.created_at else '—' }}
+                    </td>
+                    <td style="padding: 8px 12px;">
+                        <form action="{{ url_for('superadmin_toggle_promo', code_id=pc.id) }}" method="post" style="display: inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-small {% if pc.active %}btn-secondary{% else %}btn-primary{% endif %}"
+                                    style="font-size: 12px; padding: 4px 10px;"
+                                    onclick="return confirm({% if pc.active %}{{ ('Sunset ' + pc.code + '? Orgs using this code will be converted to a 7-day trial.') | tojson }}{% else %}{{ ('Re-activate ' + pc.code + '?') | tojson }}{% endif %})">
+                                {% if pc.active %}Sunset{% else %}Re-activate{% endif %}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: #999; font-size: 14px;">No promo codes yet.</p>
+        {% endif %}
+    </div>
+
+    <h2 style="margin: 0 0 16px; font-size: 18px;">Organizations</h2>
+
     <div style="overflow-x: auto;">
         <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
             <thead>

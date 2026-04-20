@@ -251,6 +251,24 @@ class Organization(db.Model):
         return self.field_descriptions.get("record_fields", {}).get(field_name, "")
 
 
+class PromoCode(db.Model):
+    """Promo codes for activating portals without payment."""
+
+    __tablename__ = "promo_codes"
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(100), unique=True, nullable=False)
+    active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    @classmethod
+    def get_active_codes(cls) -> set:
+        return {pc.code.upper() for pc in cls.query.filter_by(active=True).all()}
+
+
 class LoginAttempt(db.Model):
     """Tracks failed login attempts for rate limiting."""
 
