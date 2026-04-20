@@ -66,14 +66,14 @@
 
     function positionLabel() {
         if (!active) return;
-        var r = active.getBoundingClientRect();
-        var lh = label.offsetHeight || 52;
-        var top = r.top - lh - 6;
-        if (top < 8) top = r.bottom + 6;
-        var left = r.left;
-        if (left + 250 > window.innerWidth - 8) left = window.innerWidth - 258;
-        label.style.top  = top  + 'px';
+        var r    = active.getBoundingClientRect();
+        var left = r.right + 12;
+        if (left + 252 > window.innerWidth - 8) left = r.left - 264;
+        var top  = r.top;
+        if (top + (label.offsetHeight || 52) > window.innerHeight - 8)
+            top = window.innerHeight - (label.offsetHeight || 52) - 8;
         label.style.left = left + 'px';
+        label.style.top  = top  + 'px';
         raf = requestAnimationFrame(positionLabel);
     }
 
@@ -92,15 +92,23 @@
         positionLabel();
     }
 
+    var fadingEl  = null;
+    var fadeTimer = null;
+
     function deactivate() {
         cancelAnimationFrame(raf);
-        if (active) {
-            active.style.outline       = '';
-            active.style.outlineOffset = '';
-            active.style.borderRadius  = '';
-            active = null;
-        }
+        active = null;
         label.classList.remove('visible');
+        // clear outline after the fade finishes
+        var el = fadingEl;
+        setTimeout(function () {
+            if (el) {
+                el.style.outline       = '';
+                el.style.outlineOffset = '';
+                el.style.borderRadius  = '';
+            }
+            fadingEl = null;
+        }, 350);
     }
 
     var leaveTimer = null;
@@ -113,6 +121,7 @@
 
     document.addEventListener('mouseout', function (e) {
         if (!e.target.closest('[data-demo-color]')) return;
-        leaveTimer = setTimeout(deactivate, 80);
+        fadingEl = active;
+        leaveTimer = setTimeout(deactivate, 700);
     });
 })();

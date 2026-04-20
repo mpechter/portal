@@ -1797,7 +1797,7 @@ body:has(.preview-banner) .container {
     color: #fff;
     box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     opacity: 0;
-    transition: opacity 0.1s ease;
+    transition: opacity 0.3s ease;
 }
 
 .demo-hl-label.visible {
