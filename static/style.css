@@ -1955,8 +1955,7 @@ body:has(.preview-banner) .container {
     }
 
     .marketing-nav-links a.btn {
-        margin-top: 8px;
-        width: auto;
+        display: none;
     }
 
     .marketing-nav.nav-open .marketing-nav-links {
