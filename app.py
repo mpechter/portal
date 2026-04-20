@@ -1231,6 +1231,15 @@ def admin_activate_promo():
     valid_codes = PromoCode.get_active_codes()
 
     if code and code in valid_codes:
+        if org.stripe_subscription_id:
+            try:
+                import stripe as stripe_lib
+                stripe_lib.api_key = Config.STRIPE_SECRET_KEY
+                stripe_lib.Subscription.cancel(org.stripe_subscription_id)
+            except Exception:
+                pass
+            org.stripe_subscription_id = None
+            org.stripe_customer_id = None
         org.plan = "active"
         org.promo_code = code
         org.subscription_cancel_at = None

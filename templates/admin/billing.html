@@ -58,10 +58,11 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-primary">Subscribe with Stripe</button>
         </form>
-
         <div class="billing-divider">or</div>
         {% elif not org.subscription_cancel_at %}
         <h3 style="margin-top: 24px;">Activate with Promo Code</h3>
+        {% else %}
+        <div class="billing-divider">or</div>
         {% endif %}
 
         <form action="{{ url_for('admin_activate_promo') }}" method="post" style="display: flex; gap: 10px; align-items: flex-start; max-width: 360px;">
