@@ -49,7 +49,7 @@
         {% endif %}
         {% endif %}
 
-        {% if org.plan != 'active' %}
+        {% if org.plan != 'active' or org.subscription_cancel_at %}
 
         {% if stripe_enabled %}
         <h3 style="margin-top: 24px;">Subscribe — $10/month</h3>

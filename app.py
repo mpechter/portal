@@ -1233,6 +1233,7 @@ def admin_activate_promo():
     if code and code in valid_codes:
         org.plan = "active"
         org.promo_code = code
+        org.subscription_cancel_at = None
         db.session.commit()
         flash("Promo code accepted. Your portal is now active!", "success")
     else:
