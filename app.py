@@ -1293,11 +1293,23 @@ def stripe_webhook():
             org.stripe_subscription_id = s.get("subscription")
             db.session.commit()
 
-    elif event["type"] in ("customer.subscription.deleted",):
+    elif event["type"] == "customer.subscription.updated":
+        sub = event["data"]["object"]
+        org = Organization.query.filter_by(stripe_subscription_id=sub["id"]).first()
+        if org:
+            if sub.get("cancel_at_period_end"):
+                cancel_ts = sub.get("current_period_end")
+                org.subscription_cancel_at = datetime.fromtimestamp(cancel_ts, tz=timezone.utc) if cancel_ts else None
+            else:
+                org.subscription_cancel_at = None
+            db.session.commit()
+
+    elif event["type"] == "customer.subscription.deleted":
         sub = event["data"]["object"]
         org = Organization.query.filter_by(stripe_subscription_id=sub["id"]).first()
         if org:
             org.plan = "suspended"
+            org.subscription_cancel_at = None
             db.session.commit()
 
     return "", 200
@@ -1736,6 +1748,7 @@ def migrate_db():
             "created_at": "TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
             "field_aliases": "TEXT DEFAULT '{}'",
             "field_descriptions": "TEXT DEFAULT '{}'",
+            "subscription_cancel_at": "TIMESTAMP WITH TIME ZONE",
         }
         for col, col_def in new_cols.items():
             if col not in cols:

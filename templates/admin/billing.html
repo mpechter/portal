@@ -6,16 +6,25 @@
         <h3>Plan Status</h3>
 
         {% if org.plan == 'active' %}
+        {% if org.subscription_cancel_at %}
+        <div class="billing-status suspended">&#x23F3; Canceled</div>
+        <p class="text-muted">Your subscription has been canceled. Client access remains active until <strong>{{ org.subscription_cancel_at.strftime('%B %-d, %Y') }}</strong>, then suspends automatically.</p>
+        {% else %}
         <div class="billing-status active">&#10003; Active</div>
+        {% endif %}
         {% if org.promo_code %}
         <p class="text-muted">Activated with promo code <strong>{{ org.promo_code }}</strong>.</p>
         {% endif %}
         {% if org.stripe_subscription_id %}
+        {% if not org.subscription_cancel_at %}
         <p class="text-muted">Subscribed via Stripe.</p>
+        {% endif %}
         <form action="{{ url_for('admin_billing_portal') }}" method="post" style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" name="action" value="manage" class="btn btn-secondary btn-small">Manage Subscription</button>
+            <button type="submit" name="action" value="manage" class="btn btn-secondary btn-small">{% if org.subscription_cancel_at %}Reactivate Subscription{% else %}Manage Subscription{% endif %}</button>
+            {% if not org.subscription_cancel_at %}
             <button type="submit" name="action" value="payment" class="btn btn-secondary btn-small">Update Payment Method</button>
+            {% endif %}
         </form>
         {% endif %}
 

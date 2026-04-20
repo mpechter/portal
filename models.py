@@ -45,6 +45,7 @@ class Organization(db.Model):
     stripe_customer_id = db.Column(db.String(100), nullable=True)
     stripe_subscription_id = db.Column(db.String(100), nullable=True)
     promo_code = db.Column(db.String(100), nullable=True)  # Code used to activate without payment
+    subscription_cancel_at = db.Column(db.DateTime(timezone=True), nullable=True)  # Set when canceled but still in paid period
 
     # Field permissions stored as JSON with structure:
     # {"user_fields": {"Name": "readonly", ...}, "record_fields": {"Grade": "editable", ...}}
