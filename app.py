@@ -1297,11 +1297,8 @@ def stripe_webhook():
         sub = event["data"]["object"]
         org = Organization.query.filter_by(stripe_subscription_id=sub["id"]).first()
         if org:
-            if sub.get("cancel_at_period_end"):
-                cancel_ts = sub.get("current_period_end")
-                org.subscription_cancel_at = datetime.fromtimestamp(cancel_ts, tz=timezone.utc) if cancel_ts else None
-            else:
-                org.subscription_cancel_at = None
+            cancel_ts = sub.get("cancel_at") or (sub.get("current_period_end") if sub.get("cancel_at_period_end") else None)
+            org.subscription_cancel_at = datetime.fromtimestamp(cancel_ts, tz=timezone.utc) if cancel_ts else None
             db.session.commit()
 
     elif event["type"] == "customer.subscription.deleted":
