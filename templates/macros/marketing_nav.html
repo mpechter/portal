@@ -1,7 +1,10 @@
 {% macro marketing_nav(active='') %}
-<div class="marketing-nav">
+<div class="marketing-nav" id="marketing-nav">
     <a href="{{ url_for('index') }}" class="marketing-brand">Airbud</a>
-    <div class="marketing-nav-links">
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+    </button>
+    <div class="marketing-nav-links" id="marketing-nav-links">
         <a href="{{ url_for('about') }}"{% if active == 'about' %} class="active"{% endif %}>About</a>
         <a href="{{ url_for('faq') }}"{% if active == 'faq' %} class="active"{% endif %}>FAQ</a>
         <a href="{{ url_for('pricing') }}"{% if active == 'pricing' %} class="active"{% endif %}>Pricing</a>
@@ -11,4 +14,16 @@
         <a href="{{ url_for('signup') }}" class="btn btn-primary btn-small{% if active == 'signup' %} active{% endif %}">Get Started</a>
     </div>
 </div>
+<script>
+(function() {
+    var btn = document.getElementById('nav-hamburger');
+    var nav = document.getElementById('marketing-nav');
+    if (btn) {
+        btn.addEventListener('click', function() {
+            var open = nav.classList.toggle('nav-open');
+            btn.setAttribute('aria-expanded', open);
+        });
+    }
+})();
+</script>
 {% endmacro %}

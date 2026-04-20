@@ -1215,6 +1215,39 @@ input[type="url"] {
     color: var(--color-white);
 }
 
+.nav-hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    margin-left: auto;
+}
+
+.nav-hamburger span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--color-text);
+    border-radius: 2px;
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+.marketing-nav.nav-open .nav-hamburger span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+}
+
+.marketing-nav.nav-open .nav-hamburger span:nth-child(2) {
+    opacity: 0;
+}
+
+.marketing-nav.nav-open .nav-hamburger span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+}
+
 .marketing-hero {
     text-align: center;
     padding: 60px 20px 50px;
@@ -1890,20 +1923,44 @@ body:has(.preview-banner) .container {
         padding: 16px;
     }
 
-    /* Marketing nav — stack brand above links */
+    /* Marketing nav — hamburger layout */
     .marketing-nav {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0;
+    }
+
+    .nav-hamburger {
+        display: flex;
     }
 
     .marketing-nav-links {
-        gap: 12px;
-        flex-wrap: wrap;
+        display: none;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0;
+        width: 100%;
+        padding: 8px 0 4px;
     }
 
     .marketing-nav-links a {
-        font-size: 0.9rem;
+        font-size: 0.95rem;
+        padding: 10px 0;
+        width: 100%;
+        border-bottom: 1px solid var(--color-border, #eee);
+    }
+
+    .marketing-nav-links a:last-child {
+        border-bottom: none;
+    }
+
+    .marketing-nav-links a.btn {
+        margin-top: 8px;
+        width: auto;
+    }
+
+    .marketing-nav.nav-open .marketing-nav-links {
+        display: flex;
     }
 
     .marketing-hero {
