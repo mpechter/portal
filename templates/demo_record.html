@@ -9,9 +9,19 @@
 
     <h1>{{ record.fields.get('Name', 'Edit Record') }}</h1>
 
+    <div class="demo-feature-guide">
+        <span class="demo-feature-guide-label">Features on this page:</span>
+        <span class="demo-chip demo-chip-readonly">Read-only Fields</span>
+        <span class="demo-chip demo-chip-editable">Editable Fields</span>
+        <span class="demo-chip demo-chip-bilingual">Bilingual Labels</span>
+        <span class="demo-chip demo-chip-helptext">Help Text</span>
+        <span class="demo-chip demo-chip-confirm">Data Confirmation</span>
+    </div>
+
     <form id="edit-form" action="{{ url_for('demo_record', record_id=record.id) }}" method="post" class="form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
+        <div class="demo-section-divider">Read-only Fields</div>
         {% for field_name in readonly_fields %}
             {% set field_value = record.fields.get(field_name, '') %}
             {% set field_meta = field_metadata.get(field_name, {}) %}
@@ -19,12 +29,30 @@
             {{ render_field(field_name, field_value, field_meta, editable=False, translation=translation) }}
         {% endfor %}
 
+        <div class="demo-section-divider">Editable Fields</div>
         {% for field_name in editable_fields %}
             {% set field_value = record.fields.get(field_name, '') %}
             {% set field_meta = field_metadata.get(field_name, {}) %}
             {% set translation = field_translations.get(field_name, '') %}
-            {{ render_field(field_name, field_value, field_meta, editable=True, translation=translation) }}
+            {% set description = field_descriptions.get(field_name, '') %}
+            {{ render_field(field_name, field_value, field_meta, editable=True, translation=translation, description=description) }}
         {% endfor %}
+
+        {% if org.confirmation_enabled and org.confirmation_field and org.confirmation_value %}
+        {% set is_confirmed = last_confirmed == org.confirmation_value %}
+        <div class="demo-section-divider">Data Confirmation</div>
+        <div class="confirmation-box">
+            <label class="checkbox-label confirmation-label">
+                <input type="checkbox"
+                       name="data_confirmed"
+                       id="data_confirmed"
+                       {% if is_confirmed %}checked{% endif %}
+                       data-original="{{ 'true' if is_confirmed else 'false' }}">
+                <span class="checkbox-text">I have reviewed this record</span>
+            </label>
+            <p class="field-help" style="margin-top: 4px; margin-left: 28px;">Check this box to confirm you've reviewed the information above and it is accurate.</p>
+        </div>
+        {% endif %}
 
         <div class="form-actions">
             <button type="submit" id="save-btn" class="btn btn-save" disabled>Save Changes</button>

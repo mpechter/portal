@@ -227,9 +227,9 @@ def contact():
 _DEMO_ORG = SimpleNamespace(
     portal_title="Springfield Schools Family Portal",
     records_table="Students",
-    confirmation_enabled=False,
-    confirmation_field=None,
-    confirmation_value=None,
+    confirmation_enabled=True,
+    confirmation_field="Reviewed",
+    confirmation_value="Yes",
     logo_url=None,
     plan="active",
     field_aliases={"user_fields": {}, "record_fields": {}},
@@ -254,6 +254,7 @@ _DEMO_RECORDS = [
         "School": "Springfield Middle School",
         "Emergency Contact": "Sarah Richardson — (555) 423-8876",
         "Medical Notes": "None",
+        "Reviewed": "Yes",
     }),
     SimpleNamespace(id="aiden", fields={
         "Name": "Aiden Richardson",
@@ -275,6 +276,10 @@ _DEMO_RECORDS = [
 
 _DEMO_USER_READONLY_FIELDS = ["Name", "Email"]
 _DEMO_USER_EDITABLE_FIELDS = ["Phone", "Address"]
+_DEMO_USER_DESCRIPTIONS = {
+    "Phone": "We'll use this number for school communications and emergency calls.",
+    "Address": "Used for district enrollment verification.",
+}
 _DEMO_USER_TRANSLATIONS = {
     "Name": "Nombre",
     "Email": "Correo electrónico",
@@ -290,6 +295,10 @@ _DEMO_USER_FIELD_METADATA = {
 
 _DEMO_EDITABLE_FIELDS = ["Emergency Contact", "Medical Notes"]
 _DEMO_READONLY_FIELDS = ["Grade", "Homeroom", "School"]
+_DEMO_FIELD_DESCRIPTIONS = {
+    "Emergency Contact": "List the name and phone number of someone we can reach if a parent is unavailable.",
+    "Medical Notes": "Include any allergies, medications, or conditions the school should be aware of.",
+}
 _DEMO_FIELD_TRANSLATIONS = {
     "Grade": "Grado",
     "Homeroom": "Salón de clase",
@@ -331,6 +340,7 @@ def demo_record(record_id: str):
         flash("Demo mode — changes are not saved. Sign up to create your own portal!", "info")
         return redirect(url_for("demo_record", record_id=record_id))
 
+    last_confirmed = record.fields.get(_DEMO_ORG.confirmation_field)
     return render_template(
         "demo_record.html",
         org=_DEMO_ORG,
@@ -340,8 +350,8 @@ def demo_record(record_id: str):
         field_metadata=_DEMO_FIELD_METADATA,
         field_translations=_DEMO_FIELD_TRANSLATIONS,
         field_aliases={},
-        field_descriptions={},
-        last_confirmed=None,
+        field_descriptions=_DEMO_FIELD_DESCRIPTIONS,
+        last_confirmed=last_confirmed,
     )
 
 
@@ -361,7 +371,7 @@ def demo_profile():
         field_metadata=_DEMO_USER_FIELD_METADATA,
         field_translations=_DEMO_USER_TRANSLATIONS,
         field_aliases={},
-        field_descriptions={},
+        field_descriptions=_DEMO_USER_DESCRIPTIONS,
     )
 
 

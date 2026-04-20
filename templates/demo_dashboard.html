@@ -14,12 +14,22 @@
             <a href="{{ url_for('demo_profile') }}" class="btn btn-secondary btn-small">Edit Profile</a>
             {% endif %}
         </div>
+
         <div class="profile-summary">
             {% for field_name in user_readonly_fields %}
                 {% set value = user_fields.get(field_name, '') %}
                 {% if value %}
                 <div class="profile-field">
-                    <span class="field-label">{{ user_aliases.get(field_name, field_name) }}:</span>
+                    <span class="field-label">{{ field_name }}:</span>
+                    <span class="field-value">{{ value }}</span>
+                </div>
+                {% endif %}
+            {% endfor %}
+            {% for field_name in user_editable_fields %}
+                {% set value = user_fields.get(field_name, '') %}
+                {% if value %}
+                <div class="profile-field">
+                    <span class="field-label">{{ field_name }}:</span>
                     <span class="field-value">{{ value }}</span>
                 </div>
                 {% endif %}
@@ -32,11 +42,30 @@
     <section class="records-section">
         <h2>Your {{ org.records_table }}</h2>
         <p class="text-muted">Select a record to view and edit.</p>
+
+        {% if org.confirmation_enabled and org.confirmation_field and org.confirmation_value %}
+        {% set ns = namespace(all_reviewed=true) %}
+        {% for record in records %}
+            {% if record.fields.get(org.confirmation_field) != org.confirmation_value %}
+                {% set ns.all_reviewed = false %}
+            {% endif %}
+        {% endfor %}
+        {% if ns.all_reviewed %}
+        <div class="all-reviewed-banner">
+            &#10003; You have reviewed all records.
+        </div>
+        {% endif %}
+        {% endif %}
+
         <div class="records-list">
             {% for record in records %}
-            <a href="{{ url_for('demo_record', record_id=record.id) }}" class="record-card">
+            {% set is_reviewed = org.confirmation_enabled and org.confirmation_field and org.confirmation_value and record.fields.get(org.confirmation_field) == org.confirmation_value %}
+            <a href="{{ url_for('demo_record', record_id=record.id) }}" class="record-card {% if is_reviewed %}reviewed{% endif %}">
                 <div class="record-card-header">
                     <h3>{{ record.fields.get('Name', 'Unnamed Record') }}</h3>
+                    {% if is_reviewed %}
+                    <span class="review-badge" title="Reviewed">&#10003;</span>
+                    {% endif %}
                 </div>
                 <p class="text-muted">Click to view and edit</p>
             </a>
