@@ -275,6 +275,13 @@ _DEMO_RECORDS = [
 
 _DEMO_EDITABLE_FIELDS = ["Emergency Contact", "Medical Notes"]
 _DEMO_READONLY_FIELDS = ["Grade", "Homeroom", "School"]
+_DEMO_FIELD_TRANSLATIONS = {
+    "Grade": "Grado",
+    "Homeroom": "Salón de clase",
+    "School": "Escuela",
+    "Emergency Contact": "Contacto de emergencia",
+    "Medical Notes": "Notas médicas",
+}
 _DEMO_FIELD_METADATA = {
     "Emergency Contact": SimpleNamespace(type="singleLineText", options=[]),
     "Medical Notes": SimpleNamespace(type="multilineText", options=[]),
@@ -316,7 +323,7 @@ def demo_record(record_id: str):
         editable_fields=_DEMO_EDITABLE_FIELDS,
         readonly_fields=_DEMO_READONLY_FIELDS,
         field_metadata=_DEMO_FIELD_METADATA,
-        field_translations={},
+        field_translations=_DEMO_FIELD_TRANSLATIONS,
         field_aliases={},
         field_descriptions={},
         last_confirmed=None,

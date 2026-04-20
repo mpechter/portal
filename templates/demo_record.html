@@ -15,13 +15,15 @@
         {% for field_name in readonly_fields %}
             {% set field_value = record.fields.get(field_name, '') %}
             {% set field_meta = field_metadata.get(field_name, {}) %}
-            {{ render_field(field_name, field_value, field_meta, editable=False) }}
+            {% set translation = field_translations.get(field_name, '') %}
+            {{ render_field(field_name, field_value, field_meta, editable=False, translation=translation) }}
         {% endfor %}
 
         {% for field_name in editable_fields %}
             {% set field_value = record.fields.get(field_name, '') %}
             {% set field_meta = field_metadata.get(field_name, {}) %}
-            {{ render_field(field_name, field_value, field_meta, editable=True) }}
+            {% set translation = field_translations.get(field_name, '') %}
+            {{ render_field(field_name, field_value, field_meta, editable=True, translation=translation) }}
         {% endfor %}
 
         <div class="form-actions">
