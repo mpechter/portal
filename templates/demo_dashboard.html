@@ -10,6 +10,9 @@
     <section class="profile-section">
         <div class="section-header">
             <h2>Your Information</h2>
+            {% if user_editable_fields %}
+            <a href="{{ url_for('demo_profile') }}" class="btn btn-secondary btn-small">Edit Profile</a>
+            {% endif %}
         </div>
         <div class="profile-summary">
             {% for field_name in user_readonly_fields %}

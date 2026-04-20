@@ -273,6 +273,21 @@ _DEMO_RECORDS = [
     }),
 ]
 
+_DEMO_USER_READONLY_FIELDS = ["Name", "Email"]
+_DEMO_USER_EDITABLE_FIELDS = ["Phone", "Address"]
+_DEMO_USER_TRANSLATIONS = {
+    "Name": "Nombre",
+    "Email": "Correo electrónico",
+    "Phone": "Teléfono",
+    "Address": "Dirección",
+}
+_DEMO_USER_FIELD_METADATA = {
+    "Name": SimpleNamespace(type="singleLineText", options=[]),
+    "Email": SimpleNamespace(type="email", options=[]),
+    "Phone": SimpleNamespace(type="phoneNumber", options=[]),
+    "Address": SimpleNamespace(type="multilineText", options=[]),
+}
+
 _DEMO_EDITABLE_FIELDS = ["Emergency Contact", "Medical Notes"]
 _DEMO_READONLY_FIELDS = ["Grade", "Homeroom", "School"]
 _DEMO_FIELD_TRANSLATIONS = {
@@ -298,8 +313,8 @@ def demo():
         org=_DEMO_ORG,
         user=_DEMO_USER,
         user_fields=_DEMO_USER_FIELDS,
-        user_editable_fields=[],
-        user_readonly_fields=["Name", "Email", "Phone", "Address"],
+        user_editable_fields=_DEMO_USER_EDITABLE_FIELDS,
+        user_readonly_fields=_DEMO_USER_READONLY_FIELDS,
         has_profile_fields=True,
         user_aliases={},
         records=_DEMO_RECORDS,
@@ -327,6 +342,26 @@ def demo_record(record_id: str):
         field_aliases={},
         field_descriptions={},
         last_confirmed=None,
+    )
+
+
+@app.route("/demo/profile", methods=["GET", "POST"])
+def demo_profile():
+    if request.method == "POST":
+        flash("Demo mode — changes are not saved. Sign up to create your own portal!", "info")
+        return redirect(url_for("demo_profile"))
+
+    user_data = SimpleNamespace(fields=_DEMO_USER_FIELDS)
+    return render_template(
+        "demo_profile.html",
+        org=_DEMO_ORG,
+        user_data=user_data,
+        editable_fields=_DEMO_USER_EDITABLE_FIELDS,
+        readonly_fields=_DEMO_USER_READONLY_FIELDS,
+        field_metadata=_DEMO_USER_FIELD_METADATA,
+        field_translations=_DEMO_USER_TRANSLATIONS,
+        field_aliases={},
+        field_descriptions={},
     )
 
 
