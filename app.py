@@ -3,6 +3,7 @@ import os
 import time
 from datetime import datetime, timezone
 from functools import wraps
+from types import SimpleNamespace
 from flask import Flask, render_template, request, redirect, url_for, flash, session, abort, jsonify
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_wtf.csrf import CSRFProtect
@@ -219,6 +220,107 @@ def contact():
             return render_template("contact.html", name=name, email=email, message=message)
 
     return render_template("contact.html", name="", email="", message="")
+
+
+# --- Demo Portal ---
+
+_DEMO_ORG = SimpleNamespace(
+    portal_title="Springfield Schools Family Portal",
+    records_table="Students",
+    confirmation_enabled=False,
+    confirmation_field=None,
+    confirmation_value=None,
+    logo_url=None,
+    plan="active",
+    field_aliases={"user_fields": {}, "record_fields": {}},
+    field_annotations={"record_fields": {}},
+    field_descriptions={"record_fields": {}},
+)
+
+_DEMO_USER = SimpleNamespace(name="Sarah Richardson", email="sarah.richardson@example.com")
+
+_DEMO_USER_FIELDS = {
+    "Name": "Sarah Richardson",
+    "Email": "sarah.richardson@example.com",
+    "Phone": "(555) 423-8876",
+    "Address": "412 Maple Street, Springfield",
+}
+
+_DEMO_RECORDS = [
+    SimpleNamespace(id="liam", fields={
+        "Name": "Liam Richardson",
+        "Grade": "8th Grade",
+        "Homeroom": "Mr. Thompson",
+        "School": "Springfield Middle School",
+        "Emergency Contact": "Sarah Richardson — (555) 423-8876",
+        "Medical Notes": "None",
+    }),
+    SimpleNamespace(id="aiden", fields={
+        "Name": "Aiden Richardson",
+        "Grade": "5th Grade",
+        "Homeroom": "Ms. Patel",
+        "School": "Lincoln Elementary",
+        "Emergency Contact": "Sarah Richardson — (555) 423-8876",
+        "Medical Notes": "Peanut allergy (EpiPen on file)",
+    }),
+    SimpleNamespace(id="abigail", fields={
+        "Name": "Abigail Richardson",
+        "Grade": "2nd Grade",
+        "Homeroom": "Mrs. Chen",
+        "School": "Lincoln Elementary",
+        "Emergency Contact": "Sarah Richardson — (555) 423-8876",
+        "Medical Notes": "None",
+    }),
+]
+
+_DEMO_EDITABLE_FIELDS = ["Emergency Contact", "Medical Notes"]
+_DEMO_READONLY_FIELDS = ["Grade", "Homeroom", "School"]
+_DEMO_FIELD_METADATA = {
+    "Emergency Contact": SimpleNamespace(type="singleLineText", options=[]),
+    "Medical Notes": SimpleNamespace(type="multilineText", options=[]),
+    "Grade": SimpleNamespace(type="singleLineText", options=[]),
+    "Homeroom": SimpleNamespace(type="singleLineText", options=[]),
+    "School": SimpleNamespace(type="singleLineText", options=[]),
+}
+
+
+@app.route("/demo")
+def demo():
+    return render_template(
+        "demo_dashboard.html",
+        org=_DEMO_ORG,
+        user=_DEMO_USER,
+        user_fields=_DEMO_USER_FIELDS,
+        user_editable_fields=[],
+        user_readonly_fields=["Name", "Email", "Phone", "Address"],
+        has_profile_fields=True,
+        user_aliases={},
+        records=_DEMO_RECORDS,
+    )
+
+
+@app.route("/demo/record/<record_id>", methods=["GET", "POST"])
+def demo_record(record_id: str):
+    record = next((r for r in _DEMO_RECORDS if r.id == record_id), None)
+    if not record:
+        abort(404)
+
+    if request.method == "POST":
+        flash("Demo mode — changes are not saved. Sign up to create your own portal!", "info")
+        return redirect(url_for("demo_record", record_id=record_id))
+
+    return render_template(
+        "demo_record.html",
+        org=_DEMO_ORG,
+        record=record,
+        editable_fields=_DEMO_EDITABLE_FIELDS,
+        readonly_fields=_DEMO_READONLY_FIELDS,
+        field_metadata=_DEMO_FIELD_METADATA,
+        field_translations={},
+        field_aliases={},
+        field_descriptions={},
+        last_confirmed=None,
+    )
 
 
 @app.route("/api/check-org-code")

@@ -1,0 +1,45 @@
+{% extends "demo_base.html" %}
+
+{% block title %}Dashboard — {{ org.portal_title }}{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h1>Welcome, {{ user.name }}</h1>
+
+    {% if has_profile_fields %}
+    <section class="profile-section">
+        <div class="section-header">
+            <h2>Your Information</h2>
+        </div>
+        <div class="profile-summary">
+            {% for field_name in user_readonly_fields %}
+                {% set value = user_fields.get(field_name, '') %}
+                {% if value %}
+                <div class="profile-field">
+                    <span class="field-label">{{ user_aliases.get(field_name, field_name) }}:</span>
+                    <span class="field-value">{{ value }}</span>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    {% if records %}
+    <section class="records-section">
+        <h2>Your {{ org.records_table }}</h2>
+        <p class="text-muted">Select a record to view and edit.</p>
+        <div class="records-list">
+            {% for record in records %}
+            <a href="{{ url_for('demo_record', record_id=record.id) }}" class="record-card">
+                <div class="record-card-header">
+                    <h3>{{ record.fields.get('Name', 'Unnamed Record') }}</h3>
+                </div>
+                <p class="text-muted">Click to view and edit</p>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

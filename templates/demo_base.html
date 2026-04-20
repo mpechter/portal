@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Demo — Airbud{% endblock %}</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><ellipse cx='16' cy='9' rx='14' ry='5' fill='%2340a0ff'/><rect x='2' y='9' width='28' height='14' fill='%23007bff'/><ellipse cx='16' cy='23' rx='14' ry='5' fill='%230056b3'/><ellipse cx='16' cy='9' rx='14' ry='5' fill='%2340a0ff'/></svg>">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="demo-banner">
+        <span>Live demo &mdash; data is fictional and changes won&rsquo;t be saved.</span>
+        <a href="{{ url_for('signup') }}" class="btn btn-small demo-banner-btn">Get Started Free</a>
+    </div>
+    <div class="container">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <span class="nav-title">{{ org.portal_title }}</span>
+            </div>
+            <div class="nav-links">
+                <a href="{{ url_for('index') }}" style="color: var(--color-text-muted); font-size: 0.85rem;">← Airbud Home</a>
+            </div>
+        </nav>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

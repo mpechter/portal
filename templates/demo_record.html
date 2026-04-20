@@ -1,0 +1,35 @@
+{% extends "demo_base.html" %}
+{% from "macros/fields.html" import render_field %}
+
+{% block title %}{{ record.fields.get('Name', 'Student') }} — {{ org.portal_title }}{% endblock %}
+
+{% block content %}
+<div class="edit-record">
+    <a href="{{ url_for('demo') }}" class="back-link">← Back to {{ org.records_table }}</a>
+
+    <h1>{{ record.fields.get('Name', 'Edit Record') }}</h1>
+
+    <form id="edit-form" action="{{ url_for('demo_record', record_id=record.id) }}" method="post" class="form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        {% for field_name in readonly_fields %}
+            {% set field_value = record.fields.get(field_name, '') %}
+            {% set field_meta = field_metadata.get(field_name, {}) %}
+            {{ render_field(field_name, field_value, field_meta, editable=False) }}
+        {% endfor %}
+
+        {% for field_name in editable_fields %}
+            {% set field_value = record.fields.get(field_name, '') %}
+            {% set field_meta = field_metadata.get(field_name, {}) %}
+            {{ render_field(field_name, field_value, field_meta, editable=True) }}
+        {% endfor %}
+
+        <div class="form-actions">
+            <button type="submit" id="save-btn" class="btn btn-save" disabled>Save Changes</button>
+            <button type="button" id="discard-btn" class="btn btn-secondary" disabled>Discard Changes</button>
+        </div>
+    </form>
+</div>
+
+<script src="{{ url_for('static', filename='form-dirty-tracking.js') }}"></script>
+{% endblock %}
