@@ -1851,6 +1851,37 @@ body:has(.preview-banner) .container {
     background: var(--color-border);
 }
 
+/* Demo hover tooltips */
+.demo-tooltip {
+    position: fixed;
+    z-index: 10000;
+    background: #fff;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    max-width: 268px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.13);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.1s ease;
+}
+
+.demo-tooltip.visible {
+    opacity: 1;
+}
+
+.demo-tooltip-title {
+    font-weight: 700;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--color-demo-bg);
+    margin-bottom: 5px;
+}
+
 /* Demo portal banner */
 .demo-banner {
     position: fixed;
