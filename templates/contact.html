@@ -13,6 +13,7 @@
 
 <div class="card centered" style="max-width: 520px;">
     <form action="{{ url_for('contact') }}" method="post" class="form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
             <label for="name">Name</label>
             <input type="text" id="name" name="name" value="{{ name }}" placeholder="Your name" required autofocus>

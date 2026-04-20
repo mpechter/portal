@@ -519,16 +519,16 @@ def verify_magic_link(token: str):
             return None, None
         # Clear the stored code
         _demo_codes.pop(key, None)
-    else:
-        # Clear any stored login code for this user
-        LoginCode.clear_code(org_id, email)
-
-    # Get user from Airtable
+    # Get user from Airtable before clearing the code, so a failed lookup
+    # doesn't strand the user without a usable code.
     client = get_client_for_org(org)
     user = client.get_user_by_id(user_id)
     if not user:
         record_failed_attempt(org_id, email)
         return None, None
+
+    if not Config.DEMO_MODE:
+        LoginCode.clear_code(org_id, email)
 
     # Success
     clear_failed_attempts(org_id, email)

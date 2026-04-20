@@ -6,6 +6,7 @@
 <div class="card centered">
     <h1>Internal Dashboard</h1>
     <form action="{{ url_for('superadmin_login') }}" method="post" class="form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
             <label for="password">Password</label>
             <input type="password" id="password" name="password" required autofocus>

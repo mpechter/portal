@@ -12,6 +12,7 @@
     <div class="preview-banner">
         <span>Admin Preview — viewing as {{ session['admin_preview'].get('name') or session['admin_preview'].get('email') or 'a user' }}. Changes are not saved.</span>
         <form action="{{ url_for('admin_preview_exit') }}" method="post" style="display:inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="preview-exit-btn">Exit Preview</button>
         </form>
     </div>

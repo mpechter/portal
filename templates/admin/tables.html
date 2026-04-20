@@ -18,6 +18,7 @@
         </div>
 
         <form id="tables-form" action="{{ url_for('admin_save_tables') }}" method="post" class="form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group">
                 <label for="users_table">Users Table</label>
                 <p class="field-help">The table where users log in.</p>

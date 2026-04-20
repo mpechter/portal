@@ -80,7 +80,7 @@
 {# ---- Main admin content ---- #}
 {% block admin_content %}
         <form id="admin-form" action="{{ url_for('admin_save_fields') }}" method="post" class="form">
-
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <h3>Email Field</h3>
         <div class="fields-section">
             <p class="field-help" style="margin-bottom: 10px;">Select which field in <strong>{{ org.users_table }}</strong> contains the client's email address.</p>

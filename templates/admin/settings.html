@@ -8,13 +8,14 @@
             <strong>Verification pending:</strong> A confirmation link was sent to
             <strong>{{ org.pending_admin_email }}</strong>. Your admin email will not change until you click that link.
             <form action="{{ url_for('admin_cancel_pending_email') }}" method="post" style="display:inline; margin-left: 12px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn-text" style="color: var(--color-danger-text);">Cancel</button>
             </form>
         </div>
         {% endif %}
 
         <form id="settings-form" action="{{ url_for('admin_save_settings') }}" method="post" class="form">
-
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <h3>Organization</h3>
 
             <div class="form-group">

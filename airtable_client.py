@@ -176,6 +176,9 @@ class AirtableClient:
 
     def get_user_by_email(self, email: str) -> dict | None:
         """Find a user by email address."""
+        import re
+        if not re.match(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$', email):
+            return None
         email_field = self.org.email_field or "Email"
         safe_email = email.replace("'", "\\'")
         records = self.users_table.all(formula=f"{{{email_field}}} = '{safe_email}'")

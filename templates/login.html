@@ -8,6 +8,7 @@
     <h1>Login</h1>
     <p>Enter your organization code and email to receive a login link.</p>
     <form action="{{ url_for('login') }}" method="post" class="form" onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Sending...';">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
             <label for="org_code">Organization Code</label>
             <input type="text" id="org_code" name="org_code" value="{{ org_code }}" placeholder="e.g., SCHOOL1" required>

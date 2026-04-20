@@ -4,6 +4,7 @@
 
 {% block admin_content %}
         <form action="{{ url_for('admin_support') }}" method="post" class="form" style="max-width: 560px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group">
                 <label for="message">How can we help?</label>
                 <textarea id="message" name="message" rows="6" placeholder="Describe your issue or question…" required style="resize: vertical;">{{ message }}</textarea>

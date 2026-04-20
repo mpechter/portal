@@ -5,8 +5,20 @@ load_dotenv()
 
 
 class Config:
-    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+    _secret_key = os.environ.get("SECRET_KEY")
+    if not _secret_key:
+        raise RuntimeError("SECRET_KEY environment variable must be set")
+    SECRET_KEY = _secret_key
+
     APP_URL = os.environ.get("APP_URL", "http://localhost:5000")
+
+    # CSRF protection (flask-wtf)
+    WTF_CSRF_ENABLED = True
+
+    # Session cookie security — SECURE only when serving over HTTPS
+    SESSION_COOKIE_SECURE = APP_URL.startswith("https://")
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
 
     # Demo mode - uses mock data instead of real Airtable
     DEMO_MODE = os.environ.get("DEMO_MODE", "false").lower() == "true"

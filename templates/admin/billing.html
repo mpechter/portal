@@ -13,6 +13,7 @@
         {% if org.stripe_subscription_id %}
         <p class="text-muted">Subscribed via Stripe.</p>
         <form action="{{ url_for('admin_billing_portal') }}" method="post" style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" name="action" value="manage" class="btn btn-secondary btn-small">Manage Subscription</button>
             <button type="submit" name="action" value="payment" class="btn btn-secondary btn-small">Update Payment Method</button>
         </form>
@@ -45,6 +46,7 @@
         <h3 style="margin-top: 24px;">Subscribe — $10/month</h3>
         <p class="text-muted">1 portal, unlimited clients, unlimited records.</p>
         <form action="{{ url_for('admin_create_checkout') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-primary">Subscribe with Stripe</button>
         </form>
 
@@ -54,6 +56,7 @@
         {% endif %}
 
         <form action="{{ url_for('admin_activate_promo') }}" method="post" style="display: flex; gap: 10px; align-items: flex-start; max-width: 360px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div style="flex: 1;">
                 <input type="text" name="promo_code" placeholder="Enter promo code"
                        class="form-input" style="text-transform: uppercase;" required>
@@ -68,6 +71,7 @@
             <p>Permanently deletes your organization, all configuration, and cancels any active subscription. Client data in Airtable is not affected. This cannot be undone.</p>
             <form action="{{ url_for('admin_close_account') }}" method="post"
                   onsubmit="return confirm('Are you sure? This will permanently delete your account and cannot be undone.')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn btn-danger btn-small">Close Account</button>
             </form>
         </div>

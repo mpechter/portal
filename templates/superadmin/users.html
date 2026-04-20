@@ -78,9 +78,10 @@
                     </td>
                     <td style="padding: 10px 12px;">
                         <form action="{{ url_for('superadmin_toggle_active', org_id=org.id) }}" method="post" style="display: inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="btn btn-small {% if org.is_active %}btn-secondary{% else %}btn-primary{% endif %}"
                                     style="font-size: 12px; padding: 4px 10px;"
-                                    onclick="return confirm('{% if org.is_active %}Deactivate {{ org.name }}?{% else %}Activate {{ org.name }}?{% endif %}')">
+                                    onclick="return confirm({% if org.is_active %}{{ ('Deactivate ' + org.name + '?') | tojson }}{% else %}{{ ('Activate ' + org.name + '?') | tojson }}{% endif %})">
                                 {% if org.is_active %}Deactivate{% else %}Activate{% endif %}
                             </button>
                         </form>

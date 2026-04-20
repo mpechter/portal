@@ -1,8 +1,10 @@
 import hmac
+import os
 import time
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, flash, session, abort, jsonify
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask_wtf.csrf import CSRFProtect
 from config import Config
 from models import db, Organization, LoginAttempt, LoginCode
 from airtable_client import get_client_for_org, COMPUTED_FIELD_TYPES
@@ -17,6 +19,8 @@ from auth import (send_login_code, verify_login_code, verify_magic_link,
 
 app = Flask(__name__)
 app.config.from_object(Config)
+
+csrf = CSRFProtect(app)
 
 db.init_app(app)
 
@@ -252,7 +256,7 @@ def login():
             return render_template("login.html", org_code=org_code, email=email)
 
         # Send login code (with magic link)
-        base_url = request.url_root.rstrip("/")
+        base_url = Config.APP_URL.rstrip("/")
         result = None
         for attempt in range(3):
             try:
@@ -705,7 +709,7 @@ def admin_save_settings():
     # Admin email — require verification before committing a change
     admin_email = request.form.get("admin_email", "").strip().lower()
     if admin_email and admin_email != (org.admin_email or ""):
-        base_url = request.url_root.rstrip("/")
+        base_url = Config.APP_URL.rstrip("/")
         sent = send_admin_email_verification(org, admin_email, base_url)
         if sent:
             org.pending_admin_email = admin_email
@@ -722,8 +726,8 @@ def admin_save_settings():
     new_password = request.form.get("new_password", "").strip()
     if new_password:
         new_password_confirm = request.form.get("new_password_confirm", "").strip()
-        if len(new_password) < 6:
-            flash("New password must be at least 6 characters.", "error")
+        if len(new_password) < 10:
+            flash("New password must be at least 10 characters.", "error")
             return redirect(url_for("admin_settings"))
         if new_password != new_password_confirm:
             flash("Passwords do not match.", "error")
@@ -1055,6 +1059,7 @@ def admin_preview():
 
 
 @app.route("/admin/preview/exit", methods=["POST"])
+@admin_required
 def admin_preview_exit():
     """Exit preview mode and return to admin dashboard."""
     session.pop("admin_preview", None)
@@ -1247,6 +1252,7 @@ def admin_close_account():
 
 
 @app.route("/stripe/webhook", methods=["POST"])
+@csrf.exempt
 def stripe_webhook():
     """Handle Stripe webhook events."""
     import stripe as stripe_lib
@@ -1290,7 +1296,7 @@ def admin_forgot_password():
         org = Organization.get_by_code(org_code)
 
         if org and org.admin_email:
-            base_url = request.url_root.rstrip("/")
+            base_url = Config.APP_URL.rstrip("/")
             sent = send_admin_reset_email(org, base_url)
             if not sent:
                 flash(
@@ -1324,8 +1330,8 @@ def admin_reset_password(token):
         password = request.form.get("password", "").strip()
         confirm = request.form.get("password_confirm", "").strip()
 
-        if not password or len(password) < 6:
-            flash("Password must be at least 6 characters.", "error")
+        if not password or len(password) < 10:
+            flash("Password must be at least 10 characters.", "error")
             return render_template("admin/reset_password.html", token=token, org=org)
 
         if password != confirm:
@@ -1403,11 +1409,22 @@ def superadmin_login():
     if not Config.SUPERADMIN_PASSWORD:
         abort(404)
 
+    _SA_ORG_ID = 0
+    _SA_EMAIL = "__superadmin__"
+
     if request.method == "POST":
+        if is_locked_out(_SA_ORG_ID, _SA_EMAIL):
+            remaining = get_lockout_remaining(_SA_ORG_ID, _SA_EMAIL)
+            flash(f"Too many failed attempts. Try again in {remaining // 60} minutes.", "error")
+            return render_template("superadmin/login.html")
+
         password = request.form.get("password", "")
         if password and Config.SUPERADMIN_PASSWORD and hmac.compare_digest(password, Config.SUPERADMIN_PASSWORD):
+            clear_failed_attempts(_SA_ORG_ID, _SA_EMAIL)
             session["superadmin"] = True
             return redirect(url_for("superadmin_users"))
+
+        record_failed_attempt(_SA_ORG_ID, _SA_EMAIL)
         flash("Incorrect password.", "error")
 
     return render_template("superadmin/login.html")
@@ -1503,8 +1520,8 @@ def signup():
             errors.append("Email is required.")
         if not admin_password:
             errors.append("Password is required.")
-        elif len(admin_password) < 6:
-            errors.append("Password must be at least 6 characters.")
+        elif len(admin_password) < 10:
+            errors.append("Password must be at least 10 characters.")
         elif admin_password != admin_password_confirm:
             errors.append("Passwords do not match.")
 
@@ -1519,7 +1536,7 @@ def signup():
 
         password_hash = generate_password_hash(admin_password)
         token = generate_signup_token(admin_email, password_hash)
-        base_url = request.url_root.rstrip("/")
+        base_url = Config.APP_URL.rstrip("/")
         sent = send_signup_verification_email(admin_email, token, base_url)
 
         if sent:
@@ -1737,4 +1754,4 @@ def set_admin_password():
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    app.run(debug=os.environ.get("FLASK_DEBUG", "false").lower() == "true")

@@ -10,6 +10,7 @@
     <h1>Your Profile</h1>
 
     <form id="edit-form" action="{{ url_for('edit_profile') }}" method="post" class="form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {% if editable_fields or readonly_fields %}
             {# Editable fields #}
             {% for field_name in editable_fields %}
