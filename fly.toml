@@ -7,7 +7,7 @@ app = 'portal-rough-hill-8364'
 primary_region = 'iad'
 
 [deploy]
-  release_command = "flask migrate-db"
+  release_command = "uv run flask migrate-db"
 
 [build]
 
