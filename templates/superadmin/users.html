@@ -89,6 +89,32 @@
         {% endif %}
     </div>
 
+    <h2 id="leads" style="margin: 0 0 16px; font-size: 18px;">Send Email</h2>
+
+    <div style="margin-bottom: 32px; max-width: 640px;">
+        <form action="{{ url_for('superadmin_send_leads') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 13px; color: #555; font-weight: 600; display: block; margin-bottom: 4px;">To</label>
+                <input type="email" name="to_email" required
+                       style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 13px; color: #555; font-weight: 600; display: block; margin-bottom: 4px;">Subject</label>
+                <input type="text" name="subject" required
+                       style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="font-size: 13px; color: #555; font-weight: 600; display: block; margin-bottom: 4px;">Body</label>
+                <textarea name="body" rows="12" required
+                          style="width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px;
+                                 font-size: 13px; font-family: monospace; line-height: 1.5; resize: vertical;"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="font-size: 14px; padding: 8px 16px;"
+                    onclick="return confirm('Send this email?')">Send</button>
+        </form>
+    </div>
+
     <h2 style="margin: 0 0 16px; font-size: 18px;">Organizations</h2>
 
     <div style="overflow-x: auto;">

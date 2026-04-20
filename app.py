@@ -1428,6 +1428,13 @@ def admin_verify_email(token):
 # --- Superadmin Routes ---
 
 
+def _email_body_to_html(body_text: str) -> str:
+    import html as _html
+    escaped = _html.escape(body_text)
+    paragraphs = escaped.split("\n\n")
+    return "".join(f"<p>{p.replace(chr(10), '<br>')}</p>" for p in paragraphs)
+
+
 def superadmin_required(f):
     """Decorator to require superadmin authentication."""
     @wraps(f)
@@ -1530,6 +1537,35 @@ def superadmin_toggle_promo(code_id):
             flash(f"{len(affected)} org(s) converted to 7-day trial.", "warning")
     db.session.commit()
     return redirect(url_for("superadmin_users"))
+
+
+@app.route("/superadmin/leads/send", methods=["POST"])
+@superadmin_required
+def superadmin_send_leads():
+    """Send a one-off outreach email."""
+    import resend as _resend
+    _resend.api_key = Config.RESEND_API_KEY
+
+    to_email = request.form.get("to_email", "").strip()
+    subject = request.form.get("subject", "").strip()
+    body_text = request.form.get("body", "").strip()
+
+    if not to_email or not subject or not body_text:
+        flash("To, subject, and body are all required.", "error")
+        return redirect(url_for("superadmin_users") + "#leads")
+
+    try:
+        _resend.Emails.send({
+            "from": "Mike Pechter <info@airbud.app>",
+            "to": to_email,
+            "subject": subject,
+            "html": _email_body_to_html(body_text),
+        })
+        flash(f"Sent to {to_email}.", "success")
+    except Exception as e:
+        flash(f"Failed to send: {e}", "error")
+
+    return redirect(url_for("superadmin_users") + "#leads")
 
 
 # --- CLI Commands ---
