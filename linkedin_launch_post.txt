@@ -7,7 +7,7 @@ I've watched program staff spend hours every week answering the same question: "
 
 The data is already in Airtable. But you can't hand clients access to the whole base.
 
-So you export. You copy-paste. You answer the same email again.
+So you export. Or, worse yet, you have folks create new records a deduplicate!
 
 I've spent years doing strategic consulting with nonprofits and mid-sized organizations. This was the friction point I kept running into — and couldn't find an affordable fix for.
 
