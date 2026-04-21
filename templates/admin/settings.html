@@ -60,16 +60,20 @@
 
             <h3>Airtable Connection</h3>
 
-            <div class="admin-alert admin-alert-info">
-                <strong>Token Requirements</strong><br>
-                Create a <a href="https://airtable.com/create/tokens" target="_blank">Personal Access Token</a> with these scopes:
-                <ul style="margin: 6px 0 6px 20px; font-size: 13px;">
-                    <li><code>data.records:read</code> — read user and record data</li>
-                    <li><code>data.records:write</code> — save login codes and updates</li>
-                    <li><code>schema.bases:read</code> — detect tables and fields</li>
-                </ul>
-                Grant access to the specific base you want to connect.
-            </div>
+            <details class="admin-alert admin-alert-info" style="padding: 0;" {% if not org.airtable_api_key %}open{% endif %}>
+                <summary style="padding: 10px 14px; cursor: pointer; font-weight: bold; list-style: none; display: flex; align-items: center; gap: 6px;">
+                    <span>&#9654;</span> Token Requirements
+                </summary>
+                <div style="padding: 0 14px 10px;">
+                    Create a <a href="https://airtable.com/create/tokens" target="_blank">Personal Access Token</a> with these scopes:
+                    <ul style="margin: 6px 0 6px 20px; font-size: 13px;">
+                        <li><code>data.records:read</code> — read user and record data</li>
+                        <li><code>data.records:write</code> — save login codes and updates</li>
+                        <li><code>schema.bases:read</code> — detect tables and fields</li>
+                    </ul>
+                    Grant access to the specific base you want to connect.
+                </div>
+            </details>
 
             <div class="form-group">
                 <label for="airtable_api_key">Airtable API Key
@@ -91,16 +95,13 @@
 
 
             <div class="form-group">
-                <label for="admin_email">Admin Email <span class="field-required">*</span></label>
-                <p class="field-help">
-                    <strong>Critical — required for password reset and billing notifications.</strong>
-                    Changing this address will send a verification link to the new address before taking effect.
-                </p>
-                {% if org.admin_email %}
-                <p style="font-size: 13px; margin-bottom: 6px; color: var(--color-text-secondary);">
-                    Current: <strong>{{ org.admin_email }}</strong>
-                </p>
-                {% else %}
+                <label for="admin_email">Admin Email
+                    {% if org.admin_email %}
+                    <span style="color: var(--color-success, #2d7a3a); font-size: 13px; font-weight: normal; margin-left: 6px;">&#10003; {{ org.admin_email }}</span>
+                    {% endif %}
+                </label>
+                <p class="field-help">Required for password reset and billing notifications. Changing it sends a verification link first.</p>
+                {% if not org.admin_email %}
                 <div class="admin-alert admin-alert-warning" style="margin-bottom: 8px;">
                     No admin email is set — you won't be able to recover your password without one.
                 </div>
