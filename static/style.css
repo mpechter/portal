@@ -1631,6 +1631,12 @@ body.marketing-page .container {
     box-shadow: var(--shadow-sm);
     padding: 32px 28px;
     transition: box-shadow 0.2s, transform 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.pricing-card .btn {
+    margin-top: auto;
 }
 
 .pricing-card:hover {
