@@ -72,7 +72,11 @@
             </div>
 
             <div class="form-group">
-                <label for="airtable_api_key">Airtable API Key</label>
+                <label for="airtable_api_key">Airtable API Key
+                    {% if org.airtable_api_key %}
+                    <span style="color: var(--color-success, #2d7a3a); font-size: 13px; font-weight: normal; margin-left: 6px;">&#10003; saved</span>
+                    {% endif %}
+                </label>
                 <p class="field-help">Your personal access token from Airtable.</p>
                 <input type="password" id="airtable_api_key" name="airtable_api_key" value="" class="form-input" placeholder="Leave blank to keep current key" data-original="" autocomplete="new-password">
             </div>
