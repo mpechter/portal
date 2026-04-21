@@ -59,6 +59,10 @@
 }
 
 
+html {
+    scroll-behavior: smooth;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -220,6 +224,18 @@ body {
 .btn-secondary:hover {
     background: var(--color-border);
 }
+
+.btn-outline {
+    background: transparent;
+    color: var(--color-primary);
+    border: 2px solid var(--color-primary);
+}
+
+.btn-outline:hover {
+    background: var(--color-primary-subtle);
+    color: var(--color-primary-hover);
+}
+
 
 .btn-save {
     background: var(--color-bg-elevated);
