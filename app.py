@@ -911,6 +911,65 @@ def admin_save_settings():
     return redirect(url_for("admin_settings"))
 
 
+@app.route("/admin/upload-logo", methods=["POST"])
+@admin_required
+def admin_upload_logo():
+    """Upload a logo image to Cloudflare R2 and save the URL."""
+    import uuid
+    import boto3
+    from botocore.exceptions import BotoCoreError, ClientError
+
+    org = _get_admin_org()
+    if not org:
+        return redirect(url_for("admin_login"))
+
+    cfg = app.config
+    if not all([cfg.get("R2_ACCOUNT_ID"), cfg.get("R2_ACCESS_KEY_ID"),
+                cfg.get("R2_SECRET_ACCESS_KEY"), cfg.get("R2_BUCKET_NAME"),
+                cfg.get("R2_PUBLIC_URL")]):
+        flash("Logo upload is not configured. Set R2_* environment variables.", "error")
+        return redirect(url_for("admin_settings"))
+
+    file = request.files.get("logo_file")
+    if not file or not file.filename:
+        flash("No file selected.", "error")
+        return redirect(url_for("admin_settings"))
+
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    if ext not in {"png", "jpg", "jpeg", "gif", "webp", "svg"}:
+        flash("Unsupported file type. Use PNG, JPG, GIF, WebP, or SVG.", "error")
+        return redirect(url_for("admin_settings"))
+
+    content_types = {
+        "png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg",
+        "gif": "image/gif", "webp": "image/webp", "svg": "image/svg+xml",
+    }
+
+    key = f"logos/{org.org_code}/{uuid.uuid4().hex}.{ext}"
+    try:
+        s3 = boto3.client(
+            "s3",
+            endpoint_url=f"https://{cfg['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com",
+            aws_access_key_id=cfg["R2_ACCESS_KEY_ID"],
+            aws_secret_access_key=cfg["R2_SECRET_ACCESS_KEY"],
+            region_name="auto",
+        )
+        s3.upload_fileobj(
+            file,
+            cfg["R2_BUCKET_NAME"],
+            key,
+            ExtraArgs={"ContentType": content_types[ext]},
+        )
+    except (BotoCoreError, ClientError) as e:
+        flash(f"Upload failed: {e}", "error")
+        return redirect(url_for("admin_settings"))
+
+    org.logo_url = f"{cfg['R2_PUBLIC_URL'].rstrip('/')}/{key}"
+    db.session.commit()
+    flash("Logo uploaded successfully.", "success")
+    return redirect(url_for("admin_settings"))
+
+
 @app.route("/admin/tables", methods=["GET"])
 @admin_required
 def admin_tables():

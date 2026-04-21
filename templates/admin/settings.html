@@ -38,14 +38,22 @@
             </div>
 
             <div class="form-group">
-                <label for="logo_url">Logo URL</label>
-                <p class="field-help">URL to your organization's logo (displayed in the navbar). Leave empty for text-only.</p>
-                <input type="url" id="logo_url" name="logo_url" value="{{ org.logo_url or '' }}" class="form-input" placeholder="https://example.com/logo.png" data-original="{{ org.logo_url or '' }}">
+                <label>Logo</label>
+                <p class="field-help">Displayed in the navbar. Upload a file or paste a URL.</p>
                 {% if org.logo_url %}
-                <div class="logo-preview">
+                <div class="logo-preview" style="margin-bottom: 10px;">
                     <img src="{{ org.logo_url }}" alt="Logo preview">
                 </div>
                 {% endif %}
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <form action="{{ url_for('admin_upload_logo') }}" method="post" enctype="multipart/form-data" style="display: flex; align-items: center; gap: 8px;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="file" name="logo_file" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml" style="font-size: 13px;">
+                        <button type="submit" class="btn btn-secondary" style="white-space: nowrap;">Upload</button>
+                    </form>
+                </div>
+                <p class="field-help" style="margin: 4px 0 6px;">Or enter a URL directly:</p>
+                <input type="url" id="logo_url" name="logo_url" value="{{ org.logo_url or '' }}" class="form-input" placeholder="https://example.com/logo.png" data-original="{{ org.logo_url or '' }}">
             </div>
 
             <h3>Airtable Connection</h3>
