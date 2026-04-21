@@ -1784,12 +1784,6 @@ body:has(.preview-banner) .container {
     }
 }
 
-/* Demo spotlight effect */
-.demo-dimmed {
-    filter: brightness(0.3);
-    transition: filter 0.45s ease;
-}
-
 /* Demo portal banner */
 .demo-banner {
     position: fixed;
