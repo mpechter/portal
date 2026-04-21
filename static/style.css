@@ -98,7 +98,17 @@ body {
 
 .nav-logo {
     max-height: 36px;
+    max-width: 160px;
     width: auto;
+    object-fit: contain;
+}
+
+.org-logo {
+    max-height: 80px;
+    max-width: 260px;
+    width: auto;
+    object-fit: contain;
+    margin-bottom: 20px;
 }
 
 .nav-title {
@@ -1695,8 +1705,10 @@ input[type="url"] {
 }
 
 .logo-preview img {
-    max-height: 40px;
+    max-height: 36px;
+    max-width: 160px;
     width: auto;
+    object-fit: contain;
     border-radius: var(--radius-xs);
 }
 

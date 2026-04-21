@@ -22,7 +22,7 @@
             {% if org.tables_configured %}
             <a href="{{ url_for('admin_preview') }}" class="btn btn-secondary btn-small">Preview Portal</a>
             {% endif %}
-            <a href="{{ url_for('login', org=org.org_code) }}" target="_blank" rel="noopener" class="btn btn-primary btn-small">View Portal</a>
+            <a href="{{ url_for('org_landing', org_code=org.org_code) }}" target="_blank" rel="noopener" class="btn btn-primary btn-small">View Portal</a>
             <a href="{{ url_for('admin_logout') }}" class="admin-logout">Logout</a>
         </div>
     </div>
