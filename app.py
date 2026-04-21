@@ -183,8 +183,17 @@ def index():
 
 @app.route("/about")
 def about():
-    """About page."""
     return render_template("about.html")
+
+
+@app.route("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
+
+@app.route("/terms")
+def terms():
+    return render_template("terms.html")
 
 
 @app.route("/faq")
@@ -214,7 +223,7 @@ def contact():
         sent = send_contact_email(name, email, message)
         if sent:
             flash("Message sent! We'll get back to you soon.", "success")
-            return redirect(url_for("contact"))
+            return redirect(url_for("index"))
         else:
             flash("Could not send your message. Please try again.", "error")
             return render_template("contact.html", name=name, email=email, message=message)

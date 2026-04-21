@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% from "macros/marketing_nav.html" import marketing_nav %}
+
+{% block body_class %}marketing-page{% endblock %}
+{% block title %}Terms of Service — Airbud{% endblock %}
+
+{% block content %}
+{{ marketing_nav() }}
+
+<div class="marketing-hero" style="padding-bottom: 24px;">
+    <h1 style="font-size: 2.2rem;">Terms of Service</h1>
+    <p>Last updated: April 2026</p>
+</div>
+
+<div class="marketing-card policy-content">
+
+    <h2>Acceptance</h2>
+    <p>By creating an account or using Airbud, you agree to these Terms of Service. If you do not agree, do not use the service. These terms apply to all users, including account holders and their clients.</p>
+
+    <h2>The service</h2>
+    <p>Airbud provides a hosted client portal that displays data from your Airtable base to designated users. We are not affiliated with or endorsed by Airtable. Your use of Airtable is governed by Airtable's own terms.</p>
+
+    <h2>Your account</h2>
+    <p>You are responsible for maintaining the security of your account credentials. You must not share your admin login or API key with unauthorized parties. You are responsible for all activity that occurs under your account.</p>
+    <p>You must be 18 years of age or older to create an account. By signing up, you represent that you have the authority to bind your organization to these terms.</p>
+
+    <h2>Acceptable use</h2>
+    <p>You agree not to use Airbud to:</p>
+    <ul>
+        <li>Violate any applicable laws or regulations</li>
+        <li>Store or transmit data you do not have the right to share</li>
+        <li>Harass, abuse, or harm others</li>
+        <li>Attempt to gain unauthorized access to the service or other users' data</li>
+        <li>Interfere with the service's normal operation</li>
+    </ul>
+
+    <h2>Your data and Airtable</h2>
+    <p>You retain full ownership of all data in your Airtable base. Airbud accesses your Airtable data via the API key you provide and displays it to clients you authorize. We do not modify or store your Airtable data. You are responsible for the legality and accuracy of the data you expose through your portal.</p>
+
+    <h2>Client access</h2>
+    <p>When you add client email addresses to Airbud, you are authorizing those individuals to access the portal records you have configured. You are responsible for ensuring you have permission to share the relevant data with each client.</p>
+
+    <h2>Billing and cancellation</h2>
+    <p>Paid plans are billed monthly. You may cancel at any time from your billing settings. Cancellation takes effect at the end of the current billing period — there are no prorated refunds for partial months. We reserve the right to change pricing with 30 days' notice.</p>
+
+    <h2>Trial period</h2>
+    <p>New accounts receive a free trial period as specified at signup. No credit card is required to start a trial. After the trial ends, you must activate a paid plan to continue using the service.</p>
+
+    <h2>Service availability</h2>
+    <p>We aim for high availability but do not guarantee uninterrupted service. We are not liable for downtime, data loss, or service interruptions caused by third parties (including Airtable, Fly.io, or email providers).</p>
+
+    <h2>Limitation of liability</h2>
+    <p>To the fullest extent permitted by law, Airbud's liability for any claim arising out of these terms or your use of the service is limited to the amount you paid us in the three months preceding the claim. We are not liable for indirect, incidental, or consequential damages.</p>
+
+    <h2>Termination</h2>
+    <p>We reserve the right to suspend or terminate accounts that violate these terms. You may close your account at any time. Upon termination, your data will be deleted within 30 days.</p>
+
+    <h2>Changes to these terms</h2>
+    <p>We may update these terms from time to time. Continued use of the service after changes are posted constitutes acceptance. We will notify you of material changes by email.</p>
+
+    <h2>Governing law</h2>
+    <p>These terms are governed by the laws of the State of New York, without regard to conflict of law provisions.</p>
+
+    <h2>Contact</h2>
+    <p>Questions about these terms? Email us at <a href="mailto:hello@airbud.app">hello@airbud.app</a>.</p>
+
+</div>
+
+<footer class="marketing-footer">
+    <div class="marketing-footer-inner">
+        <span>&copy; Airbud, 2026</span>
+        <div class="marketing-footer-links">
+            <a href="{{ url_for('privacy') }}">Privacy Policy</a>
+            <a href="{{ url_for('terms') }}">Terms of Service</a>
+        </div>
+    </div>
+</footer>
+
+{% endblock %}

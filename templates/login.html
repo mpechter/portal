@@ -22,5 +22,8 @@
     <p style="margin-top: 20px;" class="text-muted">
         Admin? <a href="{{ url_for('admin_login') }}">Sign in here</a>
     </p>
+    <p style="margin-top: 16px; font-size: 0.8rem; color: var(--color-text-muted);">
+        By signing in you agree to our <a href="{{ url_for('terms') }}">Terms of Service</a> and <a href="{{ url_for('privacy') }}">Privacy Policy</a>.
+    </p>
 </div>
 {% endblock %}

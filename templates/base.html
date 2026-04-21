@@ -7,7 +7,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><ellipse cx='16' cy='9' rx='14' ry='5' fill='%2340a0ff'/><rect x='2' y='9' width='28' height='14' fill='%23007bff'/><ellipse cx='16' cy='23' rx='14' ry='5' fill='%230056b3'/><ellipse cx='16' cy='9' rx='14' ry='5' fill='%2340a0ff'/></svg>">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
     {% if session.get('admin_preview') %}
     <div class="preview-banner">
         <span>Admin Preview — viewing as {{ session['admin_preview'].get('name') or session['admin_preview'].get('email') or 'a user' }}. Changes are not saved.</span>

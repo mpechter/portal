@@ -1,19 +1,23 @@
 {% extends "base.html" %}
 {% from "macros/marketing_nav.html" import marketing_nav %}
 
+{% block body_class %}marketing-page{% endblock %}
 {% block title %}Airbud — Simple Client Portal for Airtable{% endblock %}
 
 {% block content %}
 {{ marketing_nav() }}
 
+<!-- Hero -->
 <div class="marketing-hero">
-    <h1>A simple client portal for Airtable</h1>
+    <h1>Simple client portal<br>for Airtable</h1>
     <p>Give your clients a clean, private view of their own data —<br>no spreadsheet access, no confusion.</p>
     <div class="marketing-hero-actions">
-        <a href="{{ url_for('signup') }}" class="btn btn-primary">Get Started</a>
+        <a href="{{ url_for('signup') }}" class="btn btn-primary btn-large">Get Started</a>
+        <a href="{{ url_for('demo') }}" class="btn btn-secondary btn-large">See Demo</a>
     </div>
 </div>
 
+<!-- Features -->
 <div class="marketing-features">
     <div class="feature-card">
         <div class="feature-icon">
@@ -44,6 +48,7 @@
     </div>
 </div>
 
+<!-- How it works -->
 <div class="marketing-usecase">
     <div class="usecase-text">
         <h2>Built for organizations that manage records on behalf of clients</h2>
@@ -64,12 +69,132 @@
     </div>
 </div>
 
+<!-- Pricing -->
+<div class="marketing-section" id="pricing">
+    <h2 class="marketing-section-title">Pricing</h2>
+    <p class="marketing-section-subtitle">Simple pricing. One plan covers most organizations.</p>
+    <div class="pricing-grid">
+        <div class="pricing-card featured">
+            <div class="pricing-tier">Starter</div>
+            <div class="pricing-price">$10<span>/month</span></div>
+            <p class="pricing-desc">Everything you need to give clients a clean, private window into their Airtable data.</p>
+            <ul class="pricing-features">
+                <li>1 portal</li>
+                <li>Unlimited clients</li>
+                <li>Unlimited records</li>
+                <li>Passwordless magic link login</li>
+                <li>Linked record support (e.g. parents &amp; students)</li>
+                <li>Field-level access control</li>
+                <li>Client data confirmation / review</li>
+                <li>Email support</li>
+            </ul>
+            <a href="{{ url_for('signup') }}" class="btn btn-primary" style="width: 100%; box-sizing: border-box;">Get Started</a>
+        </div>
+        <div class="pricing-card pro">
+            <div class="pricing-tier">Pro</div>
+            <div class="pricing-price" style="font-size: 1.6rem; padding-top: 6px;">Let's talk</div>
+            <p class="pricing-desc">For organizations that need multiple portals, custom branding, or white-glove setup.</p>
+            <ul class="pricing-features">
+                <li class="pricing-features-inherit">All features of Starter</li>
+                <li>Multiple portals</li>
+                <li>Priority support</li>
+                <li>Custom feature requests</li>
+                <li>Onboarding assistance</li>
+            </ul>
+            <a href="#contact" class="btn btn-pro" style="width: 100%; box-sizing: border-box;">Contact Us</a>
+        </div>
+    </div>
+    <p class="pricing-footnote">Airbud works with any Airtable plan, including free. Airtable enforces a limit of <strong>5 requests per second per base</strong>, plus monthly call limits: <strong>1,000 calls/month</strong> on Free and <strong>100,000 calls/month</strong> on Team. Each client page load uses a small number of calls. See <a href="https://support.airtable.com/docs/managing-api-call-limits-in-airtable" target="_blank" rel="noopener">Airtable's API limit documentation</a> for details.</p>
+</div>
+
+<!-- FAQ -->
+<div class="marketing-section" id="faq">
+    <h2 class="marketing-section-title">Frequently Asked Questions</h2>
+    <div class="marketing-card">
+        <div class="faq-list">
+            <div class="faq-item">
+                <h3>What Airtable plan do I need?</h3>
+                <p>Any Airtable plan works, including the free plan. Free plans allow <strong>1,000 API calls per month</strong> — enough for small or low-traffic portals. Team plans allow 100,000 calls per month, which suits most active portals. Each client page load uses a small number of API calls.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Does Airbud store my Airtable data?</h3>
+                <p>No. Your data lives in Airtable. Airbud reads it on demand to display to your clients and never copies or caches it.</p>
+            </div>
+            <div class="faq-item">
+                <h3>What does Airbud store?</h3>
+                <p>Your Airtable API key, base configuration, field settings, and client login info (email addresses and login codes). Nothing else.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Is my API key safe?</h3>
+                <p>It's stored securely and only used to fetch your data. We never share it.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How do I know how many API calls I've used?</h3>
+                <p>On the <strong>Free plan</strong>, usage is visible in your workspace settings. See <a href="https://support.airtable.com/docs/managing-api-call-limits-in-airtable#where-can-i-find-api-usage-analytics-on-free-plan-workspaces" target="_blank" rel="noopener">Airtable's documentation</a> for where to find it. On <strong>Team plans and above</strong>, Airtable does not provide granular API usage tracking.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Do my clients need an Airtable account?</h3>
+                <p>No. They just log in with their email address — no Airtable account, no passwords.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How does client login work?</h3>
+                <p>Clients receive a one-time code and magic link via email. One click and they're in.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- About -->
+<div class="marketing-section" id="about">
+    <h2 class="marketing-section-title">About</h2>
+    <div class="marketing-card">
+        <p>Airbud was built by <a href="https://www.linkedin.com/in/mike-pechter-714b6061/" target="_blank" rel="noopener"><strong>Mike Pechter</strong></a>, a data and strategy specialist who has done strategic consulting with a number of organizations and nonprofits. He knows how useful Airtable can be, and how valuable a simple portal can be for smaller organizations on a fixed budget.</p>
+        <p style="margin-top: 16px;">When he isn't sitting at a computer, he is playing the piano, running in the woods, or feeding his chatty kids.</p>
+    </div>
+</div>
+
+<!-- Contact -->
+<div class="marketing-section" id="contact">
+    <h2 class="marketing-section-title">Get in Touch</h2>
+    <p class="marketing-section-subtitle">Have a question or want to request a feature? We'd love to hear from you.</p>
+    <div class="card centered" style="max-width: 520px;">
+        <form action="{{ url_for('contact') }}" method="post" class="form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" placeholder="Your name" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" placeholder="you@example.com" required>
+            </div>
+            <div class="form-group">
+                <label for="message">Message</label>
+                <textarea id="message" name="message" rows="5" placeholder="How can we help?" required style="resize: vertical;"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Send Message</button>
+        </form>
+    </div>
+</div>
+
+<!-- Bottom CTA -->
 <div class="marketing-cta">
     <h2>Ready to get started?</h2>
     <p>Set up your portal in minutes. No credit card required.</p>
     <div class="marketing-cta-actions">
         <a href="{{ url_for('signup') }}" class="btn btn-primary">Create Your Portal</a>
-        <a href="{{ url_for('contact') }}" class="btn btn-secondary">Contact Us</a>
+        <a href="{{ url_for('demo') }}" class="btn btn-secondary">See Demo</a>
     </div>
 </div>
+
+<footer class="marketing-footer">
+    <div class="marketing-footer-inner">
+        <span>&copy; Airbud, 2026</span>
+        <div class="marketing-footer-links">
+            <a href="{{ url_for('privacy') }}">Privacy Policy</a>
+            <a href="{{ url_for('terms') }}">Terms of Service</a>
+        </div>
+    </div>
+</footer>
+
 {% endblock %}

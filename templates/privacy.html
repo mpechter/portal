@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% from "macros/marketing_nav.html" import marketing_nav %}
+
+{% block body_class %}marketing-page{% endblock %}
+{% block title %}Privacy Policy — Airbud{% endblock %}
+
+{% block content %}
+{{ marketing_nav() }}
+
+<div class="marketing-hero" style="padding-bottom: 24px;">
+    <h1 style="font-size: 2.2rem;">Privacy Policy</h1>
+    <p>Last updated: April 2026</p>
+</div>
+
+<div class="marketing-card policy-content">
+
+    <h2>What we collect</h2>
+    <p>When you create an Airbud account, we collect your name and email address. When your clients use a portal you create, we collect their email addresses and the one-time login codes we generate for them.</p>
+    <p>We also store the configuration you enter in the admin panel: your Airtable API key, base ID, table name, field settings, and portal preferences.</p>
+
+    <h2>What we do not collect</h2>
+    <p>Airbud does not copy, cache, or store any data from your Airtable base. Your Airtable records are fetched live on demand and displayed directly to clients — nothing is written to our database. If you delete your Airbud account, none of your Airtable data is affected.</p>
+
+    <h2>How data is stored</h2>
+    <p>All data is stored in a secured database hosted on Fly.io infrastructure in the United States. Your Airtable API key is stored encrypted at rest. Client email addresses and login codes are stored in the same database and are used solely for authentication purposes.</p>
+    <p>Login codes expire after a short window and are deleted once used. We do not retain session data beyond what is necessary to keep a user logged in.</p>
+
+    <h2>How we use your data</h2>
+    <ul>
+        <li>To operate and deliver the Airbud service to you and your clients</li>
+        <li>To send login codes and magic links to your clients</li>
+        <li>To send you transactional emails about your account (e.g., billing, verification)</li>
+        <li>To respond to support requests you send us</li>
+    </ul>
+    <p>We do not sell your data, share it with advertisers, or use it for any purpose beyond operating the service.</p>
+
+    <h2>Third-party services</h2>
+    <p>Airbud uses the following third-party services to operate:</p>
+    <ul>
+        <li><strong>Fly.io</strong> — application hosting and database storage</li>
+        <li><strong>Postmark / email provider</strong> — sending login codes and transactional emails</li>
+        <li><strong>Airtable</strong> — your data source; we access it via their API on your behalf</li>
+        <li><strong>Stripe</strong> — payment processing for paid subscriptions</li>
+    </ul>
+    <p>Each of these services has its own privacy policy. We do not share your personal data with any other third parties.</p>
+
+    <h2>Data retention</h2>
+    <p>We retain your account data for as long as your account is active. If you close your account, we delete your data within 30 days. Client email addresses are retained as long as your portal is active, and are deleted when you delete your portal or account.</p>
+
+    <h2>Your rights</h2>
+    <p>You can request a copy of the data we hold about you, or ask us to delete your account and associated data, by contacting us at <a href="mailto:hello@airbud.app">hello@airbud.app</a>. We will respond within 30 days.</p>
+
+    <h2>Cookies</h2>
+    <p>Airbud uses a single session cookie to keep you logged in. We do not use tracking cookies, analytics cookies, or any third-party cookies.</p>
+
+    <h2>Changes to this policy</h2>
+    <p>We may update this policy from time to time. If we make material changes, we will notify you by email or by posting a notice in the admin panel. Your continued use of the service after changes take effect constitutes acceptance of the new policy.</p>
+
+    <h2>Contact</h2>
+    <p>Questions about this policy? Email us at <a href="mailto:hello@airbud.app">hello@airbud.app</a>.</p>
+
+</div>
+
+<footer class="marketing-footer">
+    <div class="marketing-footer-inner">
+        <span>&copy; Airbud, 2026</span>
+        <div class="marketing-footer-links">
+            <a href="{{ url_for('privacy') }}">Privacy Policy</a>
+            <a href="{{ url_for('terms') }}">Terms of Service</a>
+        </div>
+    </div>
+</footer>
+
+{% endblock %}
