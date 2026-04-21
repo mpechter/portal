@@ -911,6 +911,12 @@ def admin_save_settings():
     return redirect(url_for("admin_settings"))
 
 
+@app.errorhandler(413)
+def handle_request_too_large(e):
+    flash("File is too large. Maximum size is 5 MB.", "error")
+    return redirect(request.referrer or url_for("admin_settings"))
+
+
 @app.route("/admin/upload-logo", methods=["POST"])
 @admin_required
 def admin_upload_logo():
@@ -936,13 +942,13 @@ def admin_upload_logo():
         return redirect(url_for("admin_settings"))
 
     ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
-    if ext not in {"png", "jpg", "jpeg", "gif", "webp", "svg"}:
-        flash("Unsupported file type. Use PNG, JPG, GIF, WebP, or SVG.", "error")
+    if ext not in {"png", "jpg", "jpeg", "gif", "webp"}:
+        flash("Unsupported file type. Use PNG, JPG, GIF, or WebP.", "error")
         return redirect(url_for("admin_settings"))
 
     content_types = {
         "png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg",
-        "gif": "image/gif", "webp": "image/webp", "svg": "image/svg+xml",
+        "gif": "image/gif", "webp": "image/webp",
     }
 
     key = f"logos/{org.org_code}/{uuid.uuid4().hex}.{ext}"
@@ -961,7 +967,8 @@ def admin_upload_logo():
             ExtraArgs={"ContentType": content_types[ext]},
         )
     except (BotoCoreError, ClientError) as e:
-        flash(f"Upload failed: {e}", "error")
+        app.logger.exception("R2 logo upload failed: %s", e)
+        flash("Upload failed. Please try again.", "error")
         return redirect(url_for("admin_settings"))
 
     org.logo_url = f"{cfg['R2_PUBLIC_URL'].rstrip('/')}/{key}"

@@ -57,3 +57,6 @@ class Config:
     R2_SECRET_ACCESS_KEY = os.environ.get("R2_SECRET_ACCESS_KEY")
     R2_BUCKET_NAME = os.environ.get("R2_BUCKET_NAME")
     R2_PUBLIC_URL = os.environ.get("R2_PUBLIC_URL")  # e.g. https://pub-xxxx.r2.dev or custom domain
+
+    # Max upload size (5 MB) — enforced by Flask for all requests
+    MAX_CONTENT_LENGTH = 5 * 1024 * 1024
