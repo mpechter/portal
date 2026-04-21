@@ -385,6 +385,15 @@ def check_org_code():
     return jsonify({"available": not exists})
 
 
+@app.route("/org/<org_code>")
+def org_landing(org_code):
+    """Branded landing page for a specific org — auto-404 for inactive/deleted orgs."""
+    org = Organization.get_by_code(org_code)
+    if not org:
+        abort(404)
+    return render_template("org_login.html", org=org)
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Login page - enter org code and email."""

@@ -41,6 +41,15 @@
             </div>
 
             <div class="form-group">
+                <label>Portal Link</label>
+                <p class="field-help">Share this URL with your users — your logo and portal title appear automatically.</p>
+                <div class="input-with-action">
+                    <input type="text" id="portal-link" value="{{ request.host_url.rstrip('/') }}{{ url_for('org_landing', org_code=org.org_code) }}" class="form-input" readonly onclick="this.select();">
+                    <button type="button" class="btn-text" onclick="navigator.clipboard.writeText(document.getElementById('portal-link').value).then(() => { this.textContent = 'Copied!'; setTimeout(() => this.textContent = 'Copy', 2000); })">Copy</button>
+                </div>
+            </div>
+
+            <div class="form-group">
                 <label for="name">Organization Name</label>
                 <p class="field-help">Displayed in the admin header.</p>
                 <input type="text" id="name" name="name" value="{{ org.name }}" class="form-input" required data-original="{{ org.name }}">

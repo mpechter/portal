@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}{{ org.portal_title }}{% endblock %}
+
+{% block content %}
+<div class="card centered" style="margin-top: 80px;">
+    {% if org.logo_url %}
+    <img src="{{ org.logo_url }}" alt="{{ org.portal_title }}" style="max-height: 80px; max-width: 240px; width: auto; margin-bottom: 20px;">
+    {% endif %}
+    <h1 style="font-size: 1.6rem; margin-bottom: 8px;">{{ org.portal_title }}</h1>
+    <p>Enter your email address to sign in.</p>
+    <form action="{{ url_for('login') }}" method="post" class="form" onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Sending...';">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="org_code" value="{{ org.org_code }}">
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" placeholder="your@email.com" required autofocus>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Send Login Code</button>
+    </form>
+</div>
+{% endblock %}
