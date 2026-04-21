@@ -1788,30 +1788,19 @@ body:has(.preview-banner) .container {
 .demo-hl-label {
     position: fixed;
     z-index: 10000;
-    padding: 6px 10px;
+    padding: 5px 10px;
     border-radius: 5px;
     font-size: 0.75rem;
-    line-height: 1.4;
-    max-width: 250px;
+    font-weight: 700;
     pointer-events: none;
     color: #fff;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    white-space: nowrap;
+    display: none;
 }
 
 .demo-hl-label.visible {
-    opacity: 1;
-}
-
-.demo-hl-title {
-    font-weight: 700;
-    margin-bottom: 2px;
-}
-
-.demo-hl-body {
-    opacity: 0.9;
-    font-size: 0.72rem;
+    display: block;
 }
 
 /* Demo portal banner */
