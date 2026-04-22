@@ -329,14 +329,13 @@ body {
     border-radius: var(--radius);
     box-shadow: var(--shadow-sm);
     border-left: 4px solid var(--color-primary);
+    transition: box-shadow 0.2s, transform 0.2s;
 }
 
 .profile-summary-link {
     display: block;
     text-decoration: none;
     color: inherit;
-    transition: box-shadow 0.2s, transform 0.2s;
-    border-radius: var(--radius);
 }
 
 .profile-summary-link:hover .profile-summary {
@@ -348,6 +347,7 @@ body {
     font-size: 0.85rem;
     color: var(--color-text-muted);
     margin-top: 12px;
+    margin-bottom: 0;
 }
 
 .profile-field {
