@@ -1,6 +1,9 @@
 {% macro marketing_nav(active='') %}
 <div class="marketing-nav" id="marketing-nav">
-    <a href="{{ url_for('index') }}" class="marketing-brand">Airbud</a>
+    <a href="{{ url_for('index') }}" class="marketing-brand">
+        <img src="https://pub-9399c658257349b181e8d9519256b183.r2.dev/logos/airbud.png" alt="" class="nav-logo">
+        Airbud
+    </a>
     <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle menu" aria-expanded="false">
         <span></span><span></span><span></span>
     </button>

@@ -15,6 +15,9 @@
     <div class="container">
         <nav class="navbar">
             <div class="nav-brand">
+                {% if org and org.logo_url %}
+                <img src="{{ org.logo_url }}" alt="{{ org.portal_title }}" class="nav-logo">
+                {% endif %}
                 <span class="nav-title">{{ org.portal_title }}</span>
             </div>
             <div class="nav-links">

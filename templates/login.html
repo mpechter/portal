@@ -3,8 +3,10 @@
 {% block title %}Login - Portal{% endblock %}
 
 {% block content %}
-<a href="{{ url_for('index') }}" class="back-link">← Back</a>
 <div class="card centered">
+    <div style="text-align: center; margin-bottom: 16px;">
+        <a href="{{ url_for('index') }}"><img src="https://pub-9399c658257349b181e8d9519256b183.r2.dev/logos/airbud.png" alt="Airbud" style="max-height: 48px; width: auto;"></a>
+    </div>
     <h1>Login</h1>
     <p>Enter your organization code and email to receive a login link.</p>
     <form action="{{ url_for('login') }}" method="post" class="form" onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Sending...';">
