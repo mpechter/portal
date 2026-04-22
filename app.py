@@ -1864,6 +1864,8 @@ def signup():
         admin_password = request.form.get("admin_password", "").strip()
         admin_password_confirm = request.form.get("admin_password_confirm", "").strip()
 
+        agree_terms = request.form.get("agree_terms")
+
         errors = []
         if not admin_email:
             errors.append("Email is required.")
@@ -1873,6 +1875,8 @@ def signup():
             errors.append(pw_error)
         elif admin_password != admin_password_confirm:
             errors.append("Passwords do not match.")
+        if not agree_terms:
+            errors.append("You must agree to the Terms of Service and Privacy Policy.")
 
         if not errors:
             if Organization.query.filter_by(admin_email=admin_email).first():
