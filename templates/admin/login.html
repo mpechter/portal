@@ -18,7 +18,9 @@
             <label for="password">Admin Password</label>
             <input type="password" id="password" name="password" required>
         </div>
-        <button type="submit" id="login-btn" class="btn btn-primary">Log In</button>
+        <div style="text-align: center;">
+            <button type="submit" id="login-btn" class="btn btn-primary">Log In</button>
+        </div>
     </form>
     <p class="text-muted" style="margin-top: 20px;">
         <a href="{{ url_for('admin_forgot_password', org=org_code) if org_code else url_for('admin_forgot_password') }}">
