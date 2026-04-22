@@ -17,7 +17,9 @@
             <label for="email">Email Address</label>
             <input type="email" id="email" name="email" value="{{ email }}" placeholder="your@email.com" required>
         </div>
-        <button type="submit" class="btn btn-primary">Send Login Code</button>
+        <div style="text-align: center;">
+            <button type="submit" class="btn btn-primary">Send Login Code</button>
+        </div>
     </form>
     <p style="margin-top: 20px;" class="text-muted">
         Admin? <a href="{{ url_for('admin_login') }}">Sign in here</a>
