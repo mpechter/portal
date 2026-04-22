@@ -343,13 +343,6 @@ body {
     transform: translateY(-2px);
 }
 
-.profile-edit-hint {
-    font-size: 0.85rem;
-    color: var(--color-text-muted);
-    margin-top: 12px;
-    margin-bottom: 0;
-}
-
 .profile-field {
     display: flex;
     padding: 8px 0;
