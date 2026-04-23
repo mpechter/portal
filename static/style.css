@@ -1134,6 +1134,21 @@ body {
     display: none;
 }
 
+.form-group > .checkbox-label.terms-checkbox {
+    display: flex;
+    align-items: center;
+    margin-top: 0;
+    padding: 4px 0;
+}
+
+.form-group > .checkbox-label.terms-checkbox input[type="checkbox"] {
+    margin-top: 1px;
+}
+
+.form-group > .checkbox-label.terms-checkbox .checkbox-text {
+    display: inline;
+}
+
 /* Multi-select styling */
 .multi-select {
     display: flex;
