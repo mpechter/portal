@@ -124,6 +124,7 @@ body {
     margin-left: 20px;
     color: var(--color-text-secondary);
     text-decoration: none;
+    white-space: nowrap;
 }
 
 .nav-links a:hover {
