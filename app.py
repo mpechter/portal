@@ -1055,6 +1055,16 @@ def admin_save_tables():
     # Clear field config when tables change
     org.field_config = {"user_fields": {}, "record_fields": {}}
 
+    # Save client review settings (only meaningful when a records table is selected)
+    if records_table:
+        org.confirmation_enabled = "confirmation_enabled" in request.form
+        org.confirmation_field = request.form.get("confirmation_field", "").strip() or None
+        org.confirmation_value = request.form.get("confirmation_value", "").strip() or None
+    else:
+        org.confirmation_enabled = False
+        org.confirmation_field = None
+        org.confirmation_value = None
+
     # Clear schema cache to pick up any Airtable changes
     from airtable_client import AirtableClient
     AirtableClient.clear_schema_cache(org.airtable_base_id)
@@ -1247,12 +1257,6 @@ def admin_save_fields():
         "user_fields": user_descriptions,
         "record_fields": record_descriptions,
     }
-
-    # Save email field selection
-    # Save confirmation settings
-    org.confirmation_enabled = "confirmation_enabled" in request.form
-    org.confirmation_field = request.form.get("confirmation_field", "").strip() or None
-    org.confirmation_value = request.form.get("confirmation_value", "").strip() or None
 
     db.session.commit()
 

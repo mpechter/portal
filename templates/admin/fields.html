@@ -156,44 +156,6 @@
         {% if record_fields %}
         <h3>{{ org.records_table }} Fields</h3>
 
-        <div class="fields-section">
-            <p class="fields-section-title">Client Review</p>
-            <label class="checkbox-label">
-                <input type="checkbox" name="confirmation_enabled" id="confirmation_enabled"
-                       {% if org.confirmation_enabled %}checked{% endif %}
-                       data-original="{{ 'true' if org.confirmation_enabled else 'false' }}"
-                       onchange="toggleConfirmationField()">
-                <span class="checkbox-text"><strong>Enable Client Review</strong></span>
-            </label>
-            <p class="field-help" style="margin-top: 4px;">When enabled, users can mark each record as reviewed. A green checkmark shows on the dashboard for reviewed records.</p>
-
-            <div id="confirmation-field-select" class="form-group" style="margin-top: 10px; margin-left: 30px; {% if not org.confirmation_enabled %}display: none;{% endif %}">
-                <label for="confirmation_field">Single select field:</label>
-                <select name="confirmation_field" id="confirmation_field" class="form-select"
-                        data-original="{{ org.confirmation_field or '' }}"
-                        onchange="updateConfirmationValues()">
-                    <option value="">— Select a field —</option>
-                    {% for field_name, options in select_fields.items() %}
-                    <option value="{{ field_name }}" data-options='{{ options | tojson }}' {% if org.confirmation_field == field_name %}selected{% endif %}>{{ field_name }}</option>
-                    {% endfor %}
-                </select>
-                {% if not select_fields %}
-                <p class="field-help" style="color: #d63939;">No single select fields found in {{ org.records_table }}.</p>
-                {% endif %}
-                <div id="confirmation-value-select" class="form-group" style="margin-top: 10px; {% if not org.confirmation_field %}display: none;{% endif %}">
-                    <label for="confirmation_value">Value to set when reviewed:</label>
-                    <select name="confirmation_value" id="confirmation_value" class="form-select" data-original="{{ org.confirmation_value or '' }}">
-                        <option value="">— Select a value —</option>
-                        {% if org.confirmation_field and select_fields.get(org.confirmation_field) %}
-                        {% for option in select_fields.get(org.confirmation_field, []) %}
-                        <option value="{{ option }}" {% if org.confirmation_value == option %}selected{% endif %}>{{ option }}</option>
-                        {% endfor %}
-                        {% endif %}
-                    </select>
-                </div>
-            </div>
-        </div>
-
         <input type="hidden" name="record_field_order" id="record_field_order" value="">
 
         <div class="field-cards" id="record-fields-sortable">
@@ -345,65 +307,6 @@ document.querySelectorAll('.sidebar-toggle').forEach(toggle => {
     });
 });
 
-// ---- Confirmation field ----
-
-function toggleConfirmationField() {
-    const cb = document.getElementById('confirmation_enabled');
-    document.getElementById('confirmation-field-select').style.display = cb.checked ? 'block' : 'none';
-    if (!cb.checked) {
-        document.getElementById('confirmation_field').value = '';
-        document.getElementById('confirmation_value').value = '';
-        document.getElementById('confirmation-value-select').style.display = 'none';
-    }
-    updateConfirmationValues();
-    checkForChanges();
-}
-
-function updateConfirmationValues() {
-    const fieldSelect = document.getElementById('confirmation_field');
-    const valueSelect = document.getElementById('confirmation_value');
-    const valueContainer = document.getElementById('confirmation-value-select');
-    if (!fieldSelect) return;
-    const selected = fieldSelect.options[fieldSelect.selectedIndex];
-    const selectedName = selected ? selected.value : '';
-
-    if (valueSelect) {
-        valueSelect.innerHTML = '<option value="">— Select a value —</option>';
-        if (selected && selected.value) {
-            try {
-                JSON.parse(selected.getAttribute('data-options') || '[]').forEach(opt => {
-                    const o = document.createElement('option');
-                    o.value = o.textContent = opt;
-                    valueSelect.appendChild(o);
-                });
-            } catch (e) {}
-            if (valueSelect.dataset.original) valueSelect.value = valueSelect.dataset.original;
-            if (valueContainer) valueContainer.style.display = 'block';
-        } else {
-            if (valueContainer) valueContainer.style.display = 'none';
-        }
-    }
-
-    // Hide/show the confirmation field in the record sidebar and main area
-    document.querySelectorAll('#record-sidebar-list .sidebar-field').forEach(item => {
-        const name = item.dataset.fieldName;
-        const card = document.querySelector(`#record-fields-sortable .field-card[data-field-name="${CSS.escape(name)}"]`);
-        if (name === selectedName) {
-            item.style.display = 'none';
-            const t = item.querySelector('.sidebar-toggle');
-            if (t) t.checked = false;
-            if (card) deactivateCard(card);
-        } else if (item.style.display === 'none' && name !== selectedName) {
-            item.style.display = '';
-        }
-    });
-
-    updateOrderInput('record-fields-sortable', 'record_field_order');
-    updateActiveCount('record-active-count', 'record-fields-sortable');
-    updateEmptyHint('record-empty-hint', 'record-fields-sortable');
-    if (typeof checkForChanges === 'function') checkForChanges();
-}
-
 // ---- SortableJS: sidebar drag-to-reorder ----
 
 ['user-sidebar-list', 'record-sidebar-list'].forEach(listId => {
@@ -426,7 +329,6 @@ function updateConfirmationValues() {
 
 // ---- Initialise ----
 
-updateConfirmationValues();
 updateOrderInput('user-fields-sortable', 'user_field_order');
 updateActiveCount('user-active-count', 'user-fields-sortable');
 updateActiveCount('record-active-count', 'record-fields-sortable');
@@ -459,13 +361,6 @@ updateEmptyHint('record-empty-hint', 'record-fields-sortable');
             if (t.checked !== (t.dataset.original === 'true')) changed = true;
         });
 
-        const cc = document.getElementById('confirmation_enabled');
-        const cf = document.getElementById('confirmation_field');
-        const cv = document.getElementById('confirmation_value');
-        if (cc && cc.checked !== (cc.dataset.original === 'true')) changed = true;
-        if (cf && cf.value !== cf.dataset.original) changed = true;
-        if (cv && cv.value !== cv.dataset.original) changed = true;
-
         if ((document.getElementById('user_field_order')?.value   || '') !== origUserOrder)   changed = true;
         if ((document.getElementById('record_field_order')?.value || '') !== origRecordOrder) changed = true;
 
@@ -491,14 +386,6 @@ updateEmptyHint('record-empty-hint', 'record-fields-sortable');
         form.querySelectorAll('input.annotation-input').forEach(i => { i.value = i.dataset.original; });
         form.querySelectorAll('textarea.description-input').forEach(t => { t.value = t.dataset.original; });
 
-        const cc = document.getElementById('confirmation_enabled');
-        const cf = document.getElementById('confirmation_field');
-        const cv = document.getElementById('confirmation_value');
-        if (cc) cc.checked = cc.dataset.original === 'true';
-        if (cf) cf.value = cf.dataset.original;
-        if (cv) cv.value = cv.dataset.original;
-        toggleConfirmationField();
-
         // Restore sidebar order, then sync cards
         [
             ['user-sidebar-list',   origUserOrder,   'user-fields-sortable',   'user_field_order',   'user-active-count',   'user-empty-hint'],
@@ -522,9 +409,6 @@ updateEmptyHint('record-empty-hint', 'record-fields-sortable');
     form.querySelectorAll('input[type="radio"]').forEach(r => r.addEventListener('change', checkForChanges));
     form.querySelectorAll('input.annotation-input').forEach(i => i.addEventListener('input', checkForChanges));
     form.querySelectorAll('textarea.description-input').forEach(t => t.addEventListener('input', checkForChanges));
-    ['confirmation_enabled', 'confirmation_field', 'confirmation_value'].forEach(id => {
-        document.getElementById(id)?.addEventListener('change', checkForChanges);
-    });
     if (discardBtn) discardBtn.addEventListener('click', discardChanges);
 })();
 </script>

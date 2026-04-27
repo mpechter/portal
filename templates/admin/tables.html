@@ -54,6 +54,32 @@
                 <p id="records-table-hint" class="field-help text-muted" style="display: none; margin-top: 6px;"></p>
             </div>
 
+            <div class="form-group" id="client-review-group" style="{% if not org.records_table %}display:none{% endif %}">
+                <label>Client Review</label>
+                <p class="field-help">When enabled, users can mark each record as reviewed. A green checkmark shows on the dashboard for reviewed records.</p>
+                <label class="checkbox-label" style="margin-top: 8px;">
+                    <input type="checkbox" name="confirmation_enabled" id="confirmation_enabled"
+                           {% if org.confirmation_enabled %}checked{% endif %}
+                           data-original="{{ 'true' if org.confirmation_enabled else 'false' }}">
+                    <span class="checkbox-text"><strong>Enable Client Review</strong></span>
+                </label>
+                <div id="confirmation-field-select" style="margin-top: 10px; margin-left: 30px; {% if not org.confirmation_enabled %}display:none{% endif %}">
+                    <label for="confirmation_field">Single select field:</label>
+                    <select name="confirmation_field" id="confirmation_field" class="form-select"
+                            data-original="{{ org.confirmation_field or '' }}" style="max-width: 320px;">
+                        <option value="">— Select a field —</option>
+                    </select>
+                    <p id="no-select-fields-hint" class="field-help" style="color: #d63939; display:none;">No single select fields found in this table.</p>
+                    <div id="confirmation-value-select" style="margin-top: 10px; {% if not org.confirmation_field %}display:none{% endif %}">
+                        <label for="confirmation_value">Value to set when reviewed:</label>
+                        <select name="confirmation_value" id="confirmation_value" class="form-select"
+                                data-original="{{ org.confirmation_value or '' }}" style="max-width: 320px;">
+                            <option value="">— Select a value —</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <div class="form-actions">
                 <button type="submit" id="save-btn" class="btn btn-save" disabled>Save &amp; Continue</button>
             </div>
@@ -75,6 +101,18 @@
     const originalUsersTable = usersTableSelect.value;
     const originalRecordsTable = recordsTableSelect.value;
     let originalEmailField = savedEmailField;
+
+    const clientReviewGroup = document.getElementById('client-review-group');
+    const confirmationEnabledCb = document.getElementById('confirmation_enabled');
+    const confirmationFieldSel = document.getElementById('confirmation_field');
+    const confirmationValueSel = document.getElementById('confirmation_value');
+    const confirmationFieldContainer = document.getElementById('confirmation-field-select');
+    const confirmationValueContainer = document.getElementById('confirmation-value-select');
+    const noSelectFieldsHint = document.getElementById('no-select-fields-hint');
+
+    const origConfirmationEnabled = confirmationEnabledCb ? confirmationEnabledCb.dataset.original === 'true' : false;
+    const origConfirmationField = confirmationFieldSel ? confirmationFieldSel.dataset.original : '';
+    const origConfirmationValue = confirmationValueSel ? confirmationValueSel.dataset.original : '';
 
     function getTableId(tableName) {
         const t = tablesData.find(t => t.name === tableName);
@@ -151,10 +189,80 @@
         }
     }
 
+    function populateConfirmationField(tableName, restoreOriginal) {
+        if (!confirmationFieldSel) return;
+        confirmationFieldSel.innerHTML = '<option value="">— Select a field —</option>';
+        const table = tablesData.find(t => t.name === tableName);
+        const selectFields = (table ? table.fields || [] : []).filter(f => f.type === 'singleSelect');
+        if (selectFields.length === 0) {
+            if (noSelectFieldsHint) noSelectFieldsHint.style.display = '';
+        } else {
+            if (noSelectFieldsHint) noSelectFieldsHint.style.display = 'none';
+            selectFields.forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = opt.textContent = f.name;
+                opt.setAttribute('data-options', JSON.stringify(f.options || []));
+                confirmationFieldSel.appendChild(opt);
+            });
+        }
+        if (restoreOriginal && origConfirmationField) {
+            const match = Array.from(confirmationFieldSel.options).find(o => o.value === origConfirmationField);
+            if (match) match.selected = true;
+        }
+        updateConfirmationValues(restoreOriginal);
+    }
+
+    function updateConfirmationValues(restoreOriginal) {
+        if (!confirmationValueSel) return;
+        const selected = confirmationFieldSel ? confirmationFieldSel.options[confirmationFieldSel.selectedIndex] : null;
+        confirmationValueSel.innerHTML = '<option value="">— Select a value —</option>';
+        if (selected && selected.value) {
+            try {
+                JSON.parse(selected.getAttribute('data-options') || '[]').forEach(opt => {
+                    const o = document.createElement('option');
+                    o.value = o.textContent = opt;
+                    confirmationValueSel.appendChild(o);
+                });
+            } catch(e) {}
+            if (restoreOriginal && origConfirmationValue) {
+                const match = Array.from(confirmationValueSel.options).find(o => o.value === origConfirmationValue);
+                if (match) match.selected = true;
+            }
+            if (confirmationValueContainer) confirmationValueContainer.style.display = '';
+        } else {
+            if (confirmationValueContainer) confirmationValueContainer.style.display = 'none';
+        }
+    }
+
+    function toggleConfirmationFields() {
+        if (!confirmationEnabledCb || !confirmationFieldContainer) return;
+        confirmationFieldContainer.style.display = confirmationEnabledCb.checked ? '' : 'none';
+        if (!confirmationEnabledCb.checked) {
+            if (confirmationFieldSel) confirmationFieldSel.value = '';
+            if (confirmationValueSel) confirmationValueSel.value = '';
+            if (confirmationValueContainer) confirmationValueContainer.style.display = 'none';
+        }
+        checkForChanges();
+    }
+
+    function showHideClientReview(restoreOriginal) {
+        if (!clientReviewGroup) return;
+        const tableName = recordsTableSelect.value;
+        if (tableName) {
+            clientReviewGroup.style.display = '';
+            populateConfirmationField(tableName, restoreOriginal);
+        } else {
+            clientReviewGroup.style.display = 'none';
+        }
+    }
+
     function checkForChanges() {
         const hasChanges = usersTableSelect.value !== originalUsersTable ||
                           recordsTableSelect.value !== originalRecordsTable ||
-                          (emailFieldSelect && emailFieldSelect.value !== originalEmailField);
+                          (emailFieldSelect && emailFieldSelect.value !== originalEmailField) ||
+                          (confirmationEnabledCb && confirmationEnabledCb.checked !== origConfirmationEnabled) ||
+                          (confirmationFieldSel && confirmationFieldSel.value !== origConfirmationField) ||
+                          (confirmationValueSel && confirmationValueSel.value !== origConfirmationValue);
         const hasSelection = usersTableSelect.value !== '';
 
         if (hasChanges && hasSelection) {
@@ -172,14 +280,25 @@
     usersTableSelect.addEventListener('change', function() {
         updateEmailField(false);
         filterRecordsTables();
+        showHideClientReview(false);
         checkForChanges();
     });
-    recordsTableSelect.addEventListener('change', checkForChanges);
+    recordsTableSelect.addEventListener('change', function() {
+        showHideClientReview(false);
+        checkForChanges();
+    });
     if (emailFieldSelect) emailFieldSelect.addEventListener('change', checkForChanges);
+    if (confirmationEnabledCb) confirmationEnabledCb.addEventListener('change', toggleConfirmationFields);
+    if (confirmationFieldSel) confirmationFieldSel.addEventListener('change', function() {
+        updateConfirmationValues(false);
+        checkForChanges();
+    });
+    if (confirmationValueSel) confirmationValueSel.addEventListener('change', checkForChanges);
 
     // Initial population and check
     updateEmailField(false);
     filterRecordsTables();
+    showHideClientReview(true);
     checkForChanges();
 })();
 </script>
