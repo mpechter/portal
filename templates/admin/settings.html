@@ -108,7 +108,7 @@
             <div class="form-group">
                 <label for="admin_email">Admin Email
                     {% if org.admin_email %}
-                    <span style="color: var(--color-success, #2d7a3a); font-size: 13px; font-weight: normal; margin-left: 6px;">&#10003; {{ org.admin_email }}</span>
+                    <span style="color: var(--color-success, #2d7a3a); font-size: 13px; font-weight: normal; margin-left: 6px;">&#10003; verified</span>
                     {% endif %}
                 </label>
                 <p class="field-help">Required for password reset and billing notifications. Changing it sends a verification link first.</p>
@@ -123,18 +123,9 @@
             </div>
 
             <div class="form-group">
-                <label for="new_password">New Password</label>
-                <p class="field-help">Leave blank to keep your current password.</p>
-                <div class="input-with-action">
-                    <input type="password" id="new_password" name="new_password" class="form-input" data-original="" autocomplete="new-password">
-                    <button type="button" class="btn-text" onclick="togglePassword('new_password')">Show</button>
-                </div>
-            </div>
-
-            <div class="form-group" id="confirm-password-group" style="display: none;">
-                <label for="new_password_confirm">Confirm New Password</label>
-                <input type="password" id="new_password_confirm" name="new_password_confirm" class="form-input" autocomplete="new-password">
-                <p id="password-match-msg" style="display:none;"></p>
+                <label>Password</label>
+                <p class="field-help">Use a strong password with uppercase, lowercase, a number, and a special character.</p>
+                <button type="button" class="btn btn-secondary" onclick="openPasswordModal()">Change Password</button>
             </div>
 
             <div class="form-actions">
@@ -144,18 +135,6 @@
         </form>
 
 <script>
-function togglePassword(fieldId) {
-    const field = document.getElementById(fieldId);
-    const btn = field.parentElement.querySelector('button');
-    if (field.type === 'password') {
-        field.type = 'text';
-        btn.textContent = 'Hide';
-    } else {
-        field.type = 'password';
-        btn.textContent = 'Show';
-    }
-}
-
 (function() {
     const form = document.getElementById('settings-form');
     const saveBtn = document.getElementById('save-btn');
@@ -167,70 +146,152 @@ function togglePassword(fieldId) {
     function checkForChanges() {
         let hasChanges = false;
         inputs.forEach(input => {
-            if (input.value !== input.dataset.original) {
-                hasChanges = true;
-            }
+            if (input.value !== input.dataset.original) hasChanges = true;
         });
-
-        if (hasChanges) {
-            saveBtn.disabled = false;
-            saveBtn.classList.add('has-changes');
-            if (discardBtn) discardBtn.disabled = false;
-        } else {
-            saveBtn.disabled = true;
-            saveBtn.classList.remove('has-changes');
-            if (discardBtn) discardBtn.disabled = true;
-        }
+        saveBtn.disabled = !hasChanges;
+        saveBtn.classList.toggle('has-changes', hasChanges);
+        if (discardBtn) discardBtn.disabled = !hasChanges;
     }
 
-    inputs.forEach(input => {
-        input.addEventListener('input', checkForChanges);
-    });
-
-    // Run on load to handle browser autofill
+    inputs.forEach(input => input.addEventListener('input', checkForChanges));
     checkForChanges();
-
-    // Show confirm field when password is entered, with match validation
-    const newPasswordInput = document.getElementById('new_password');
-    const confirmGroup = document.getElementById('confirm-password-group');
-    const confirmInput = document.getElementById('new_password_confirm');
-    const matchMsg = document.getElementById('password-match-msg');
-
-    function checkPasswordMatch() {
-        if (!confirmInput || !matchMsg || !newPasswordInput.value) return;
-        if (!confirmInput.value) {
-            matchMsg.style.display = 'none';
-            return;
-        }
-        if (newPasswordInput.value === confirmInput.value) {
-            matchMsg.textContent = 'Passwords match.';
-            matchMsg.className = 'password-match-success';
-            matchMsg.style.display = 'block';
-        } else {
-            matchMsg.textContent = 'Passwords do not match.';
-            matchMsg.className = 'password-match-error';
-            matchMsg.style.display = 'block';
-        }
-    }
-
-    if (newPasswordInput && confirmGroup) {
-        newPasswordInput.addEventListener('input', function() {
-            confirmGroup.style.display = this.value ? 'block' : 'none';
-            if (!this.value && matchMsg) matchMsg.style.display = 'none';
-            checkPasswordMatch();
-        });
-        if (confirmInput) {
-            confirmInput.addEventListener('input', checkPasswordMatch);
-        }
-    }
 
     if (discardBtn) {
         discardBtn.addEventListener('click', function() {
             inputs.forEach(input => { input.value = input.dataset.original; });
-            if (confirmGroup) confirmGroup.style.display = 'none';
             checkForChanges();
         });
     }
 })();
+
+// ---- Change Password modal ----
+
+function openPasswordModal() {
+    document.getElementById('pw-modal').style.display = 'flex';
+    setTimeout(() => document.getElementById('pw-current').focus(), 50);
+}
+
+function closePasswordModal() {
+    document.getElementById('pw-modal').style.display = 'none';
+    ['pw-current', 'pw-new', 'pw-confirm'].forEach(id => {
+        document.getElementById(id).value = '';
+        document.getElementById(id).type = 'password';
+    });
+    ['pw-show-current', 'pw-show-new', 'pw-show-confirm'].forEach(id => {
+        document.getElementById(id).textContent = 'Show';
+    });
+    document.getElementById('pw-requirements').style.display = 'none';
+    document.getElementById('pw-match-msg').style.display = 'none';
+    document.getElementById('pw-submit').disabled = true;
+}
+
+function togglePw(fieldId, btnId) {
+    const f = document.getElementById(fieldId);
+    const b = document.getElementById(btnId);
+    f.type = f.type === 'password' ? 'text' : 'password';
+    b.textContent = f.type === 'password' ? 'Show' : 'Hide';
+}
+
+(function() {
+    const modal = document.getElementById('pw-modal');
+    if (!modal) return;
+
+    const pwNew = document.getElementById('pw-new');
+    const pwConfirm = document.getElementById('pw-confirm');
+    const pwCurrent = document.getElementById('pw-current');
+    const matchMsg = document.getElementById('pw-match-msg');
+    const submitBtn = document.getElementById('pw-submit');
+    const reqs = document.getElementById('pw-requirements');
+
+    const rules = [
+        { id: 'req-length',  test: p => p.length >= 8,                          label: 'At least 8 characters' },
+        { id: 'req-upper',   test: p => /[A-Z]/.test(p),                        label: 'One uppercase letter' },
+        { id: 'req-lower',   test: p => /[a-z]/.test(p),                        label: 'One lowercase letter' },
+        { id: 'req-digit',   test: p => /\d/.test(p),                           label: 'One number' },
+        { id: 'req-special', test: p => /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;'\/`~]/.test(p), label: 'One special character' },
+    ];
+
+    function validate() {
+        const pw = pwNew.value;
+        const allMet = rules.every(r => r.test(pw));
+        const matches = pw && pwConfirm.value === pw;
+        const hasCurrent = !!pwCurrent.value;
+
+        rules.forEach(r => {
+            const el = document.getElementById(r.id);
+            if (!el) return;
+            const met = r.test(pw);
+            el.style.color = pw ? (met ? 'var(--color-success, #2d7a3a)' : 'var(--color-danger, #c0392b)') : '';
+            el.querySelector('.req-icon').textContent = pw ? (met ? '✓' : '✗') : '·';
+        });
+
+        if (pwConfirm.value) {
+            matchMsg.textContent = matches ? 'Passwords match.' : 'Passwords do not match.';
+            matchMsg.className = matches ? 'password-match-success' : 'password-match-error';
+            matchMsg.style.display = 'block';
+        } else {
+            matchMsg.style.display = 'none';
+        }
+
+        submitBtn.disabled = !(hasCurrent && allMet && matches);
+    }
+
+    pwNew.addEventListener('focus', () => { reqs.style.display = 'block'; });
+    pwNew.addEventListener('input', validate);
+    pwConfirm.addEventListener('input', validate);
+    pwCurrent.addEventListener('input', validate);
+
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) closePasswordModal();
+    });
+})();
 </script>
+
+{# Change Password modal #}
+<div id="pw-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:8px; padding:28px 32px; max-width:420px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+        <h3 style="margin:0 0 18px;">Change Password</h3>
+        <form action="{{ url_for('admin_change_password') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="form-group">
+                <label for="pw-current">Current Password</label>
+                <div class="input-with-action">
+                    <input type="password" id="pw-current" name="current_password" class="form-input" autocomplete="current-password">
+                    <button type="button" id="pw-show-current" class="btn-text" onclick="togglePw('pw-current','pw-show-current')">Show</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="pw-new">New Password</label>
+                <div class="input-with-action">
+                    <input type="password" id="pw-new" name="new_password" class="form-input" autocomplete="new-password">
+                    <button type="button" id="pw-show-new" class="btn-text" onclick="togglePw('pw-new','pw-show-new')">Show</button>
+                </div>
+                <ul id="pw-requirements" style="display:none; list-style:none; padding:8px 0 0; margin:0; font-size:13px; line-height:1.8;">
+                    <li id="req-length"><span class="req-icon">·</span> At least 8 characters</li>
+                    <li id="req-upper"><span class="req-icon">·</span> One uppercase letter</li>
+                    <li id="req-lower"><span class="req-icon">·</span> One lowercase letter</li>
+                    <li id="req-digit"><span class="req-icon">·</span> One number</li>
+                    <li id="req-special"><span class="req-icon">·</span> One special character</li>
+                </ul>
+            </div>
+
+            <div class="form-group">
+                <label for="pw-confirm">Confirm New Password</label>
+                <div class="input-with-action">
+                    <input type="password" id="pw-confirm" name="new_password_confirm" class="form-input" autocomplete="new-password">
+                    <button type="button" id="pw-show-confirm" class="btn-text" onclick="togglePw('pw-confirm','pw-show-confirm')">Show</button>
+                </div>
+                <p id="pw-match-msg" style="display:none; font-size:13px; margin-top:4px;"></p>
+            </div>
+
+            <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;">
+                <button type="button" class="btn btn-secondary" onclick="closePasswordModal()">Cancel</button>
+                <button type="submit" id="pw-submit" class="btn btn-save" disabled>Update Password</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 {% endblock %}

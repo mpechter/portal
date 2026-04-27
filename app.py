@@ -913,20 +913,39 @@ def admin_save_settings():
             flash("Could not send verification email. Check your email configuration.", "error")
         return redirect(url_for("admin_settings"))
 
-    new_password = request.form.get("new_password", "").strip()
-    if new_password:
-        new_password_confirm = request.form.get("new_password_confirm", "").strip()
-        pw_error = validate_password(new_password)
-        if pw_error:
-            flash(pw_error, "error")
-            return redirect(url_for("admin_settings"))
-        if new_password != new_password_confirm:
-            flash("Passwords do not match.", "error")
-            return redirect(url_for("admin_settings"))
-        org.set_admin_password(new_password)
-
     db.session.commit()
     flash("Settings saved.", "success")
+    return redirect(url_for("admin_settings"))
+
+
+@app.route("/admin/change-password", methods=["POST"])
+@admin_required
+def admin_change_password():
+    """Change admin password, requiring the current password for verification."""
+    org = _get_admin_org()
+    if not org:
+        return redirect(url_for("admin_login"))
+
+    current_password = request.form.get("current_password", "").strip()
+    new_password = request.form.get("new_password", "").strip()
+    new_password_confirm = request.form.get("new_password_confirm", "").strip()
+
+    if not org.check_admin_password(current_password):
+        flash("Current password is incorrect.", "error")
+        return redirect(url_for("admin_settings"))
+
+    pw_error = validate_password(new_password)
+    if pw_error:
+        flash(pw_error, "error")
+        return redirect(url_for("admin_settings"))
+
+    if new_password != new_password_confirm:
+        flash("Passwords do not match.", "error")
+        return redirect(url_for("admin_settings"))
+
+    org.set_admin_password(new_password)
+    db.session.commit()
+    flash("Password updated successfully.", "success")
     return redirect(url_for("admin_settings"))
 
 
