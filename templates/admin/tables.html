@@ -14,7 +14,7 @@
 
         <div class="admin-alert admin-alert-info">
             <strong>Airtable Setup Requirements</strong><br>
-            Your <strong>Users Table</strong> must have a field containing each user's email address. You'll select which field that is on the <strong>Fields</strong> tab.
+            Your <strong>Users Table</strong> must have a field containing each user's email address. Select which field below.
         </div>
 
         <form id="tables-form" action="{{ url_for('admin_save_tables') }}" method="post" class="form">
@@ -29,6 +29,14 @@
                         {{ table.name }}
                     </option>
                     {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group" id="email-field-group" style="{% if not org.users_table %}display:none{% endif %}">
+                <label for="email_field">Email Field</label>
+                <p class="field-help">Which field in <strong id="users-table-label">{{ org.users_table or 'your Users Table' }}</strong> contains the user's email address?</p>
+                <select id="email_field" name="email_field" class="form-select" style="max-width: 320px;">
+                    <option value="">-- Select --</option>
                 </select>
             </div>
 
@@ -54,18 +62,52 @@
 <script>
 (function() {
     const tablesData = {{ tables | tojson }};
+    const savedEmailField = {{ (org.email_field or 'Email') | tojson }};
     const form = document.getElementById('tables-form');
     const usersTableSelect = document.getElementById('users_table');
     const recordsTableSelect = document.getElementById('records_table');
     const recordsHint = document.getElementById('records-table-hint');
     const saveBtn = document.getElementById('save-btn');
+    const emailFieldGroup = document.getElementById('email-field-group');
+    const emailFieldSelect = document.getElementById('email_field');
+    const usersTableLabel = document.getElementById('users-table-label');
 
     const originalUsersTable = usersTableSelect.value;
     const originalRecordsTable = recordsTableSelect.value;
+    let originalEmailField = savedEmailField;
 
     function getTableId(tableName) {
         const t = tablesData.find(t => t.name === tableName);
         return t ? t.id : null;
+    }
+
+    function updateEmailField(preserveValue) {
+        const tableName = usersTableSelect.value;
+        if (usersTableLabel) usersTableLabel.textContent = tableName || 'your Users Table';
+        if (!emailFieldGroup || !emailFieldSelect) return;
+
+        if (!tableName) {
+            emailFieldGroup.style.display = 'none';
+            return;
+        }
+        emailFieldGroup.style.display = '';
+
+        const prevValue = preserveValue ? emailFieldSelect.value : null;
+        emailFieldSelect.innerHTML = '<option value="">-- Select --</option>';
+
+        const table = tablesData.find(t => t.name === tableName);
+        if (table) {
+            (table.fields || []).filter(f => f.type === 'email' || f.type === 'singleLineText').forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = opt.textContent = f.name;
+                emailFieldSelect.appendChild(opt);
+            });
+        }
+
+        // Restore selection: prefer preserved value, then saved value, then 'Email'
+        const target = prevValue || savedEmailField || 'Email';
+        const match = Array.from(emailFieldSelect.options).find(o => o.value === target);
+        if (match) match.selected = true;
     }
 
     function filterRecordsTables() {
@@ -111,7 +153,8 @@
 
     function checkForChanges() {
         const hasChanges = usersTableSelect.value !== originalUsersTable ||
-                          recordsTableSelect.value !== originalRecordsTable;
+                          recordsTableSelect.value !== originalRecordsTable ||
+                          (emailFieldSelect && emailFieldSelect.value !== originalEmailField);
         const hasSelection = usersTableSelect.value !== '';
 
         if (hasChanges && hasSelection) {
@@ -127,12 +170,15 @@
     }
 
     usersTableSelect.addEventListener('change', function() {
+        updateEmailField(false);
         filterRecordsTables();
         checkForChanges();
     });
     recordsTableSelect.addEventListener('change', checkForChanges);
+    if (emailFieldSelect) emailFieldSelect.addEventListener('change', checkForChanges);
 
-    // Initial filter and check
+    // Initial population and check
+    updateEmailField(false);
     filterRecordsTables();
     checkForChanges();
 })();

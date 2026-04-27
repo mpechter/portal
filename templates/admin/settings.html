@@ -24,9 +24,9 @@
             <form action="{{ url_for('admin_upload_logo') }}" method="post" enctype="multipart/form-data" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="file" name="logo_file" accept="image/png,image/jpeg,image/gif,image/webp" style="font-size: 13px;">
-                <button type="submit" class="btn btn-secondary" style="white-space: nowrap;">Upload</button>
+                <button type="submit" class="btn {% if org.logo_url %}btn-primary{% else %}btn-secondary{% endif %}" style="white-space: nowrap;">Upload</button>
             </form>
-            <p class="field-help">PNG, JPG, GIF, or WebP. Max 5 MB. Or set a URL in the settings below.</p>
+            <p class="field-help">PNG, JPG, GIF, or WebP. Max 5 MB.</p>
         </div>
 
         <form id="settings-form" action="{{ url_for('admin_save_settings') }}" method="post" class="form">
@@ -59,12 +59,6 @@
                 <label for="portal_title">Portal Title</label>
                 <p class="field-help">Shown in the browser tab and page headers for users.</p>
                 <input type="text" id="portal_title" name="portal_title" value="{{ org.portal_title }}" class="form-input" placeholder="e.g., Parent Portal" data-original="{{ org.portal_title }}">
-            </div>
-
-            <div class="form-group">
-                <label for="logo_url">Logo URL</label>
-                <p class="field-help">Override the uploaded logo with a URL. Leave empty to use the uploaded logo.</p>
-                <input type="url" id="logo_url" name="logo_url" value="{{ org.logo_url or '' }}" class="form-input" placeholder="https://example.com/logo.png" data-original="{{ org.logo_url or '' }}">
             </div>
 
             <h3>Airtable Connection</h3>

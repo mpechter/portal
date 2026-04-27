@@ -81,24 +81,6 @@
 {% block admin_content %}
         <form id="admin-form" action="{{ url_for('admin_save_fields') }}" method="post" class="form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <h3>Email Field</h3>
-        <div class="fields-section">
-            <p class="field-help" style="margin-bottom: 10px;">Select which field in <strong>{{ org.users_table }}</strong> contains the client's email address.</p>
-            <select name="email_field" id="email_field" class="form-select" style="max-width: 320px;"
-                    data-original="{{ org.email_field or 'Email' }}"
-                    onchange="updateEmailFieldSidebar(); checkForChanges()">
-                {% for field in email_fields %}
-                <option value="{{ field }}" {% if (org.email_field or 'Email') == field %}selected{% endif %}>{{ field }}</option>
-                {% endfor %}
-                {% if not email_fields %}
-                <option value="{{ org.email_field or 'Email' }}" selected>{{ org.email_field or 'Email' }}</option>
-                {% endif %}
-            </select>
-            {% if not email_fields %}
-            <p class="field-help" style="color: #d63939; margin-top: 6px;">No email or text fields found in this table.</p>
-            {% endif %}
-        </div>
-
         {# Profile Fields #}
         <h3>Profile Fields ({{ org.users_table }})</h3>
         <p class="text-muted" style="margin-bottom: 14px;">Toggle fields on in the panel to show them here. Configure each active field below.</p>
@@ -363,27 +345,6 @@ document.querySelectorAll('.sidebar-toggle').forEach(toggle => {
     });
 });
 
-// ---- Email field ----
-
-function updateEmailFieldSidebar() {
-    const selected = document.getElementById('email_field')?.value || '';
-    document.querySelectorAll('#user-sidebar-list .sidebar-field').forEach(item => {
-        const name = item.dataset.fieldName;
-        const card = document.querySelector(`#user-fields-sortable .field-card[data-user-field-name="${CSS.escape(name)}"]`);
-        if (name === selected) {
-            item.style.display = 'none';
-            const t = item.querySelector('.sidebar-toggle');
-            if (t) t.checked = false;
-            if (card) deactivateCard(card);
-        } else if (item.style.display === 'none') {
-            item.style.display = '';
-        }
-    });
-    updateOrderInput('user-fields-sortable', 'user_field_order');
-    updateActiveCount('user-active-count', 'user-fields-sortable');
-    updateEmptyHint('user-empty-hint', 'user-fields-sortable');
-}
-
 // ---- Confirmation field ----
 
 function toggleConfirmationField() {
@@ -465,7 +426,6 @@ function updateConfirmationValues() {
 
 // ---- Initialise ----
 
-updateEmailFieldSidebar();
 updateConfirmationValues();
 updateOrderInput('user-fields-sortable', 'user_field_order');
 updateActiveCount('user-active-count', 'user-fields-sortable');
@@ -499,8 +459,6 @@ updateEmptyHint('record-empty-hint', 'record-fields-sortable');
             if (t.checked !== (t.dataset.original === 'true')) changed = true;
         });
 
-        const ef = document.getElementById('email_field');
-        if (ef && ef.value !== ef.dataset.original) changed = true;
         const cc = document.getElementById('confirmation_enabled');
         const cf = document.getElementById('confirmation_field');
         const cv = document.getElementById('confirmation_value');
@@ -533,9 +491,6 @@ updateEmptyHint('record-empty-hint', 'record-fields-sortable');
         form.querySelectorAll('input.annotation-input').forEach(i => { i.value = i.dataset.original; });
         form.querySelectorAll('textarea.description-input').forEach(t => { t.value = t.dataset.original; });
 
-        const ef = document.getElementById('email_field');
-        if (ef) { ef.value = ef.dataset.original; updateEmailFieldSidebar(); }
-
         const cc = document.getElementById('confirmation_enabled');
         const cf = document.getElementById('confirmation_field');
         const cv = document.getElementById('confirmation_value');
@@ -567,7 +522,6 @@ updateEmptyHint('record-empty-hint', 'record-fields-sortable');
     form.querySelectorAll('input[type="radio"]').forEach(r => r.addEventListener('change', checkForChanges));
     form.querySelectorAll('input.annotation-input').forEach(i => i.addEventListener('input', checkForChanges));
     form.querySelectorAll('textarea.description-input').forEach(t => t.addEventListener('input', checkForChanges));
-    document.getElementById('email_field')?.addEventListener('change', checkForChanges);
     ['confirmation_enabled', 'confirmation_field', 'confirmation_value'].forEach(id => {
         document.getElementById(id)?.addEventListener('change', checkForChanges);
     });

@@ -853,16 +853,11 @@ def admin_save_settings():
     # Get form values
     name = request.form.get("name", "").strip()
     portal_title = request.form.get("portal_title", "").strip()
-    logo_url = request.form.get("logo_url", "").strip() or None
     airtable_api_key = request.form.get("airtable_api_key", "").strip()
     airtable_base_id = request.form.get("airtable_base_id", "").strip()
 
     if not name:
         flash("Organization name is required.", "error")
-        return redirect(url_for("admin_settings"))
-
-    if logo_url and not logo_url.startswith("https://"):
-        flash("Logo URL must start with https://", "error")
         return redirect(url_for("admin_settings"))
 
     if not airtable_base_id or (not airtable_api_key and not org.airtable_api_key):
@@ -877,7 +872,6 @@ def admin_save_settings():
 
     org.name = name
     org.portal_title = portal_title or "Portal"
-    org.logo_url = logo_url
     # Only update API key if a new one was provided (don't overwrite with empty)
     if airtable_api_key:
         org.airtable_api_key = airtable_api_key
@@ -1026,6 +1020,7 @@ def admin_save_tables():
 
     users_table = request.form.get("users_table", "").strip()
     records_table = request.form.get("records_table", "").strip()
+    email_field = request.form.get("email_field", "").strip() or "Email"
 
     if not users_table:
         flash("Please select a Users table.", "error")
@@ -1044,6 +1039,7 @@ def admin_save_tables():
 
     org.records_table = records_table if records_table else None
     org.link_field = None  # Auto-detected from schema
+    org.email_field = email_field
 
     # Validate data.records:read permission by attempting a test read
     try:
@@ -1094,13 +1090,6 @@ def admin_fields():
     link_user_fields = {f["name"] for f in (users_table_schema or {}).get("linked_fields", [])}
     link_record_fields = set()
 
-    # Get fields suitable as an email field (email type or plain text)
-    email_fields = []
-    if users_table_schema:
-        for field in users_table_schema.get("fields", []):
-            if field.get("type") in ("email", "singleLineText"):
-                email_fields.append(field["name"])
-
     # Get single select fields with their options from schema (not sampled records)
     select_fields = {}
     if org.has_linked_records:
@@ -1137,7 +1126,6 @@ def admin_fields():
         "admin/fields.html",
         org=org,
         user_fields=user_fields,
-        email_fields=email_fields,
         record_fields=record_fields,
         select_fields=select_fields,
         user_field_config=org.user_field_config,
@@ -1261,8 +1249,6 @@ def admin_save_fields():
     }
 
     # Save email field selection
-    org.email_field = request.form.get("email_field", "").strip() or "Email"
-
     # Save confirmation settings
     org.confirmation_enabled = "confirmation_enabled" in request.form
     org.confirmation_field = request.form.get("confirmation_field", "").strip() or None
