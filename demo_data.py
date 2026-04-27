@@ -32,8 +32,8 @@ DEMO_TABLES = [
         "id": "tbl_users",
         "name": "Parents",
         "fields": [
-            {"id": "fld_email", "name": "Email", "type": "email"},
             {"id": "fld_name", "name": "Name", "type": "singleLineText"},
+            {"id": "fld_email", "name": "Email", "type": "email"},
             {"id": "fld_phone", "name": "Phone", "type": "phoneNumber"},
             {"id": "fld_address", "name": "Address", "type": "singleLineText"},
             {"id": "fld_pref", "name": "Preferred Contact", "type": "singleSelect", "options": ["Email", "Phone", "Text"]},
@@ -109,6 +109,13 @@ DEMO_RECORDS = {
             "Photo Permission": False,
         },
     },
+}
+
+
+# Map table IDs to their in-memory record dicts for linked field resolution
+_DEMO_TABLE_RECORDS = {
+    "tbl_users": DEMO_USERS,
+    "tbl_students": DEMO_RECORDS,
 }
 
 
@@ -192,6 +199,44 @@ class DemoAirtableClient:
     def get_computed_field_names(self, table_name: str) -> set:
         """Return computed field names (none in demo data)."""
         return set()
+
+    def resolve_linked_fields(self, table_name: str, fields_dict: dict) -> dict:
+        """Replace linked record ID arrays with primary field display names."""
+        table = self.get_table_by_name(table_name)
+        if not table:
+            return fields_dict
+
+        linked_field_map = {}
+        for field in table.get("fields", []):
+            if field.get("type") == "multipleRecordLinks" and field.get("linked_table_id"):
+                linked_field_map[field["name"]] = field["linked_table_id"]
+
+        if not linked_field_map:
+            return fields_dict
+
+        table_id_to_info = {t["id"]: t for t in DEMO_TABLES}
+
+        resolved = dict(fields_dict)
+        for field_name, linked_table_id in linked_field_map.items():
+            record_ids = fields_dict.get(field_name)
+            if not record_ids or not isinstance(record_ids, list):
+                continue
+
+            records = _DEMO_TABLE_RECORDS.get(linked_table_id, {})
+            linked_table_info = table_id_to_info.get(linked_table_id)
+            primary_field = linked_table_info["fields"][0]["name"] if linked_table_info and linked_table_info.get("fields") else None
+
+            display_names = []
+            for rid in record_ids:
+                record = records.get(rid)
+                if record and primary_field:
+                    display_names.append(str(record["fields"].get(primary_field, rid)))
+                else:
+                    display_names.append(rid)
+
+            resolved[field_name] = display_names
+
+        return resolved
 
     def update_user(self, user_id: str, fields: dict):
         """Update a user record with the provided fields."""

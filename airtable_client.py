@@ -263,6 +263,63 @@ class AirtableClient:
             return []
         return sorted(field["name"] for field in table_info.get("fields", []))
 
+    def resolve_linked_fields(self, table_name: str, fields_dict: dict) -> dict:
+        """Replace linked record ID arrays with primary field display names.
+
+        For each multipleRecordLinks field in table_name, fetches the primary
+        field value of each linked record so the UI shows names instead of IDs.
+        """
+        table = self.get_table_by_name(table_name)
+        if not table:
+            return fields_dict
+
+        linked_field_map = {}  # field_name -> linked_table_id
+        for field in table.get("fields", []):
+            if field.get("type") == "multipleRecordLinks" and field.get("linked_table_id"):
+                linked_field_map[field["name"]] = field["linked_table_id"]
+
+        if not linked_field_map:
+            return fields_dict
+
+        all_tables = self.get_base_tables()
+        table_id_to_name = {t["id"]: t["name"] for t in all_tables}
+        table_id_to_primary_field = {
+            t["id"]: t["fields"][0]["name"]
+            for t in all_tables
+            if t.get("fields")
+        }
+
+        resolved = dict(fields_dict)
+        for field_name, linked_table_id in linked_field_map.items():
+            record_ids = fields_dict.get(field_name)
+            if not record_ids or not isinstance(record_ids, list):
+                continue
+
+            linked_table_name = table_id_to_name.get(linked_table_id)
+            if not linked_table_name:
+                continue
+
+            primary_field = table_id_to_primary_field.get(linked_table_id)
+            linked_table = self.base.table(linked_table_name)
+
+            display_names = []
+            for rid in record_ids:
+                try:
+                    linked_rec = linked_table.get(rid)
+                    linked_fields = linked_rec.get("fields", {})
+                    if primary_field and primary_field in linked_fields:
+                        display_names.append(str(linked_fields[primary_field]))
+                    elif linked_fields:
+                        display_names.append(str(next(iter(linked_fields.values()))))
+                    else:
+                        display_names.append(rid)
+                except Exception:
+                    display_names.append(rid)
+
+            resolved[field_name] = display_names
+
+        return resolved
+
     def update_user(self, user_id: str, fields: dict):
         """Update a user record with the provided fields."""
         self.users_table.update(user_id, fields)

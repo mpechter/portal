@@ -595,6 +595,7 @@ def dashboard():
     # Get user's own profile data
     user_data = client.get_user_by_id(current_user.user_id)
     user_fields = user_data.get("fields", {}) if user_data else {}
+    user_fields = client.resolve_linked_fields(org.users_table, user_fields)
 
     # Get field permissions for user profile
     user_editable_fields = org.get_user_editable_fields()
@@ -646,6 +647,7 @@ def edit_record(record_id: str):
     record = client.get_record_by_id(record_id)
     if not record:
         abort(404)
+    record["fields"] = client.resolve_linked_fields(org.records_table, record.get("fields", {}))
 
     # Get field permissions from org config (for linked records)
     editable_fields = org.get_record_editable_fields()
@@ -722,6 +724,7 @@ def edit_profile():
     user_data = client.get_user_by_id(current_user.user_id)
     if not user_data:
         abort(404)
+    user_data["fields"] = client.resolve_linked_fields(org.users_table, user_data.get("fields", {}))
 
     # Get field permissions for user profile
     editable_fields = org.get_user_editable_fields()

@@ -20,7 +20,7 @@
                 {% if value %}
                 <div class="profile-field">
                     <span class="field-label">{{ user_aliases.get(field_name, field_name) }}:</span>
-                    <span class="field-value">{{ value }}</span>
+                    <span class="field-value">{% if value is iterable and value is not string %}{{ value | join(', ') }}{% else %}{{ value }}{% endif %}</span>
                 </div>
                 {% endif %}
             {% endfor %}
@@ -29,7 +29,7 @@
                 {% if value %}
                 <div class="profile-field">
                     <span class="field-label">{{ user_aliases.get(field_name, field_name) }}:</span>
-                    <span class="field-value">{{ value }}</span>
+                    <span class="field-value">{% if value is iterable and value is not string %}{{ value | join(', ') }}{% else %}{{ value }}{% endif %}</span>
                 </div>
                 {% endif %}
             {% endfor %}
