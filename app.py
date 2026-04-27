@@ -570,6 +570,10 @@ def magic_link_auth():
 @login_required
 def logout():
     """Log out the current user."""
+    if is_preview_mode():
+        session.pop("admin_preview", None)
+        logout_user()
+        return redirect(url_for("admin_dashboard"))
     logout_user()
     session.clear()
     flash("You have been logged out.", "info")
