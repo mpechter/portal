@@ -549,13 +549,25 @@ body {
 
 .admin-header {
     display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.admin-header-top {
+    display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
 }
 
 .admin-header h1 {
     margin: 0;
+}
+
+.admin-header-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
 }
 
 .admin-logout {
