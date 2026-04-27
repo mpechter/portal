@@ -1747,6 +1747,30 @@ def superadmin_create_promo():
     return redirect(url_for("superadmin_users"))
 
 
+@app.route("/superadmin/delete-org/<int:org_id>", methods=["POST"])
+@superadmin_required
+def superadmin_delete_org(org_id):
+    """Permanently delete an organization and all associated data."""
+    org = Organization.query.get(org_id)
+    if not org:
+        abort(404)
+
+    # Require the org code to be echoed back as confirmation
+    confirm_code = request.form.get("confirm_code", "").strip().upper()
+    if confirm_code != org.org_code:
+        flash("Org code did not match — deletion cancelled.", "error")
+        return redirect(url_for("superadmin_users"))
+
+    org_name = org.name
+    LoginAttempt.query.filter_by(org_id=org_id).delete()
+    LoginCode.query.filter_by(org_id=org_id).delete()
+    db.session.delete(org)
+    db.session.commit()
+
+    flash(f"Organization '{org_name}' has been permanently deleted.", "success")
+    return redirect(url_for("superadmin_users"))
+
+
 @app.route("/superadmin/promo-codes/toggle/<int:code_id>", methods=["POST"])
 @superadmin_required
 def superadmin_toggle_promo(code_id):

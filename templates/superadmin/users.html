@@ -127,6 +127,7 @@
                     <th style="padding: 10px 12px; color: #555; font-weight: 600;">Plan</th>
                     <th style="padding: 10px 12px; color: #555; font-weight: 600;">Joined</th>
                     <th style="padding: 10px 12px; color: #555; font-weight: 600;">Active</th>
+                    <th style="padding: 10px 12px;"></th>
                 </tr>
             </thead>
             <tbody>
@@ -169,6 +170,13 @@
                             </button>
                         </form>
                     </td>
+                    <td style="padding: 10px 12px;">
+                        <button type="button" class="btn btn-small"
+                                style="font-size: 12px; padding: 4px 10px; background: #fce4ec; color: #b71c1c; border: none; border-radius: 4px; cursor: pointer;"
+                                onclick="openDeleteModal({{ org.id }}, {{ org.org_code | tojson }}, {{ org.name | tojson }})">
+                            Delete
+                        </button>
+                    </td>
                 </tr>
                 {% else %}
                 <tr>
@@ -179,4 +187,72 @@
         </table>
     </div>
 </div>
+
+{# Delete confirmation modal #}
+<div id="delete-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:10px; padding:28px 32px; max-width:420px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+        <h3 style="margin:0 0 8px; font-size:18px; color:#b71c1c;">Delete Organization</h3>
+        <p style="margin:0 0 16px; color:#444; font-size:14px; line-height:1.5;">
+            This will permanently delete <strong id="modal-org-name"></strong> and all associated data. This cannot be undone.
+        </p>
+        <p style="margin:0 0 8px; font-size:13px; color:#555;">
+            Type the org code <code id="modal-org-code" style="background:#f5f5f5; padding:2px 6px; border-radius:4px;"></code> to confirm:
+        </p>
+        <input type="text" id="modal-confirm-input" placeholder="Org code"
+               style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:6px; font-size:14px; box-sizing:border-box; margin-bottom:16px; text-transform:uppercase;"
+               oninput="checkDeleteInput()">
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <button type="button" onclick="closeDeleteModal()"
+                    style="padding:8px 18px; border:1px solid #ddd; border-radius:6px; background:#f5f5f5; font-size:14px; cursor:pointer;">
+                Cancel
+            </button>
+            <form id="delete-form" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="confirm_code" id="modal-hidden-code">
+                <button type="submit" id="delete-submit-btn" disabled
+                        style="padding:8px 18px; border:none; border-radius:6px; background:#b71c1c; color:#fff; font-size:14px; cursor:not-allowed; opacity:0.45; transition:opacity 0.15s;">
+                    Delete permanently
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openDeleteModal(orgId, orgCode, orgName) {
+    document.getElementById('modal-org-name').textContent = orgName;
+    document.getElementById('modal-org-code').textContent = orgCode;
+    document.getElementById('delete-form').action = '/superadmin/delete-org/' + orgId;
+    document.getElementById('modal-confirm-input').value = '';
+    document.getElementById('modal-hidden-code').value = '';
+    document.getElementById('delete-submit-btn').disabled = true;
+    document.getElementById('delete-submit-btn').style.opacity = '0.45';
+    document.getElementById('delete-submit-btn').style.cursor = 'not-allowed';
+    const modal = document.getElementById('delete-modal');
+    modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('modal-confirm-input').focus(), 50);
+}
+
+function closeDeleteModal() {
+    document.getElementById('delete-modal').style.display = 'none';
+}
+
+function checkDeleteInput() {
+    const input = document.getElementById('modal-confirm-input').value.trim().toUpperCase();
+    const expected = document.getElementById('modal-org-code').textContent;
+    const btn = document.getElementById('delete-submit-btn');
+    const match = input === expected;
+    document.getElementById('modal-hidden-code').value = input;
+    btn.disabled = !match;
+    btn.style.opacity = match ? '1' : '0.45';
+    btn.style.cursor = match ? 'pointer' : 'not-allowed';
+}
+
+document.getElementById('delete-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteModal();
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeDeleteModal();
+});
+</script>
 {% endblock %}
