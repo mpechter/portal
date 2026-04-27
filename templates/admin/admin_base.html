@@ -18,7 +18,8 @@
 <div class="admin-dashboard">
     <div class="admin-header">
         <div class="admin-header-top">
-            <h1>Admin: {{ org.name }}</h1>
+            <a href="{{ url_for('admin_logout') }}" class="admin-logout" style="visibility:hidden;">Logout</a>
+            <h1>{{ org.name }} Admin</h1>
             <a href="{{ url_for('admin_logout') }}" class="admin-logout">Logout</a>
         </div>
         <div class="admin-header-actions">
@@ -34,6 +35,7 @@
         <a href="{{ url_for('admin_tables') }}" class="tab {% if active_tab == 'tables' %}active{% endif %}">Tables</a>
         <a href="{{ url_for('admin_fields') }}" class="tab {% if active_tab == 'fields' %}{% if not org.tables_configured %}disabled{% endif %} active{% elif not org.tables_configured %}disabled{% endif %}">Fields</a>
         <a href="{{ url_for('admin_billing') }}" class="tab {% if active_tab == 'billing' %}active{% endif %}">Billing</a>
+        <a href="{{ url_for('admin_support') }}" class="tab {% if active_tab == 'support' %}active{% endif %}">Support</a>
     </nav>
 
     <div class="admin-content">

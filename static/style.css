@@ -562,6 +562,8 @@ body {
 
 .admin-header h1 {
     margin: 0;
+    text-align: center;
+    flex: 1;
 }
 
 .admin-header-actions {
