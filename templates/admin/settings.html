@@ -173,6 +173,49 @@ function togglePw(fieldId, btnId) {
     b.textContent = f.type === 'password' ? 'Show' : 'Hide';
 }
 
+function validatePw() {
+    const pwNew     = document.getElementById('pw-new');
+    const pwConfirm = document.getElementById('pw-confirm');
+    const pwCurrent = document.getElementById('pw-current');
+    const matchMsg  = document.getElementById('pw-match-msg');
+    const submitBtn = document.getElementById('pw-submit');
+    if (!pwNew || !submitBtn) return;
+
+    const pw = pwNew.value;
+    const checks = [
+        { id: 'req-length',  ok: pw.length >= 8 },
+        { id: 'req-upper',   ok: /[A-Z]/.test(pw) },
+        { id: 'req-lower',   ok: /[a-z]/.test(pw) },
+        { id: 'req-digit',   ok: /[0-9]/.test(pw) },
+        { id: 'req-special', ok: /[^A-Za-z0-9]/.test(pw) },
+    ];
+    const allMet = checks.every(c => c.ok);
+
+    checks.forEach(c => {
+        const el = document.getElementById(c.id);
+        if (!el) return;
+        el.style.color = pw ? (c.ok ? 'var(--color-success, #2d7a3a)' : 'var(--color-danger, #c0392b)') : '';
+        const icon = el.querySelector('.req-icon');
+        if (icon) icon.textContent = pw ? (c.ok ? '✓' : '✗') : '·';
+    });
+
+    const confirmVal = pwConfirm ? pwConfirm.value : '';
+    const matches = pw.length > 0 && confirmVal === pw;
+    const hasCurrent = pwCurrent ? pwCurrent.value.length > 0 : false;
+
+    if (matchMsg) {
+        if (confirmVal.length > 0) {
+            matchMsg.textContent = matches ? 'Passwords match.' : 'Passwords do not match.';
+            matchMsg.className = matches ? 'password-match-success' : 'password-match-error';
+            matchMsg.style.display = 'block';
+        } else {
+            matchMsg.style.display = 'none';
+        }
+    }
+
+    submitBtn.disabled = !(hasCurrent && allMet && matches);
+}
+
 function openPasswordModal() {
     document.getElementById('pw-modal').style.display = 'flex';
     setTimeout(() => document.getElementById('pw-current').focus(), 50);
@@ -182,73 +225,24 @@ function closePasswordModal() {
     document.getElementById('pw-modal').style.display = 'none';
     ['pw-current', 'pw-new', 'pw-confirm'].forEach(id => {
         const el = document.getElementById(id);
+        if (!el) return;
         el.value = '';
         el.type = 'password';
     });
     ['pw-show-current', 'pw-show-new', 'pw-show-confirm'].forEach(id => {
-        document.getElementById(id).textContent = 'Show';
+        const el = document.getElementById(id);
+        if (el) el.textContent = 'Show';
     });
     document.querySelectorAll('#pw-requirements li').forEach(li => {
         li.style.color = '';
-        li.querySelector('.req-icon').textContent = '·';
+        const icon = li.querySelector('.req-icon');
+        if (icon) icon.textContent = '·';
     });
     const matchMsg = document.getElementById('pw-match-msg');
     if (matchMsg) { matchMsg.textContent = ''; matchMsg.style.display = 'none'; }
     const submitBtn = document.getElementById('pw-submit');
     if (submitBtn) submitBtn.disabled = true;
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('pw-modal');
-    if (!modal) return;
-
-    const pwNew     = document.getElementById('pw-new');
-    const pwConfirm = document.getElementById('pw-confirm');
-    const pwCurrent = document.getElementById('pw-current');
-    const matchMsg  = document.getElementById('pw-match-msg');
-    const submitBtn = document.getElementById('pw-submit');
-
-    const rules = [
-        { id: 'req-length',  test: p => p.length >= 8 },
-        { id: 'req-upper',   test: p => /[A-Z]/.test(p) },
-        { id: 'req-lower',   test: p => /[a-z]/.test(p) },
-        { id: 'req-digit',   test: p => /\d/.test(p) },
-        { id: 'req-special', test: p => /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;'\/`~]/.test(p) },
-    ];
-
-    function validate() {
-        const pw = pwNew.value;
-        const allMet = rules.every(r => r.test(pw));
-        const matches = pw.length > 0 && pwConfirm.value === pw;
-        const hasCurrent = pwCurrent.value.length > 0;
-
-        rules.forEach(r => {
-            const el = document.getElementById(r.id);
-            if (!el) return;
-            const met = r.test(pw);
-            el.style.color = pw ? (met ? 'var(--color-success, #2d7a3a)' : 'var(--color-danger, #c0392b)') : '';
-            el.querySelector('.req-icon').textContent = pw ? (met ? '✓' : '✗') : '·';
-        });
-
-        if (pwConfirm.value.length > 0) {
-            matchMsg.textContent = matches ? 'Passwords match.' : 'Passwords do not match.';
-            matchMsg.className = matches ? 'password-match-success' : 'password-match-error';
-            matchMsg.style.display = 'block';
-        } else {
-            matchMsg.style.display = 'none';
-        }
-
-        submitBtn.disabled = !(hasCurrent && allMet && matches);
-    }
-
-    pwNew.addEventListener('input', validate);
-    pwConfirm.addEventListener('input', validate);
-    pwCurrent.addEventListener('input', validate);
-
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) closePasswordModal();
-    });
-});
 </script>
 
 {# Change Password modal #}
@@ -261,7 +255,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="form-group">
                 <label for="pw-current">Current Password <span style="font-weight:normal; color:var(--color-text-secondary); font-size:12px;">— verified on submit</span></label>
                 <div class="input-with-action">
-                    <input type="password" id="pw-current" name="current_password" class="form-input" autocomplete="current-password">
+                    <input type="password" id="pw-current" name="current_password" class="form-input" autocomplete="current-password" oninput="validatePw()">
                     <button type="button" id="pw-show-current" class="btn-text" onclick="togglePw('pw-current','pw-show-current')">Show</button>
                 </div>
             </div>
@@ -269,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="form-group">
                 <label for="pw-new">New Password</label>
                 <div class="input-with-action">
-                    <input type="password" id="pw-new" name="new_password" class="form-input" autocomplete="new-password">
+                    <input type="password" id="pw-new" name="new_password" class="form-input" autocomplete="new-password" oninput="validatePw()">
                     <button type="button" id="pw-show-new" class="btn-text" onclick="togglePw('pw-new','pw-show-new')">Show</button>
                 </div>
                 <ul id="pw-requirements" style="list-style:none; padding:8px 0 0; margin:0; font-size:13px; line-height:1.8;">
@@ -284,7 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="form-group">
                 <label for="pw-confirm">Confirm New Password</label>
                 <div class="input-with-action">
-                    <input type="password" id="pw-confirm" name="new_password_confirm" class="form-input" autocomplete="new-password">
+                    <input type="password" id="pw-confirm" name="new_password_confirm" class="form-input" autocomplete="new-password" oninput="validatePw()">
                     <button type="button" id="pw-show-confirm" class="btn-text" onclick="togglePw('pw-confirm','pw-show-confirm')">Show</button>
                 </div>
                 <p id="pw-match-msg" style="display:none; font-size:13px; margin-top:4px;"></p>
