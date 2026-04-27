@@ -21,11 +21,19 @@
                 <img src="{{ org.logo_url }}" alt="Logo preview">
             </div>
             {% endif %}
-            <form action="{{ url_for('admin_upload_logo') }}" method="post" enctype="multipart/form-data" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="file" name="logo_file" accept="image/png,image/jpeg,image/gif,image/webp" style="font-size: 13px;">
-                <button type="submit" class="btn {% if org.logo_url %}btn-primary{% else %}btn-secondary{% endif %}" style="white-space: nowrap;">Upload</button>
-            </form>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+                <form action="{{ url_for('admin_upload_logo') }}" method="post" enctype="multipart/form-data" style="display: flex; align-items: center; gap: 8px;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="file" name="logo_file" accept="image/png,image/jpeg,image/gif,image/webp" style="font-size: 13px;">
+                    <button type="submit" class="btn {% if org.logo_url %}btn-secondary{% else %}btn-secondary{% endif %}" style="white-space: nowrap;">Upload</button>
+                </form>
+                {% if org.logo_url %}
+                <form action="{{ url_for('admin_remove_logo') }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger-outline" style="white-space: nowrap;">Remove</button>
+                </form>
+                {% endif %}
+            </div>
             <p class="field-help">PNG, JPG, GIF, or WebP. Max 5 MB.</p>
         </div>
 

@@ -996,6 +996,45 @@ def admin_upload_logo():
     return redirect(url_for("admin_settings"))
 
 
+@app.route("/admin/remove-logo", methods=["POST"])
+@admin_required
+def admin_remove_logo():
+    """Remove the org logo and delete it from R2 if possible."""
+    import boto3
+    from botocore.exceptions import BotoCoreError, ClientError
+
+    org = _get_admin_org()
+    if not org:
+        return redirect(url_for("admin_login"))
+
+    old_url = org.logo_url
+    org.logo_url = None
+    db.session.commit()
+
+    # Best-effort delete from R2
+    cfg = app.config
+    if old_url and all([cfg.get("R2_ACCOUNT_ID"), cfg.get("R2_ACCESS_KEY_ID"),
+                        cfg.get("R2_SECRET_ACCESS_KEY"), cfg.get("R2_BUCKET_NAME"),
+                        cfg.get("R2_PUBLIC_URL")]):
+        public_base = cfg["R2_PUBLIC_URL"].rstrip("/") + "/"
+        if old_url.startswith(public_base):
+            key = old_url[len(public_base):]
+            try:
+                s3 = boto3.client(
+                    "s3",
+                    endpoint_url=f"https://{cfg['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com",
+                    aws_access_key_id=cfg["R2_ACCESS_KEY_ID"],
+                    aws_secret_access_key=cfg["R2_SECRET_ACCESS_KEY"],
+                    region_name="auto",
+                )
+                s3.delete_object(Bucket=cfg["R2_BUCKET_NAME"], Key=key)
+            except (BotoCoreError, ClientError) as e:
+                app.logger.warning("R2 logo delete failed: %s", e)
+
+    flash("Logo removed.", "success")
+    return redirect(url_for("admin_settings"))
+
+
 @app.route("/admin/tables", methods=["GET"])
 @admin_required
 def admin_tables():
