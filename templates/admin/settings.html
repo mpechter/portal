@@ -97,7 +97,9 @@
             </div>
 
             <div class="form-group" id="base-field-group">
-                <label for="airtable_base_id">Airtable Base</label>
+                <label for="airtable_base_id">Airtable Base
+                    <span id="base-load-status" style="font-size: 13px; font-weight: normal; margin-left: 6px;"></span>
+                </label>
                 <p class="field-help" id="base-field-help">
                     {% if org.airtable_api_key %}
                         Enter your new API key above and click <strong>Load Bases</strong>, or type a Base ID manually.
@@ -118,9 +120,8 @@
                            data-original="{{ org.airtable_base_id }}">
                 </div>
 
-                <div style="margin-top: 6px; display: flex; align-items: center; gap: 10px;">
+                <div style="margin-top: 6px;">
                     <button type="button" id="load-bases-btn" class="btn btn-secondary btn-sm">Load Bases</button>
-                    <span id="base-load-status" style="font-size: 13px; color: var(--color-muted, #666);"></span>
                 </div>
             </div>
 
@@ -363,6 +364,7 @@ function closePasswordModal() {
         const key = keyInput.value.trim();
         statusEl.textContent = 'Loading…';
         statusEl.style.color = 'var(--color-muted, #666)';
+        statusEl.style.fontWeight = 'normal';
         loadBtn.disabled = true;
 
         fetch('/api/airtable-bases', {
@@ -377,17 +379,20 @@ function closePasswordModal() {
             if (data.error || !data.bases.length) {
                 statusEl.textContent = data.error || 'No bases found — check token scopes.';
                 statusEl.style.color = 'var(--color-danger-text, #b00)';
+                statusEl.style.fontWeight = 'normal';
                 return;
             }
             const current = baseInput.value || '{{ org.airtable_base_id | default("") }}';
             showDropdown(data.bases, current);
-            statusEl.textContent = data.bases.length + ' base(s) loaded.';
+            statusEl.textContent = '✓ base loaded';
             statusEl.style.color = 'var(--color-success, #2d7a3a)';
+            statusEl.style.fontWeight = 'normal';
         })
         .catch(function() {
             loadBtn.disabled = false;
             statusEl.textContent = 'Request failed.';
             statusEl.style.color = 'var(--color-danger-text, #b00)';
+            statusEl.style.fontWeight = 'normal';
         });
     }
 
