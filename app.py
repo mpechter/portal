@@ -1912,6 +1912,43 @@ def generate_org_code(name: str) -> str:
     return code
 
 
+@app.route("/api/airtable-bases", methods=["POST"])
+def api_airtable_bases():
+    """Return list of Airtable bases accessible by a given API key.
+
+    Accepts JSON body with optional `api_key`. If omitted and the admin is
+    logged in, falls back to the org's stored key.
+    """
+    from pyairtable import Api as _AirtableApi
+    data = request.get_json(silent=True) or {}
+    api_key = (data.get("api_key") or "").strip()
+
+    if not api_key:
+        # Try stored key for logged-in admin
+        org_code = session.get("admin_org_code")
+        if org_code:
+            org = Organization.get_by_code(org_code)
+            api_key = org.airtable_api_key if org else None
+
+    if not api_key:
+        return jsonify({"error": "API key required", "bases": []}), 400
+
+    try:
+        airtable = _AirtableApi(api_key)
+        bases = airtable.bases()
+        return jsonify({
+            "bases": [{"id": b.id, "name": b.name} for b in bases],
+            "error": None,
+        })
+    except Exception as e:
+        msg = str(e)
+        if "401" in msg or "AUTHENTICATION" in msg.upper():
+            return jsonify({"error": "Invalid API key.", "bases": []}), 401
+        if "403" in msg or "FORBIDDEN" in msg.upper():
+            return jsonify({"error": "Token lacks schema.bases:read scope.", "bases": []}), 403
+        return jsonify({"error": f"Could not fetch bases: {msg}", "bases": []}), 500
+
+
 def validate_airtable_credentials(api_key: str, base_id: str) -> tuple[bool, str]:
     """Test if Airtable credentials are valid by trying to fetch base schema."""
     try:

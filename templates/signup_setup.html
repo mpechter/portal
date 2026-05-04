@@ -65,11 +65,21 @@
             <label for="airtable_api_key">Airtable Personal Access Token</label>
             <input type="password" id="airtable_api_key" name="airtable_api_key" placeholder="pat..." required>
         </div>
+
         <div class="form-group">
-            <label for="airtable_base_id">Airtable Base ID</label>
-            <input type="text" id="airtable_base_id" name="airtable_base_id"
-                   value="{{ airtable_base_id }}" placeholder="app..." required>
-            <p class="field-help">Found in your base URL: airtable.com/<strong>appXXXXXX</strong>/...</p>
+            <label for="airtable_base_id">Airtable Base</label>
+            <div id="base-selector">
+                <select id="airtable_base_select" class="form-input" style="display:none;">
+                    <option value="">— select a base —</option>
+                </select>
+                <input type="text" id="airtable_base_id" name="airtable_base_id"
+                       value="{{ airtable_base_id }}" placeholder="app..." required>
+            </div>
+            <div style="margin-top: 6px; display: flex; align-items: center; gap: 10px;">
+                <button type="button" id="load-bases-btn" class="btn btn-secondary btn-sm">Load Bases</button>
+                <span id="base-load-status" style="font-size: 13px; color: var(--color-muted, #666);"></span>
+            </div>
+            <p class="field-help" style="margin-top: 6px;">Enter your token above then click Load Bases, or type the Base ID manually (starts with "app").</p>
         </div>
 
         <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
@@ -115,6 +125,86 @@ function checkOrgCode(value) {
         btn.disabled = true;
         btn.textContent = 'Creating…';
     });
+})();
+
+(function() {
+    const CSRF_TOKEN = '{{ csrf_token() }}';
+    const keyInput   = document.getElementById('airtable_api_key');
+    const baseInput  = document.getElementById('airtable_base_id');
+    const baseSelect = document.getElementById('airtable_base_select');
+    const loadBtn    = document.getElementById('load-bases-btn');
+    const statusEl   = document.getElementById('base-load-status');
+
+    function showDropdown(bases, currentId) {
+        baseSelect.innerHTML = '<option value="">— select a base —</option>';
+        bases.forEach(function(b) {
+            const opt = document.createElement('option');
+            opt.value = b.id;
+            opt.textContent = b.name + ' (' + b.id + ')';
+            if (b.id === currentId) opt.selected = true;
+            baseSelect.appendChild(opt);
+        });
+        const manual = document.createElement('option');
+        manual.value = '__manual__';
+        manual.textContent = 'Enter ID manually…';
+        baseSelect.appendChild(manual);
+
+        baseSelect.style.display = '';
+        baseInput.style.display = 'none';
+        baseInput.removeAttribute('required');
+        syncFromSelect();
+        baseSelect.addEventListener('change', syncFromSelect);
+    }
+
+    function syncFromSelect() {
+        if (baseSelect.value === '__manual__') {
+            baseSelect.style.display = 'none';
+            baseInput.style.display = '';
+            baseInput.setAttribute('required', '');
+            baseInput.value = '';
+            baseInput.focus();
+        } else {
+            baseInput.value = baseSelect.value;
+        }
+    }
+
+    function loadBases() {
+        const key = keyInput.value.trim();
+        if (!key) {
+            statusEl.textContent = 'Enter your token first.';
+            statusEl.style.color = 'var(--color-danger-text, #b00)';
+            return;
+        }
+        statusEl.textContent = 'Loading…';
+        statusEl.style.color = 'var(--color-muted, #666)';
+        loadBtn.disabled = true;
+
+        fetch('/api/airtable-bases', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+            credentials: 'same-origin',
+            body: JSON.stringify({ api_key: key }),
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            loadBtn.disabled = false;
+            if (data.error || !data.bases.length) {
+                statusEl.textContent = data.error || 'No bases found — check token scopes.';
+                statusEl.style.color = 'var(--color-danger-text, #b00)';
+                return;
+            }
+            showDropdown(data.bases, baseInput.value);
+            statusEl.textContent = data.bases.length + ' base(s) loaded.';
+            statusEl.style.color = 'var(--color-success, #2d7a3a)';
+        })
+        .catch(function() {
+            loadBtn.disabled = false;
+            statusEl.textContent = 'Request failed.';
+            statusEl.style.color = 'var(--color-danger-text, #b00)';
+        });
+    }
+
+    loadBtn.addEventListener('click', loadBases);
 })();
 </script>
 {% endblock %}
