@@ -110,7 +110,7 @@
 
                 <div id="base-selector">
                     <!-- Dropdown shown after successful fetch -->
-                    <select id="airtable_base_select" class="form-input" style="display:none;">
+                    <select id="airtable_base_select" class="form-select" style="display:none;">
                         <option value="">— select a base —</option>
                     </select>
                     <!-- Fallback text input (always submitted) -->
@@ -332,7 +332,7 @@ function closePasswordModal() {
         bases.forEach(function(b) {
             const opt = document.createElement('option');
             opt.value = b.id;
-            opt.textContent = b.name + ' (' + b.id + ')';
+            opt.textContent = b.name;
             if (b.id === currentId) opt.selected = true;
             baseSelect.appendChild(opt);
         });
