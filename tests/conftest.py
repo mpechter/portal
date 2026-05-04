@@ -13,7 +13,7 @@ os.environ["DEMO_MODE"] = "true"
 os.environ["SECRET_KEY"] = "test-secret-key"
 
 from app import app as flask_app, db
-from models import Organization
+from models import Organization, PortalConfig
 
 
 @pytest.fixture
@@ -53,16 +53,15 @@ def runner(app):
 def demo_org(app):
     """Create a demo organization for testing."""
     with app.app_context():
-        org = Organization(
-            org_code="TEST",
-            name="Test Organization",
+        org = Organization(org_code="TEST", name="Test Organization")
+        org.portal_configs.append(PortalConfig(
             airtable_api_key="fake_key",
             airtable_base_id="fake_base",
             portal_title="Test Portal",
             users_table="Parents",
             records_table="Students",
             link_field="Students",
-        )
+        ))
         org.set_admin_password("admin123")
         db.session.add(org)
         db.session.commit()

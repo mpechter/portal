@@ -8,7 +8,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_wtf.csrf import CSRFProtect
 from config import Config
-from models import db, Organization, LoginAttempt, LoginCode, PromoCode
+from models import db, Organization, PortalConfig, LoginAttempt, LoginCode, PromoCode
 from airtable_client import get_client_for_org, COMPUTED_FIELD_TYPES
 from auth import (send_login_code, verify_login_code, verify_magic_link,
                   is_locked_out, get_lockout_remaining,
@@ -2064,14 +2064,16 @@ def signup_setup():
             org_code=org_code,
             name=name,
             admin_email=email,
-            airtable_api_key=airtable_api_key,
-            airtable_base_id=airtable_base_id,
-            portal_title=f"{name} Portal",
             plan=plan,
             promo_code=valid_promo,
             trial_started_at=datetime.now(_tz.utc) if plan == "trial" else None,
         )
         org.admin_password_hash = pending["password_hash"]
+        org.portal_configs.append(PortalConfig(
+            airtable_api_key=airtable_api_key,
+            airtable_base_id=airtable_base_id,
+            portal_title=f"{name} Portal",
+        ))
 
         db.session.add(org)
         db.session.commit()
@@ -2147,6 +2149,82 @@ def migrate_db():
         else:
             print("promo_codes table already exists.")
 
+        # Create portal_configs table and migrate data from organizations
+        tables = inspect(db.engine).get_table_names()
+        if "portal_configs" not in tables:
+            conn.execute(text("""
+                CREATE TABLE portal_configs (
+                    id SERIAL PRIMARY KEY,
+                    org_id INTEGER NOT NULL REFERENCES organizations(id),
+                    airtable_api_key VARCHAR(200),
+                    airtable_base_id VARCHAR(50),
+                    users_table VARCHAR(100),
+                    records_table VARCHAR(100),
+                    link_field VARCHAR(100),
+                    email_field VARCHAR(100) DEFAULT 'Email',
+                    portal_title VARCHAR(200) DEFAULT 'Parent Portal',
+                    logo_url VARCHAR(500),
+                    confirmation_enabled BOOLEAN DEFAULT FALSE,
+                    confirmation_field VARCHAR(100),
+                    confirmation_value VARCHAR(200),
+                    field_config TEXT DEFAULT '{}',
+                    field_annotations TEXT DEFAULT '{}',
+                    field_aliases TEXT DEFAULT '{}',
+                    field_descriptions TEXT DEFAULT '{}',
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                )
+            """))
+            conn.execute(text("CREATE INDEX ix_portal_configs_org_id ON portal_configs (org_id)"))
+            conn.commit()
+            print("Created portal_configs table.")
+
+            # Migrate existing data from organizations into portal_configs
+            orgs = conn.execute(text("""
+                SELECT id, airtable_api_key, airtable_base_id, users_table,
+                       records_table, link_field, email_field, portal_title,
+                       logo_url, confirmation_enabled, confirmation_field,
+                       confirmation_value, field_config, field_annotations,
+                       field_aliases, field_descriptions
+                FROM organizations
+            """)).fetchall()
+            for row in orgs:
+                conn.execute(text("""
+                    INSERT INTO portal_configs (
+                        org_id, airtable_api_key, airtable_base_id, users_table,
+                        records_table, link_field, email_field, portal_title,
+                        logo_url, confirmation_enabled, confirmation_field,
+                        confirmation_value, field_config, field_annotations,
+                        field_aliases, field_descriptions
+                    ) VALUES (
+                        :org_id, :airtable_api_key, :airtable_base_id, :users_table,
+                        :records_table, :link_field, :email_field, :portal_title,
+                        :logo_url, :confirmation_enabled, :confirmation_field,
+                        :confirmation_value, :field_config, :field_annotations,
+                        :field_aliases, :field_descriptions
+                    )
+                """), {
+                    "org_id": row[0],
+                    "airtable_api_key": row[1],
+                    "airtable_base_id": row[2],
+                    "users_table": row[3],
+                    "records_table": row[4],
+                    "link_field": row[5],
+                    "email_field": row[6] or "Email",
+                    "portal_title": row[7] or "Parent Portal",
+                    "logo_url": row[8],
+                    "confirmation_enabled": row[9] or False,
+                    "confirmation_field": row[10],
+                    "confirmation_value": row[11],
+                    "field_config": row[12] or "{}",
+                    "field_annotations": row[13] or "{}",
+                    "field_aliases": row[14] or "{}",
+                    "field_descriptions": row[15] or "{}",
+                })
+            conn.commit()
+            print(f"Migrated {len(orgs)} organization(s) to portal_configs.")
+        else:
+            print("portal_configs table already exists.")
+
     print("Migration complete.")
 
 
@@ -2163,13 +2241,12 @@ def add_org():
     portal_title = input("Portal title [Parent Portal]: ").strip() or "Parent Portal"
     admin_password = input("Admin password: ").strip()
 
-    org = Organization(
-        org_code=org_code,
-        name=name,
+    org = Organization(org_code=org_code, name=name)
+    org.portal_configs.append(PortalConfig(
         airtable_api_key=api_key,
         airtable_base_id=base_id,
         portal_title=portal_title,
-    )
+    ))
     if admin_password:
         org.set_admin_password(admin_password)
 
