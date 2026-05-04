@@ -2165,6 +2165,23 @@ def init_db():
 @app.cli.command("migrate-db")
 def migrate_db():
     """Apply incremental schema migrations."""
+    import time
+    from sqlalchemy.exc import OperationalError as SAOperationalError
+
+    max_attempts = 5
+    for attempt in range(1, max_attempts + 1):
+        try:
+            _run_migrations()
+            return
+        except SAOperationalError as e:
+            if attempt == max_attempts:
+                raise
+            wait = attempt * 3
+            print(f"DB connection error (attempt {attempt}/{max_attempts}), retrying in {wait}s: {e}")
+            time.sleep(wait)
+
+
+def _run_migrations():
     with db.engine.connect() as conn:
         # Add email_field column if it doesn't exist
         from sqlalchemy import text, inspect
