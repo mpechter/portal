@@ -426,15 +426,16 @@ def send_admin_email_verification(org, new_email: str, base_url: str) -> bool:
         return True
 
 
-def generate_signup_token(email: str, password_hash: str) -> str:
-    """Generate a signed token for email verification during signup."""
-    return get_serializer("signup-verify").dumps({"email": email, "password_hash": password_hash})
+def generate_signup_token(pending_signup_id: int) -> str:
+    """Generate a signed token referencing a PendingSignup row by ID."""
+    return get_serializer("signup-verify").dumps({"id": pending_signup_id})
 
 
-def verify_signup_token(token: str, max_age: int = 86400) -> dict | None:
-    """Verify a signup email verification token (24-hour expiry)."""
+def verify_signup_token(token: str, max_age: int = 86400) -> int | None:
+    """Verify a signup token and return the PendingSignup ID, or None if invalid."""
     try:
-        return get_serializer("signup-verify").loads(token, max_age=max_age)
+        data = get_serializer("signup-verify").loads(token, max_age=max_age)
+        return data.get("id")
     except (BadSignature, SignatureExpired):
         return None
 

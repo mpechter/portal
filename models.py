@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -392,6 +392,48 @@ class PortalConfig(db.Model):
 
     def __repr__(self):
         return f"<PortalConfig org_id={self.org_id} base={self.airtable_base_id}>"
+
+
+class PendingSignup(db.Model):
+    """Server-side store for in-progress signups.
+
+    Keeps the password hash off the verification URL and out of the session
+    cookie, and ensures the verification link can only be used once.
+    """
+
+    __tablename__ = "pending_signups"
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(255), nullable=False, index=True)
+    password_hash = db.Column(db.String(256), nullable=False)
+    expires_at = db.Column(db.DateTime(timezone=True), nullable=False)
+    used_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    @classmethod
+    def create(cls, email: str, password_hash: str):
+        """Replace any existing pending signup for this email and return a new one."""
+        cls.query.filter_by(email=email.lower()).delete()
+        row = cls(
+            email=email.lower(),
+            password_hash=password_hash,
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+        )
+        db.session.add(row)
+        db.session.commit()
+        return row
+
+    def claim(self):
+        """Mark this signup as used. Returns False if already used or expired."""
+        now = datetime.now(timezone.utc)
+        if self.used_at is not None or now > self.expires_at:
+            return False
+        self.used_at = now
+        db.session.commit()
+        return True
 
 
 class PromoCode(db.Model):

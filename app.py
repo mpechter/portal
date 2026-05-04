@@ -8,7 +8,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_wtf.csrf import CSRFProtect
 from config import Config
-from models import db, Organization, PortalConfig, LoginAttempt, LoginCode, PromoCode
+from models import db, Organization, PortalConfig, PendingSignup, LoginAttempt, LoginCode, PromoCode
 from airtable_client import get_client_for_org, COMPUTED_FIELD_TYPES
 from auth import (send_login_code, verify_login_code, verify_magic_link,
                   is_locked_out, get_lockout_remaining,
@@ -25,6 +25,15 @@ app.config.from_object(Config)
 csrf = CSRFProtect(app)
 
 db.init_app(app)
+
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    storage_uri="memory://",
+    default_limits=[],
+)
 
 
 @app.after_request
@@ -1922,6 +1931,7 @@ def generate_org_code(name: str) -> str:
 
 
 @app.route("/api/airtable-bases", methods=["POST"])
+@limiter.limit("20 per minute")
 def api_airtable_bases():
     """Return list of Airtable bases accessible by a given API key.
 
@@ -1982,6 +1992,7 @@ def validate_airtable_credentials(api_key: str, base_id: str) -> tuple[bool, str
 
 
 @app.route("/signup", methods=["GET", "POST"])
+@limiter.limit("10 per hour", methods=["POST"])
 def signup():
     """Step 1: Create account — email + password, then send verification email."""
     if request.method == "POST":
@@ -2013,8 +2024,10 @@ def signup():
                 flash(error, "error")
             return render_template("signup.html", admin_email=admin_email)
 
+        # Store hash server-side; token carries only the row ID
         password_hash = generate_password_hash(admin_password)
-        token = generate_signup_token(admin_email, password_hash)
+        pending = PendingSignup.create(admin_email, password_hash)
+        token = generate_signup_token(pending.id)
         base_url = Config.APP_URL.rstrip("/")
         sent = send_signup_verification_email(admin_email, token, base_url)
 
@@ -2030,24 +2043,29 @@ def signup():
 @app.route("/signup/verify/<token>")
 def signup_verify(token):
     """Verify the email token from the signup confirmation link."""
-    data = verify_signup_token(token)
-    if not data:
+    pending_id = verify_signup_token(token)
+    if not pending_id:
         flash("This verification link has expired or is invalid.", "error")
         return redirect(url_for("signup"))
 
-    # Store credentials in session so step 2 can use them
-    session["pending_signup"] = {
-        "email": data["email"],
-        "password_hash": data["password_hash"],
-    }
+    pending = db.session.get(PendingSignup, pending_id)
+    if not pending or not pending.claim():
+        flash("This verification link has already been used or has expired.", "error")
+        return redirect(url_for("signup"))
+
+    # Session carries only the row ID — hash stays in the database
+    session["pending_signup_id"] = pending.id
     return redirect(url_for("signup_setup"))
 
 
 @app.route("/signup/setup", methods=["GET", "POST"])
 def signup_setup():
     """Step 2: Set up the portal — org name, promo code, Airtable keys."""
-    pending = session.get("pending_signup")
-    if not pending:
+    pending_id = session.get("pending_signup_id")
+    pending = db.session.get(PendingSignup, pending_id) if pending_id else None
+    # used_at is set by claim() in signup_verify; its absence means the session
+    # was not established through the normal verify flow
+    if not pending or pending.used_at is None:
         flash("Please start signup from the beginning.", "error")
         return redirect(url_for("signup"))
 
@@ -2100,10 +2118,10 @@ def signup_setup():
                 flash("Invalid promo code — your portal will start on a free trial.", "warning")
 
         # Guard against duplicate email (race condition)
-        email = pending["email"]
+        email = pending.email
         if Organization.query.filter_by(admin_email=email).first():
             flash("An account with this email already exists.", "error")
-            session.pop("pending_signup", None)
+            session.pop("pending_signup_id", None)
             return redirect(url_for("signup"))
 
         from datetime import datetime, timezone as _tz
@@ -2115,7 +2133,7 @@ def signup_setup():
             promo_code=valid_promo,
             trial_started_at=datetime.now(_tz.utc) if plan == "trial" else None,
         )
-        org.admin_password_hash = pending["password_hash"]
+        org.admin_password_hash = pending.password_hash
         org.portal_configs.append(PortalConfig(
             airtable_api_key=airtable_api_key,
             airtable_base_id=airtable_base_id,
@@ -2127,7 +2145,8 @@ def signup_setup():
 
         send_signup_notification(org.name, org.admin_email, plan)
 
-        session.pop("pending_signup", None)
+        session.pop("pending_signup_id", None)
+        session.permanent = True
         session["admin_org_code"] = org.org_code
 
         flash("Portal created! Now let's connect your tables.", "success")
@@ -2271,6 +2290,25 @@ def migrate_db():
             print(f"Migrated {len(orgs)} organization(s) to portal_configs.")
         else:
             print("portal_configs table already exists.")
+
+        # Create pending_signups table
+        tables = inspect(db.engine).get_table_names()
+        if "pending_signups" not in tables:
+            conn.execute(text("""
+                CREATE TABLE pending_signups (
+                    id SERIAL PRIMARY KEY,
+                    email VARCHAR(255) NOT NULL,
+                    password_hash VARCHAR(256) NOT NULL,
+                    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                    used_at TIMESTAMP WITH TIME ZONE,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                )
+            """))
+            conn.execute(text("CREATE INDEX ix_pending_signups_email ON pending_signups (email)"))
+            conn.commit()
+            print("Created pending_signups table.")
+        else:
+            print("pending_signups table already exists.")
 
     print("Migration complete.")
 
