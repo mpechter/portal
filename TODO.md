@@ -8,12 +8,15 @@
   - Admin configures rules: field X is visible when field Y equals/contains value Z
   - Requires UI for building rules + client-side evaluation at render time
 
-- **Multiple portals per base (Pro)**
-  - Currently: one portal per org, one Airtable base
-  - Future: multiple named portals per base, each with its own table + field configuration
-  - e.g. "Parent Portal" and "Staff Portal" both pointing at the same base, different views
-  - Requires significant UI rework: table/field config must be scoped to a portal, not the org
-  - Portal switcher in admin nav; portal selector on client login
+- **Multiple portals per account (Pro)**
+  - Data model groundwork done: `portal_configs` table is separate from `organizations`; one org can have many PortalConfigs
+  - Remaining: UI for creating/naming/switching portals; portal selector on client login; scoping admin table/field config to a specific portal
+
+- **Encrypt Airtable API keys at rest (application-level)**
+  - Keys are currently stored as plaintext in `portal_configs.airtable_api_key`
+  - Fly.io encrypts the storage volume (protects against physical disk access), but a DB dump, backup file, or leaked `DATABASE_URL` exposes the keys in plain text
+  - Fix: encrypt the column value with `cryptography.fernet` before INSERT, decrypt after SELECT; store the encryption key in an env var separate from `DATABASE_URL`
+  - Risk if skipped: a misconfigured backup or compromised DB connection leaks all customer Airtable tokens
 
 - **Organization logos (upload)**
   - Currently supports logo via URL
@@ -27,6 +30,21 @@
 
 ## Completed Features
 
+- PortalConfig table extracted from organizations (multi-portal groundwork)
+  - `portal_configs` table holds all Airtable + portal-specific config; `organizations` holds account identity + billing
+  - Organization proxies all portal fields transparently so no app logic changed
+- Airtable base dropdown in signup and admin settings
+  - New `POST /api/airtable-bases` endpoint fetches accessible bases from a PAT
+  - Settings page auto-loads on page load if a stored key exists; signup prompts user to click "Load Bases"
+  - Falls back to manual Base ID entry if the token lacks `schema.bases:read` or fetch fails
+- Security hardening (signup flow + general)
+  - Signup token no longer embeds bcrypt hash: `PendingSignup` table stores hash server-side; token carries only the row ID
+  - Verification link is single-use: `claim()` sets `used_at` on first redemption and rejects replays
+  - Rate limiting: `POST /signup` 10/hour per IP; `POST /api/airtable-bases` 20/minute per IP (flask-limiter, in-memory)
+  - Admin sessions expire after 8 hours (`PERMANENT_SESSION_LIFETIME`)
+  - Security headers on all responses: `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`
+  - `portal_title` HTML-escaped before embedding in outgoing login emails
+  - Error details no longer leaked from `/api/airtable-bases` 500 responses
 - 7-day trial countdown with expiry enforcement (client portal deactivated, admin access preserved)
 - Admin priority support form (emails info@airbud.app with org context)
 - Contact form at /contact (sends to info@airbud.app via Resend)
