@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,6 +20,7 @@ class Config:
     SESSION_COOKIE_SECURE = APP_URL.startswith("https://")
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=8)
 
     # Demo mode - uses mock data instead of real Airtable
     DEMO_MODE = os.environ.get("DEMO_MODE", "false").lower() == "true"

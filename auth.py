@@ -98,15 +98,16 @@ def send_login_code(org, user_email: str, user_id: str, base_url: str = None) ->
     # Send email via Resend if configured
     if Config.RESEND_API_KEY and not Config.DEMO_MODE:
         try:
-            # Build email HTML with both code and magic link
+            import html as _html
+            safe_title = _html.escape(org.portal_title or "")
             html_content = f"""
-                <h2>Log in to {org.portal_title}</h2>
+                <h2>Log in to {safe_title}</h2>
                 <p>Click the button below to log in:</p>
                 <p style="margin: 25px 0;">
                     <a href="{magic_link}"
                        style="background: #4a90d9; color: white; padding: 12px 24px;
                               text-decoration: none; border-radius: 6px; font-weight: 500;">
-                        Log In to {org.portal_title}
+                        Log In to {safe_title}
                     </a>
                 </p>
                 <p style="color: #666; font-size: 14px;">Or enter this code manually:</p>

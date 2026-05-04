@@ -26,6 +26,14 @@ csrf = CSRFProtect(app)
 
 db.init_app(app)
 
+
+@app.after_request
+def security_headers(response):
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    return response
+
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
@@ -804,6 +812,7 @@ def admin_login():
 
         # Success
         clear_failed_attempts(org.id, _admin_sentinel)
+        session.permanent = True
         session["admin_org_code"] = org.org_code
         flash("Logged in as admin.", "success")
         return redirect(url_for("admin_dashboard"))
@@ -1946,7 +1955,8 @@ def api_airtable_bases():
             return jsonify({"error": "Invalid API key.", "bases": []}), 401
         if "403" in msg or "FORBIDDEN" in msg.upper():
             return jsonify({"error": "Token lacks schema.bases:read scope.", "bases": []}), 403
-        return jsonify({"error": f"Could not fetch bases: {msg}", "bases": []}), 500
+        app.logger.error(f"airtable-bases error: {msg}")
+        return jsonify({"error": "Could not fetch bases. Check your token and try again.", "bases": []}), 500
 
 
 def validate_airtable_credentials(api_key: str, base_id: str) -> tuple[bool, str]:
