@@ -16,6 +16,7 @@ dependencies = [
     "stripe>=14.4.1",
     "flask-wtf>=1.2.0",
     "boto3>=1.34.0",
+    "flask-limiter>=3.5.0",
 ]
 
 [project.scripts]
