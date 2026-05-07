@@ -48,7 +48,7 @@
         <div class="sidebar-field-list" id="record-sidebar-list">
             {% for field_name in record_fields %}
             {% set is_computed = field_name in computed_record_fields %}
-            {% set current = record_field_config.get(field_name, 'hidden' if is_computed else 'editable') %}
+            {% set current = record_field_config.get(field_name, 'hidden') %}
             {% set active = current != 'hidden' %}
             <div class="sidebar-field" data-field-name="{{ field_name }}"
                  {% if org.confirmation_field == field_name %}style="display:none"{% endif %}>
@@ -161,7 +161,7 @@
         <div class="field-cards" id="record-fields-sortable">
             {% for field_name in record_fields %}
             {% set is_computed = field_name in computed_record_fields %}
-            {% set current = record_field_config.get(field_name, 'hidden' if is_computed else 'editable') %}
+            {% set current = record_field_config.get(field_name, 'hidden') %}
             {% set active = current != 'hidden' %}
             {% set translation = record_translations.get(field_name, '') %}
             {% set alias = record_aliases.get(field_name, '') %}
@@ -330,6 +330,7 @@ document.querySelectorAll('.sidebar-toggle').forEach(toggle => {
 // ---- Initialise ----
 
 updateOrderInput('user-fields-sortable', 'user_field_order');
+updateOrderInput('record-fields-sortable', 'record_field_order');
 updateActiveCount('user-active-count', 'user-fields-sortable');
 updateActiveCount('record-active-count', 'record-fields-sortable');
 updateEmptyHint('user-empty-hint', 'user-fields-sortable');

@@ -270,7 +270,7 @@ class Organization(db.Model):
         return self.field_config.get("record_fields", {})
 
     def get_record_field_permission(self, field_name: str) -> str:
-        return self.record_field_config.get(field_name, "editable")
+        return self.record_field_config.get(field_name, "hidden")
 
     def get_record_editable_fields(self) -> list:
         return [f for f, p in self.record_field_config.items() if p == "editable"]
