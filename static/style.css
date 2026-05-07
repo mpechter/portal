@@ -1182,6 +1182,15 @@ body {
     background: var(--color-bg-subtle);
     border-radius: var(--radius-xs);
     transition: background 0.2s;
+    align-items: center;
+}
+
+.multi-select .checkbox-label input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+    align-self: center;
+    margin: 0;
 }
 
 .multi-select .checkbox-label:hover {
