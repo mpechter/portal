@@ -4,6 +4,20 @@
     {% set field_options = field_meta.options if field_meta else [] %}
     {% set display_name = alias if alias else field_name %}
 
+    {% if field_type == 'checkbox' and editable %}
+    {# Editable checkbox: card-row layout (label left, checkbox right) #}
+    <div class="form-group form-group--checkbox">
+        <div class="form-group--checkbox-label">
+            <label for="{{ field_name }}">{{ display_name }}{% if translation %}<span class="field-translation">{{ translation }}</span>{% endif %}</label>
+            {% if description %}<p class="field-description">{{ description }}</p>{% endif %}
+        </div>
+        <input type="checkbox"
+               id="{{ field_name }}"
+               name="{{ field_name }}"
+               {% if field_value %}checked{% endif %}
+               data-original="{{ 'true' if field_value else 'false' }}">
+    </div>
+    {% else %}
     <div class="form-group">
         <label for="{{ field_name }}">{{ display_name }}{% if translation %}<span class="field-translation">{{ translation }}</span>{% endif %}</label>
         {% if description %}
@@ -21,16 +35,6 @@
                     {{ field_value or '—' }}
                 {% endif %}
             </div>
-        {% elif field_type == 'checkbox' %}
-            {# Checkbox #}
-            <label class="checkbox-label">
-                <input type="checkbox"
-                       id="{{ field_name }}"
-                       name="{{ field_name }}"
-                       {% if field_value %}checked{% endif %}
-                       data-original="{{ 'true' if field_value else 'false' }}">
-                <span class="checkbox-text">{{ display_name }}{% if translation %}<span class="field-translation">{{ translation }}</span>{% endif %}</span>
-            </label>
         {% elif field_type == 'singleSelect' %}
             {# Dropdown for single select #}
             <select id="{{ field_name }}"
@@ -122,4 +126,5 @@
             {% endif %}
         {% endif %}
     </div>
+    {% endif %}
 {% endmacro %}

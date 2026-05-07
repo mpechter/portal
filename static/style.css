@@ -1145,13 +1145,41 @@ body {
     font-weight: normal;
 }
 
-/* Hide duplicate label for standalone checkboxes */
-.form-group > .checkbox-label {
-    margin-top: -5px;
+/* Checkbox card-row: label left, checkbox right */
+.form-group--checkbox {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: var(--color-bg-subtle);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    cursor: pointer;
+    margin-bottom: 20px;
 }
 
-.form-group > .checkbox-label .checkbox-text {
-    display: none;
+.form-group--checkbox .form-group--checkbox-label {
+    flex: 1;
+}
+
+.form-group--checkbox label {
+    display: block;
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
+.form-group--checkbox .field-description {
+    margin: 2px 0 0;
+}
+
+.form-group--checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    cursor: pointer;
+    accent-color: var(--color-primary);
+    margin: 0;
 }
 
 .form-group > .checkbox-label.terms-checkbox {
