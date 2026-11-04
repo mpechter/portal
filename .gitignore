@@ -35,3 +35,6 @@ htmlcov/
 
 # Database
 *.db
+
+# Sales leads (contains personal contact info; never commit)
+leads/
