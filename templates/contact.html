@@ -15,6 +15,12 @@
 <div class="card centered" style="max-width: 520px;">
     <form action="{{ url_for('contact') }}" method="post" class="form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="form_token" value="{{ contact_form_token() }}">
+        {# Honeypot: hidden from people, bots tend to fill it in. #}
+        <div style="position: absolute; left: -10000px;" aria-hidden="true">
+            <label for="website">Website</label>
+            <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+        </div>
         <div class="form-group">
             <label for="name">Name</label>
             <input type="text" id="name" name="name" value="{{ name }}" placeholder="Your name" required autofocus>

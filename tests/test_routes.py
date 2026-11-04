@@ -120,3 +120,66 @@ class TestAdminRoutes:
         response = client.get("/admin/logout", follow_redirects=False)
         assert response.status_code == 302
         assert "/admin/login" in response.location
+
+
+class TestContactBotProtection:
+    """Honeypot, timing check, and rate limit on /contact."""
+
+    def _form(self, app, age=10, **overrides):
+        from unittest.mock import patch
+        import time as _time
+        from app import _contact_form_token
+        with app.test_request_context():
+            with patch("app.time.time", return_value=_time.time() - age):
+                token = _contact_form_token()
+        data = {"name": "Ann", "email": "ann@example.com", "message": "Hi",
+                "website": "", "form_token": token}
+        data.update(overrides)
+        return data
+
+    def _post(self, client, app, **kw):
+        from unittest.mock import patch
+        from app import limiter
+        limiter.reset()
+        with patch("app.send_contact_email", return_value=True) as send:
+            resp = client.post("/contact", data=self._form(app, **kw))
+        return resp, send
+
+    def test_human_submission_sends(self, client, app):
+        resp, send = self._post(client, app)
+        assert resp.status_code == 302
+        send.assert_called_once()
+
+    def test_honeypot_filled_is_dropped(self, client, app):
+        resp, send = self._post(client, app, website="http://spam.example")
+        assert resp.status_code == 302
+        send.assert_not_called()
+
+    def test_too_fast_is_dropped(self, client, app):
+        resp, send = self._post(client, app, age=0)
+        send.assert_not_called()
+
+    def test_missing_token_is_dropped(self, client, app):
+        resp, send = self._post(client, app, form_token="")
+        send.assert_not_called()
+
+    def test_rate_limited_per_client_ip(self, client, app):
+        from unittest.mock import patch
+        from app import limiter
+        limiter.reset()
+        headers = {"Fly-Client-IP": "203.0.113.5"}
+        with patch("app.send_contact_email", return_value=True):
+            codes = [client.post("/contact", data=self._form(app), headers=headers).status_code
+                     for _ in range(6)]
+        assert codes[:5] == [302] * 5
+        assert codes[5] == 429
+        # A different client is unaffected.
+        with patch("app.send_contact_email", return_value=True):
+            other = client.post("/contact", data=self._form(app),
+                                headers={"Fly-Client-IP": "203.0.113.9"})
+        assert other.status_code == 302
+
+    def test_form_renders_honeypot_and_token(self, client):
+        html = client.get("/contact").get_data(as_text=True)
+        assert 'name="website"' in html
+        assert 'name="form_token"' in html

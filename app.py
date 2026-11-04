@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from flask import Flask, render_template, request, redirect, url_for, flash, session, abort, jsonify
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_wtf.csrf import CSRFProtect
+from itsdangerous import URLSafeTimedSerializer, BadData
 from config import Config
 from models import db, Organization, PortalConfig, PendingSignup, LoginAttempt, LoginCode, PromoCode
 from airtable_client import get_client_for_org, COMPUTED_FIELD_TYPES
@@ -28,8 +29,15 @@ db.init_app(app)
 
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+
+
+def client_ip():
+    """Real client IP. On Fly, remote_addr is the proxy; Fly sets Fly-Client-IP."""
+    return request.headers.get("Fly-Client-IP") or get_remote_address()
+
+
 limiter = Limiter(
-    key_func=get_remote_address,
+    key_func=client_ip,
     app=app,
     storage_uri="memory://",
     default_limits=[],
@@ -225,10 +233,40 @@ def pricing():
     return render_template("pricing.html")
 
 
+CONTACT_MIN_SECONDS = 3  # humans can't fill the form faster than this
+
+
+def _contact_form_token():
+    """Signed page-load timestamp, used to reject instant bot submissions."""
+    return URLSafeTimedSerializer(app.secret_key, salt="contact-form").dumps(time.time())
+
+
+app.jinja_env.globals["contact_form_token"] = _contact_form_token
+
+
+def _contact_looks_like_bot():
+    # Honeypot: hidden field real users never see or fill in.
+    if request.form.get("website", "").strip():
+        return True
+    # Time check: must be a valid token issued at least a few seconds ago.
+    try:
+        loaded_at = URLSafeTimedSerializer(app.secret_key, salt="contact-form").loads(
+            request.form.get("form_token", ""), max_age=86400)
+    except BadData:
+        return True
+    return time.time() - loaded_at < CONTACT_MIN_SECONDS
+
+
 @app.route("/contact", methods=["GET", "POST"])
+@limiter.limit("5 per hour", methods=["POST"])
 def contact():
     """Contact form page."""
     if request.method == "POST":
+        if _contact_looks_like_bot():
+            # Pretend success so bots don't learn to adapt.
+            flash("Message sent! We'll get back to you soon.", "success")
+            return redirect(url_for("index"))
+
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip()
         message = request.form.get("message", "").strip()
