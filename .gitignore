@@ -38,3 +38,4 @@ htmlcov/
 
 # Sales leads (contains personal contact info; never commit)
 leads/
+linkedin_launch_post.txt
